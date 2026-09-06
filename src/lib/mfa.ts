@@ -59,10 +59,10 @@ export function verifyMfaToken(token: string, secret: string): boolean {
 
   try {
     const { totp } = createTotp('verify', secret);
-    // window: 4 allows +/- 120 seconds of clock drift
+    // window: 12 allows +/- 360 seconds (6 minutes) of clock drift between server and smartphone
     const delta = totp.validate({
       token: cleanToken,
-      window: 4,
+      window: 12,
     });
     return delta !== null;
   } catch (error) {
