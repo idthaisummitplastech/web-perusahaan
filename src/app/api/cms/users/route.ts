@@ -86,7 +86,9 @@ export async function POST(req: Request) {
     }
 
     const validRole = ['admin', 'marketing', 'editor', 'hr', 'user_dept'].includes(role) ? role : 'marketing';
-    const hashedPassword = await bcrypt.hash(password, 12);
+    const currentYear = new Date().getFullYear();
+    const finalPassword = password && password.trim().length >= 6 ? password.trim() : `Itsp@${currentYear}`;
+    const hashedPassword = await bcrypt.hash(finalPassword, 12);
 
     const isMfa = Boolean(mfaEnabled);
     let mfaSecret = null;

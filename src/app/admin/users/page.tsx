@@ -205,7 +205,7 @@ export default function AdminUsersPage() {
       setFormData({
         name: '',
         email: '',
-        password: '',
+        password: `Itsp@${new Date().getFullYear()}`,
         role: 'marketing',
         mfaEnabled: false,
       });
@@ -585,10 +585,11 @@ export default function AdminUsersPage() {
                 label={editingUser ? 'Reset Kata Sandi Baru (Opsional)' : 'Kata Sandi Awal'}
                 required={!editingUser}
                 fullWidth
-                type="password"
+                type="text"
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                placeholder={editingUser ? 'Kosongkan jika tidak ingin mengubah kata sandi' : 'Minimal 6 karakter'}
+                placeholder={editingUser ? 'Kosongkan jika tidak ingin mengubah kata sandi' : `Default: Itsp@${new Date().getFullYear()}`}
+                helperText={!editingUser ? `Kata sandi awal standar tahun: Itsp@${new Date().getFullYear()}` : ''}
                 slotProps={{
                   input: {
                     startAdornment: <KeyIcon sx={{ color: '#94A3B8', mr: 1, fontSize: 20 }} />,
