@@ -41,9 +41,10 @@ import EditNoteIcon from '@mui/icons-material/EditNote';
 import ShieldIcon from '@mui/icons-material/Shield';
 import KeyIcon from '@mui/icons-material/Key';
 import VpnKeyIcon from '@mui/icons-material/VpnKey';
-import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import CheckIcon from '@mui/icons-material/Check';
 import RefreshIcon from '@mui/icons-material/Refresh';
+import PeopleIcon from '@mui/icons-material/People';
+import EngineeringIcon from '@mui/icons-material/Engineering';
 
 interface UserItem {
   id: number;
@@ -56,6 +57,30 @@ interface UserItem {
 }
 
 const ROLES = [
+  {
+    value: 'admin',
+    label: 'Administrator (Akses Penuh)',
+    desc: 'Memiliki kontrol total terhadap seluruh fitur CMS, pengaturan sistem, konfigurasi navigasi, dan manajemen pengguna.',
+    color: '#0F172A',
+    bg: '#F1F5F9',
+    icon: <AdminPanelSettingsIcon fontSize="small" />,
+  },
+  {
+    value: 'hr',
+    label: 'HR Recruitment (Portal Karir)',
+    desc: 'Pengelola seleksi pelamar, bank soal psikotes, jadwal interview, klinik MCU, offering letter, dan kartu orientasi.',
+    color: '#0284C7',
+    bg: '#E0F2FE',
+    icon: <PeopleIcon fontSize="small" />,
+  },
+  {
+    value: 'user_dept',
+    label: 'User Departemen (Portal Karir)',
+    desc: 'Pembuat soal tes teknis kejuruan, reviewer CV spesialis, dan pewawancara teknis kandidat.',
+    color: '#7C3AED',
+    bg: '#F3E8FF',
+    icon: <EngineeringIcon fontSize="small" />,
+  },
   {
     value: 'marketing',
     label: 'Marketing (Pengelola Konten)',
@@ -71,14 +96,6 @@ const ROLES = [
     color: '#fc4509',
     bg: '#FFF7ED',
     icon: <EditNoteIcon fontSize="small" />,
-  },
-  {
-    value: 'admin',
-    label: 'Administrator (Akses Penuh)',
-    desc: 'Memiliki kontrol total terhadap seluruh fitur CMS, pengaturan sistem, konfigurasi navigasi, dan manajemen pengguna.',
-    color: '#0F172A',
-    bg: '#F1F5F9',
-    icon: <AdminPanelSettingsIcon fontSize="small" />,
   },
 ];
 
@@ -212,6 +229,7 @@ export default function AdminUsersPage() {
         ? {
             id: editingUser.id,
             name: formData.name,
+            email: formData.email,
             role: formData.role,
             newPassword: formData.password,
             mfaEnabled: formData.mfaEnabled,
@@ -535,11 +553,10 @@ export default function AdminUsersPage() {
                 required
                 fullWidth
                 type="email"
-                disabled={Boolean(editingUser)}
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                placeholder="marketing@portal.com"
-                helperText={editingUser ? 'Alamat email tidak dapat diubah' : 'Digunakan untuk login ke panel CMS'}
+                placeholder="nama@itsp.co.id"
+                helperText={editingUser ? 'Perubahan email akan menjadi alamat login baru pengguna di CMS & Portal Karir' : 'Digunakan untuk login ke panel sistem'}
               />
 
               <TextField

@@ -85,7 +85,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const validRole = ['admin', 'marketing', 'editor'].includes(role) ? role : 'marketing';
+    const validRole = ['admin', 'marketing', 'editor', 'hr', 'user_dept'].includes(role) ? role : 'marketing';
     const hashedPassword = await bcrypt.hash(password, 12);
 
     const isMfa = Boolean(mfaEnabled);
@@ -125,7 +125,7 @@ export async function POST(req: Request) {
   }
 }
 
-// PUT /api/cms/users - Perbarui role, nama, status MFA, atau reset kata sandi
+// PUT /api/cms/users - Perbarui role, nama, email, status MFA, atau reset kata sandi
 export async function PUT(req: Request) {
   const currentUser = await getCurrentUser();
   if (!currentUser) {
@@ -141,7 +141,7 @@ export async function PUT(req: Request) {
 
   try {
     const body = await req.json();
-    const { id, name, role, newPassword, mfaEnabled, regenerateBackupCodes } = body;
+    const { id, name, email, role, newPassword, mfaEnabled, regenerateBackupCodes } = body;
 
     if (!id) {
       return NextResponse.json({ error: 'ID pengguna wajib disertakan.' }, { status: 400 });
@@ -154,7 +154,27 @@ export async function PUT(req: Request) {
 
     const updateData: any = {};
     if (name) updateData.name = name.trim();
-    if (role && ['admin', 'marketing', 'editor'].includes(role)) {
+
+    if (email && typeof email === 'string') {
+      const normalizedEmail = email.toLowerCase().trim();
+      if (normalizedEmail !== targetUser.email.toLowerCase().trim()) {
+        if (!normalizedEmail.includes('@') || normalizedEmail.length < 5) {
+          return NextResponse.json({ error: 'Format alamat email tidak valid.' }, { status: 400 });
+        }
+        const existing = await prisma.user.findUnique({
+          where: { email: normalizedEmail },
+        });
+        if (existing && existing.id !== targetUser.id) {
+          return NextResponse.json(
+            { error: 'Alamat email ini sudah terdaftar untuk akun lain. Gunakan email berbeda.' },
+            { status: 400 }
+          );
+        }
+        updateData.email = normalizedEmail;
+      }
+    }
+
+    if (role && ['admin', 'marketing', 'editor', 'hr', 'user_dept'].includes(role)) {
       // Cegah admin mengubah rolenya sendiri jika hanya tersisa 1 admin
       if (targetUser.id === currentUser.id && role !== 'admin') {
         return NextResponse.json(
@@ -168,7 +188,7 @@ export async function PUT(req: Request) {
     if (typeof mfaEnabled === 'boolean') {
       updateData.mfaEnabled = mfaEnabled;
       if (mfaEnabled && (!targetUser.mfaSecret || !targetUser.backupCodes)) {
-        const setup = await generateMfaSetup(targetUser.email);
+        const setup = await generateMfaSetup(updateData.email || targetUser.email);
         updateData.mfaSecret = setup.secret;
         updateData.backupCodes = JSON.stringify(generateBackupCodes(8));
       }
@@ -202,6 +222,34 @@ export async function PUT(req: Request) {
         updatedAt: true,
       },
     });
+
+    // Sinkronisasi update ke database rekrutmen ATS jika akun terdaftar di sana
+    try {
+      const karirPrisma = new (await import('@prisma/client')).PrismaClient({
+        datasources: {
+          db: {
+            url: process.env.KARIR_DATABASE_URL || 'postgresql://sydit:syditsp@localhost:5432/web_karir?schema=public',
+          },
+        },
+      });
+      await karirPrisma.$queryRawUnsafe(
+        'UPDATE recruitment_admins SET email = $1, name = $2, role = $3, updated_at = NOW() WHERE email = $4',
+        updated.email,
+        updated.name,
+        updated.role,
+        targetUser.email
+      );
+      if (updateData.password) {
+        await karirPrisma.$queryRawUnsafe(
+          'UPDATE recruitment_admins SET password = $1 WHERE email = $2',
+          updateData.password,
+          updated.email
+        );
+      }
+      await karirPrisma.$disconnect();
+    } catch {
+      // Sinkronisasi bersifat best-effort jika tabel ATS ada
+    }
 
     return NextResponse.json({ success: true, user: updated });
   } catch (error: any) {
