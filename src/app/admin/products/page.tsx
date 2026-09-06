@@ -417,8 +417,10 @@ export default function AdminProductsPage() {
                 value={formData.price}
                 onChange={(e) => setFormData({ ...formData, price: e.target.value })}
                 placeholder="Kosongkan jika harga berdasarkan spesifikasi penawaran"
-                InputProps={{
-                  startAdornment: <InputAdornment position="start">Rp</InputAdornment>,
+                slotProps={{
+                  input: {
+                    startAdornment: <InputAdornment position="start">Rp</InputAdornment>,
+                  },
                 }}
               />
 

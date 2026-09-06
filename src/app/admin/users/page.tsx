@@ -572,8 +572,10 @@ export default function AdminUsersPage() {
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 placeholder={editingUser ? 'Kosongkan jika tidak ingin mengubah kata sandi' : 'Minimal 6 karakter'}
-                InputProps={{
-                  startAdornment: <KeyIcon sx={{ color: '#94A3B8', mr: 1, fontSize: 20 }} />,
+                slotProps={{
+                  input: {
+                    startAdornment: <KeyIcon sx={{ color: '#94A3B8', mr: 1, fontSize: 20 }} />,
+                  },
                 }}
               />
 
