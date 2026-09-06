@@ -1,0 +1,226 @@
+'use client';
+
+import * as React from 'react';
+import { useState, useEffect } from 'react';
+import {
+  Box,
+  Paper,
+  Typography,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  Chip,
+  Alert,
+  CircularProgress,
+  Stack,
+  Divider,
+} from '@mui/material';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import DeleteIcon from '@mui/icons-material/Delete';
+import MarkEmailReadIcon from '@mui/icons-material/MarkEmailRead';
+
+interface Contact {
+  id: number;
+  name: string;
+  email: string;
+  subject: string | null;
+  message: string;
+  isRead: boolean;
+  createdAt: string;
+}
+
+export default function AdminContactsPage() {
+  const [items, setItems] = useState<Contact[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    fetchItems();
+  }, []);
+
+  const fetchItems = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch('/api/cms/contacts');
+      const data = await res.json();
+      if (Array.isArray(data)) setItems(data);
+    } catch {
+      setError('Gagal memuat pesan kontak.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOpenDetail = async (contact: Contact) => {
+    setSelectedContact(contact);
+    if (!contact.isRead) {
+      try {
+        await fetch('/api/cms/contacts', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: contact.id, isRead: true }),
+        });
+        setItems((prev) =>
+          prev.map((c) => (c.id === contact.id ? { ...c, isRead: true } : c))
+        );
+      } catch {}
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!confirm('Apakah Anda yakin ingin menghapus pesan ini?')) return;
+    try {
+      const res = await fetch(`/api/cms/contacts?id=${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Gagal menghapus pesan.');
+      setMessage('Pesan berhasil dihapus!');
+      if (selectedContact?.id === id) setSelectedContact(null);
+      fetchItems();
+    } catch (err: any) {
+      setError(err.message || 'Gagal menghapus.');
+    }
+  };
+
+  return (
+    <Box>
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h4" fontWeight={900} color="#0F172A">
+          Pesan Masuk (Formulir Kontak)
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+          Daftar pesan, pertanyaan, dan permohonan konsultasi yang dikirim oleh calon klien website.
+        </Typography>
+      </Box>
+
+      {message && <Alert severity="success" onClose={() => setMessage('')} sx={{ mb: 3, borderRadius: 2 }}>{message}</Alert>}
+      {error && <Alert severity="error" onClose={() => setError('')} sx={{ mb: 3, borderRadius: 2 }}>{error}</Alert>}
+
+      <Paper elevation={0} sx={{ borderRadius: 3, border: '1px solid #E2E8F0', bgcolor: '#FFFFFF', overflow: 'hidden' }}>
+        {loading ? (
+          <Box sx={{ p: 6, display: 'flex', justifyContent: 'center' }}>
+            <CircularProgress sx={{ color: '#F59E0B' }} />
+          </Box>
+        ) : (
+          <TableContainer>
+            <Table>
+              <TableHead sx={{ bgcolor: '#F8FAFC' }}>
+                <TableRow>
+                  <TableCell sx={{ fontWeight: 700 }}>Nama Pengirim</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Email</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Subjek</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Waktu Diterima</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
+                  <TableCell align="right" sx={{ fontWeight: 700 }}>Aksi</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {items.length > 0 ? (
+                  items.map((item) => (
+                    <TableRow key={item.id} hover sx={{ bgcolor: item.isRead ? 'inherit' : 'rgba(254, 243, 199, 0.2)' }}>
+                      <TableCell sx={{ fontWeight: item.isRead ? 500 : 700, color: '#0F172A' }}>{item.name}</TableCell>
+                      <TableCell>{item.email}</TableCell>
+                      <TableCell sx={{ fontWeight: item.isRead ? 400 : 600 }}>{item.subject || '-'}</TableCell>
+                      <TableCell>
+                        {new Date(item.createdAt).toLocaleDateString('id-ID', {
+                          day: 'numeric',
+                          month: 'short',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          label={item.isRead ? 'Dibaca' : 'Baru'}
+                          size="small"
+                          sx={{
+                            bgcolor: item.isRead ? '#F1F5F9' : '#FEF3C7',
+                            color: item.isRead ? '#64748B' : '#B45309',
+                            fontWeight: 700,
+                          }}
+                        />
+                      </TableCell>
+                      <TableCell align="right">
+                        <IconButton size="small" color="primary" onClick={() => handleOpenDetail(item)}>
+                          <VisibilityIcon fontSize="small" />
+                        </IconButton>
+                        <IconButton size="small" color="error" onClick={() => handleDelete(item.id)}>
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={6} sx={{ textAlign: 'center', py: 4, color: 'text.secondary' }}>
+                      Belum ada pesan yang diterima.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
+      </Paper>
+
+      {/* Message Details Modal */}
+      <Dialog open={Boolean(selectedContact)} onClose={() => setSelectedContact(null)} maxWidth="sm" fullWidth>
+        {selectedContact && (
+          <>
+            <DialogTitle sx={{ fontWeight: 800, color: '#0F172A' }}>
+              Detail Pesan dari {selectedContact.name}
+            </DialogTitle>
+            <DialogContent dividers>
+              <Stack spacing={2}>
+                <Box>
+                  <Typography variant="caption" color="text.secondary">Alamat Email:</Typography>
+                  <Typography variant="body1" fontWeight={600} color="#0F172A">{selectedContact.email}</Typography>
+                </Box>
+                <Box>
+                  <Typography variant="caption" color="text.secondary">Subjek:</Typography>
+                  <Typography variant="body1" fontWeight={600} color="#0F172A">{selectedContact.subject || '-'}</Typography>
+                </Box>
+                <Box>
+                  <Typography variant="caption" color="text.secondary">Waktu Kirim:</Typography>
+                  <Typography variant="body2" color="#64748B">
+                    {new Date(selectedContact.createdAt).toLocaleString('id-ID')}
+                  </Typography>
+                </Box>
+                <Divider />
+                <Box>
+                  <Typography variant="caption" color="text.secondary">Isi Pesan:</Typography>
+                  <Paper variant="outlined" sx={{ p: 2, mt: 1, bgcolor: '#F8FAFC', borderRadius: 2 }}>
+                    <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap', lineHeight: 1.7, color: '#1E293B' }}>
+                      {selectedContact.message}
+                    </Typography>
+                  </Paper>
+                </Box>
+              </Stack>
+            </DialogContent>
+            <DialogActions sx={{ p: 2.5 }}>
+              <Button onClick={() => setSelectedContact(null)} color="inherit">Tutup</Button>
+              <Button
+                component="a"
+                href={`mailto:${selectedContact.email}?subject=Re: ${encodeURIComponent(selectedContact.subject || 'Balasan Kontak')}`}
+                variant="contained"
+                sx={{ bgcolor: '#F59E0B', color: '#0F172A', fontWeight: 700, '&:hover': { bgcolor: '#D97706', color: '#FFFFFF' } }}
+              >
+                Balas via Email
+              </Button>
+            </DialogActions>
+          </>
+        )}
+      </Dialog>
+    </Box>
+  );
+}

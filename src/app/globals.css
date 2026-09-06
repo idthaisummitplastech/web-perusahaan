@@ -1,0 +1,43 @@
+:root {
+  --brand-green: #018730;
+  --brand-green-hover: #016f27;
+  --brand-green-light: #e8f6ed;
+  --brand-green-border: #a3dfb7;
+  --brand-orange: #fc4509;
+  --brand-orange-hover: #e03800;
+  --brand-orange-light: #fff1ed;
+  --brand-orange-border: #ffc4b3;
+  --brand-navy: #0b1320;
+  --primary: #018730;
+  --primary-dark: #016f27;
+  --secondary: #fc4509;
+  --secondary-dark: #e03800;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+  width: 100%;
+  overflow-x: hidden;
+  background-color: #F8FAFC;
+  color: #0F172A;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
+}
+
+::selection {
+  background-color: #166534;
+  color: #FFFFFF;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
