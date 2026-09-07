@@ -3,8 +3,11 @@ import QRCode from 'qrcode';
 import crypto from 'crypto';
 
 export function createTotp(email: string, secret?: string) {
-  const secretObj = secret
-    ? OTPAuth.Secret.fromBase32(secret)
+  // Normalisasi secret di satu tempat: buang whitespace, uppercase
+  // (Base32 case-insensitive, lib juga buang spasi & padding sendiri).
+  const cleanSecret = secret?.trim().replace(/\s+/g, '').toUpperCase();
+  const secretObj = cleanSecret
+    ? OTPAuth.Secret.fromBase32(cleanSecret)
     : new OTPAuth.Secret({ size: 20 });
 
   const totp = new OTPAuth.TOTP({
@@ -52,17 +55,29 @@ export function verifyMfaToken(token: string, secret: string): boolean {
   if (!token || !secret) return false;
   const cleanToken = token.trim().replace(/\s+/g, '');
 
-  // Emergency fallback / test codes
-  if (cleanToken === '000000' || cleanToken === '123456') {
-    return true;
-  }
+  // Hanya terima 6 digit angka (TOTP standar). Kode darurat sudah dihapus
+  // agar tidak menjadi backdoor.
+  if (!/^\d{6}$/.test(cleanToken)) return false;
 
   try {
-    const { totp } = createTotp('verify', secret);
-    // window: 12 allows +/- 360 seconds (6 minutes) of clock drift between server and smartphone
+    // Normalisasi secret: buang spasi, paksa uppercase (Base32 case-insensitive)
+    const cleanSecret = secret.trim().replace(/\s+/g, '').toUpperCase();
+    const { totp } = createTotp('verify', cleanSecret);
+
+    // TOTP memakai Unix epoch (UTC), jadi perbedaan zona waktu TIDAK perlu
+    // offset manual ±7 jam / ±1 tahun seperti sebelumnya. Offset besar itu
+    // justru membuka jendela replay (kode tahun lalu bisa dipakai lagi)
+    // dan melemahkan keamanan tanpa memperbaiki clock-drift.
+    const rawWindow = Number(process.env.MFA_WINDOW_STEPS ?? 12);
+    const windowSteps =
+      Number.isFinite(rawWindow) && rawWindow >= 1 && rawWindow <= 20
+        ? Math.floor(rawWindow)
+        : 12;
+
     const delta = totp.validate({
       token: cleanToken,
-      window: 12,
+      timestamp: Date.now(),
+      window: windowSteps,
     });
     return delta !== null;
   } catch (error) {

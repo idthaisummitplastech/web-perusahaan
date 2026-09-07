@@ -67,7 +67,7 @@ export async function POST(req: Request) {
 
     if (!isCodeValid) {
       return NextResponse.json(
-        { error: 'Kode autentikasi salah atau sudah kadaluwarsa.' },
+        { error: 'Kode autentikasi salah atau sudah kedaluwarsa. Pastikan jam HP dan jam laptop/server sudah sinkron (WIB UTC+7), lalu masukkan kode 6-digit yang sedang aktif.' },
         { status: 400 }
       );
     }

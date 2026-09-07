@@ -79,7 +79,7 @@ export async function POST(req: Request) {
     const isValid = verifyMfaToken(code, secret);
     if (!isValid) {
       return NextResponse.json(
-        { error: 'Kode 6-digit salah atau sudah kedaluwarsa. Pastikan jam perangkat Anda akurat atau gunakan kode darurat 000000.' },
+        { error: 'Kode 6-digit salah atau sudah kedaluwarsa. Pastikan jam HP dan jam laptop tersinkronisasi, lalu masukkan kode yang sedang aktif di aplikasi Authenticator.' },
         { status: 400 }
       );
     }
