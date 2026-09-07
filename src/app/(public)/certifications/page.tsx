@@ -6,6 +6,7 @@ import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
 import VerifiedIcon from '@mui/icons-material/Verified';
 import ShieldIcon from '@mui/icons-material/Shield';
 import SupportAgentIcon from '@mui/icons-material/SupportAgent';
+import CertificateGridClient from './CertificateGridClient';
 
 export const dynamic = 'force-dynamic';
 
@@ -51,106 +52,11 @@ export default async function CertificationsPage() {
           </Typography>
         </Box>
 
-        <Grid container spacing={3.5}>
-          {certifications.map((cert) => (
-            <Grid size={{ xs: 12, sm: 6, md: 3 }} key={cert.id}>
-              <Card
-                sx={{
-                  height: '100%',
-                  p: 3,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  borderRadius: 4,
-                  border: '1.5px solid #cbead5',
-                  borderTop: '4px solid #018730',
-                  bgcolor: '#FFFFFF',
-                  boxShadow: '0 6px 20px rgba(1, 135, 48, 0.05)',
-                  transition: 'all 0.25s ease',
-                  '&:hover': {
-                    borderColor: '#018730',
-                    transform: 'translateY(-4px)',
-                    boxShadow: '0 16px 32px rgba(1, 135, 48, 0.12)',
-                  },
-                }}
-              >
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
-                  <Box
-                    sx={{
-                      width: 50,
-                      height: 50,
-                      borderRadius: 2.5,
-                      bgcolor: '#F4FAF6',
-                      color: '#018730',
-                      border: '1px solid #cbead5',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0,
-                    }}
-                  >
-                    <ShieldIcon sx={{ fontSize: 26 }} />
-                  </Box>
-                  <Box>
-                    <Typography variant="subtitle1" fontWeight={900} color="#0F172A" sx={{ lineHeight: 1.25 }}>
-                      {cert.title}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.35, fontWeight: 600 }}>
-                      {cert.issuer}
-                    </Typography>
-                  </Box>
-                </Box>
-
-                {cert.certificateNumber && (
-                  <Typography
-                    variant="caption"
-                    sx={{
-                      fontFamily: 'monospace',
-                      bgcolor: '#F8FAFC',
-                      border: '1px solid #E2E8F0',
-                      p: 0.75,
-                      borderRadius: 1.5,
-                      color: '#015e21',
-                      fontWeight: 700,
-                      mb: 1.5,
-                      display: 'block',
-                      textAlign: 'center',
-                      fontSize: '0.75rem',
-                    }}
-                  >
-                    No: {cert.certificateNumber}
-                  </Typography>
-                )}
-
-                <Typography variant="body2" color="text.secondary" sx={{ flexGrow: 1, fontSize: '0.825rem', lineHeight: 1.6, mb: 2.5 }}>
-                  {cert.description}
-                </Typography>
-
-                <Box sx={{ mt: 'auto', pt: 1.5, borderTop: '1px solid #F1F5F9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Box
-                    sx={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 0.5,
-                      bgcolor: '#018730',
-                      color: '#FFFFFF',
-                      fontWeight: 700,
-                      fontSize: '0.7rem',
-                      px: 1.2,
-                      py: 0.35,
-                      borderRadius: '14px',
-                    }}
-                  >
-                    <VerifiedIcon sx={{ fontSize: 12, color: '#FFFFFF' }} />
-                    <span>Aktif</span>
-                  </Box>
-                  <Typography variant="caption" color="#64748B" fontWeight={600}>
-                    {cert.expiryDate ? `s/d ${new Date(cert.expiryDate).getFullYear()}` : 'Berlaku'}
-                  </Typography>
-                </Box>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
+        <CertificateGridClient certifications={certifications.map(c => ({
+          ...c,
+          issuedDate: c.issuedDate ? c.issuedDate.toISOString() : null,
+          expiryDate: c.expiryDate ? c.expiryDate.toISOString() : null,
+        }))} />
 
         {/* CTA */}
         <Box sx={{ mt: 10, p: { xs: 4, md: 6 }, borderRadius: 4, bgcolor: '#018730', color: '#FFFFFF', textAlign: 'center' }}>
