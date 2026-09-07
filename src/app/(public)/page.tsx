@@ -507,18 +507,25 @@ export default async function HomePage() {
         <Box sx={{ py: { xs: 8, md: 12 }, bgcolor: '#FFFFFF', borderTop: '1px solid #E2EFE6' }}>
           <Container maxWidth="lg">
             <Box sx={{ textAlign: 'center', mb: 8 }}>
-              <Chip
-                icon={<PrecisionManufacturingIcon sx={{ fontSize: '18px !important', color: '#018730 !important' }} />}
-                label="Infrastruktur & Fasilitas Pabrik"
+              <Box
                 sx={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 1,
                   bgcolor: '#e8f6ed',
                   color: '#018730',
                   fontWeight: 800,
+                  fontSize: '0.85rem',
                   border: '1px solid #a3dfb7',
+                  borderRadius: '20px',
                   mb: 2,
-                  px: 1.5,
+                  px: 2,
+                  py: 0.6,
                 }}
-              />
+              >
+                <PrecisionManufacturingIcon sx={{ fontSize: 18, color: '#018730' }} />
+                <span>Infrastruktur & Fasilitas Pabrik</span>
+              </Box>
               <Typography variant="h3" component="h2" fontWeight={800} color="#0F172A">
                 Fasilitas Manufaktur Berteknologi Modern
               </Typography>
@@ -577,13 +584,23 @@ export default async function HomePage() {
                           size="small"
                           sx={{ bgcolor: '#e8f6ed', color: '#018730', fontWeight: 800, fontSize: '0.75rem' }}
                         />
-                        <Chip
-                          icon={<VerifiedIcon sx={{ fontSize: '14px !important', color: '#018730 !important' }} />}
-                          label="Siap Produksi"
-                          size="small"
-                          variant="outlined"
-                          sx={{ borderColor: '#a3dfb7', color: '#015e21', fontWeight: 600, fontSize: '0.7rem' }}
-                        />
+                        <Box
+                          sx={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 0.5,
+                            border: '1px solid #a3dfb7',
+                            color: '#015e21',
+                            fontWeight: 600,
+                            fontSize: '0.7rem',
+                            borderRadius: '12px',
+                            px: 1,
+                            py: 0.25,
+                          }}
+                        >
+                          <VerifiedIcon sx={{ fontSize: 14, color: '#018730' }} />
+                          <span>Siap Produksi</span>
+                        </Box>
                       </Box>
 
                       <Typography variant="h5" fontWeight={800} color="#0F172A" sx={{ mb: 1 }}>
@@ -618,18 +635,25 @@ export default async function HomePage() {
         <Box sx={{ py: { xs: 8, md: 12 }, bgcolor: '#F8FAFC', borderTop: '1px solid #E2EFE6' }}>
           <Container maxWidth="lg">
             <Box sx={{ textAlign: 'center', mb: 8 }}>
-              <Chip
-                icon={<WorkspacePremiumIcon sx={{ fontSize: '18px !important', color: '#018730 !important' }} />}
-                label="Standar Mutu & Akreditasi"
+              <Box
                 sx={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 1,
                   bgcolor: '#e8f6ed',
                   color: '#018730',
                   fontWeight: 800,
+                  fontSize: '0.85rem',
                   border: '1px solid #a3dfb7',
+                  borderRadius: '20px',
                   mb: 2,
-                  px: 1.5,
+                  px: 2,
+                  py: 0.6,
                 }}
-              />
+              >
+                <WorkspacePremiumIcon sx={{ fontSize: 18, color: '#018730' }} />
+                <span>Standar Mutu & Akreditasi</span>
+              </Box>
               <Typography variant="h3" component="h2" fontWeight={800} color="#0F172A">
                 Sertifikasi Mutu Standar Internasional
               </Typography>
@@ -710,12 +734,23 @@ export default async function HomePage() {
                     </Typography>
 
                     <Box sx={{ mt: 'auto', pt: 1.5, borderTop: '1px solid #F1F5F9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <Chip
-                        icon={<VerifiedIcon sx={{ fontSize: '13px !important' }} />}
-                        label="Terverifikasi"
-                        size="small"
-                        sx={{ bgcolor: '#e8f6ed', color: '#018730', fontWeight: 700, fontSize: '0.7rem' }}
-                      />
+                      <Box
+                        sx={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 0.5,
+                          bgcolor: '#e8f6ed',
+                          color: '#018730',
+                          fontWeight: 700,
+                          fontSize: '0.7rem',
+                          borderRadius: '12px',
+                          px: 1,
+                          py: 0.25,
+                        }}
+                      >
+                        <VerifiedIcon sx={{ fontSize: 13, color: '#018730' }} />
+                        <span>Terverifikasi</span>
+                      </Box>
                       <Typography variant="caption" color="#64748B" fontWeight={600}>
                         {cert.expiryDate ? `s/d ${new Date(cert.expiryDate).getFullYear()}` : 'Aktif'}
                       </Typography>

@@ -77,10 +77,11 @@ export default function HeroSection({
 
       <Container maxWidth="md" sx={{ position: 'relative', zIndex: 1, textAlign: 'center' }}>
         {badge && (
-          <Chip
-            icon={<SparklesIcon sx={{ fontSize: '16px !important', color: '#fc4509 !important' }} />}
-            label={badge}
+          <Box
             sx={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 1,
               bgcolor: '#e8f6ed',
               color: '#018730',
               fontWeight: 700,
@@ -88,11 +89,14 @@ export default function HeroSection({
               border: '1.5px solid #a3dfb7',
               boxShadow: '0 2px 8px rgba(1, 135, 48, 0.12)',
               mb: 3,
-              px: 1.5,
-              py: 2.2,
-              borderRadius: 20,
+              px: 2,
+              py: 0.8,
+              borderRadius: '20px',
             }}
-          />
+          >
+            <SparklesIcon sx={{ fontSize: 16, color: '#fc4509' }} />
+            <span>{badge}</span>
+          </Box>
         )}
 
         <Typography
