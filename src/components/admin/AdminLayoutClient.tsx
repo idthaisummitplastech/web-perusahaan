@@ -48,28 +48,39 @@ import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
 import PrecisionManufacturingIcon from '@mui/icons-material/PrecisionManufacturing';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import BrandLogo from '@/components/BrandLogo';
+import LanguageToggle from '@/components/LanguageToggle';
+import { useLanguage } from '@/lib/LanguageContext';
+import { Translations } from '@/lib/translations';
 
-const DRAWER_WIDTH = 260;
+const DRAWER_WIDTH = 280;
 
-const MENU_ITEMS = [
-  { text: 'Dashboard', href: '/admin', icon: <DashboardIcon /> },
-  { text: 'Produk Manufaktur', href: '/admin/products', icon: <Inventory2Icon /> },
-  { text: 'Sertifikasi ISO', href: '/admin/certifications', icon: <WorkspacePremiumIcon /> },
-  { text: 'Fasilitas Pabrik', href: '/admin/facilities', icon: <PrecisionManufacturingIcon /> },
-  { text: 'Layanan', href: '/admin/services', icon: <MiscellaneousServicesIcon /> },
-  { text: 'Artikel Blog', href: '/admin/blog-posts', icon: <ArticleIcon /> },
-  { text: 'Hero Sections', href: '/admin/hero-sections', icon: <ViewCarouselIcon /> },
-  { text: 'Pengumuman', href: '/admin/announcements', icon: <CampaignIcon /> },
-  { text: 'Fitur Utama', href: '/admin/features', icon: <StarIcon /> },
-  { text: 'Mitra & Klien', href: '/admin/partners', icon: <HandshakeIcon /> },
-  { text: 'Testimoni', href: '/admin/testimonials', icon: <FormatQuoteIcon /> },
-  { text: 'Tanya Jawab (FAQ)', href: '/admin/faqs', icon: <QuizIcon /> },
-  { text: 'Statistik', href: '/admin/statistics', icon: <BarChartIcon /> },
-  { text: 'Pesan Masuk', href: '/admin/contacts', icon: <MailIcon /> },
-  { text: 'Manajemen Pengguna', href: '/admin/users', icon: <AdminPanelSettingsIcon />, adminOnly: true },
-  { text: 'Pengaturan Web', href: '/admin/settings', icon: <SettingsIcon />, adminOnly: true },
-  { text: 'Menu Navigasi', href: '/admin/nav-menus', icon: <NavigationIcon />, adminOnly: true },
-  { text: 'Keamanan & MFA', href: '/admin/profile', icon: <ShieldIcon /> },
+interface MenuItemConfig {
+  key: keyof Translations;
+  defaultText: string;
+  href: string;
+  icon: React.ReactElement;
+  adminOnly?: boolean;
+}
+
+const MENU_ITEMS: MenuItemConfig[] = [
+  { key: 'menu_dashboard', defaultText: 'Dashboard', href: '/admin', icon: <DashboardIcon /> },
+  { key: 'menu_products', defaultText: 'Manufactured Products', href: '/admin/products', icon: <Inventory2Icon /> },
+  { key: 'menu_certs', defaultText: 'ISO Certifications', href: '/admin/certifications', icon: <WorkspacePremiumIcon /> },
+  { key: 'menu_facilities', defaultText: 'Plant Facilities', href: '/admin/facilities', icon: <PrecisionManufacturingIcon /> },
+  { key: 'menu_services', defaultText: 'Services', href: '/admin/services', icon: <MiscellaneousServicesIcon /> },
+  { key: 'menu_blog', defaultText: 'Blog Articles', href: '/admin/blog-posts', icon: <ArticleIcon /> },
+  { key: 'menu_hero', defaultText: 'Hero Banners', href: '/admin/hero-sections', icon: <ViewCarouselIcon /> },
+  { key: 'menu_announcements', defaultText: 'Announcements', href: '/admin/announcements', icon: <CampaignIcon /> },
+  { key: 'menu_features', defaultText: 'Key Features', href: '/admin/features', icon: <StarIcon /> },
+  { key: 'menu_partners', defaultText: 'Partners & Clients', href: '/admin/partners', icon: <HandshakeIcon /> },
+  { key: 'menu_testimonials', defaultText: 'Testimonials', href: '/admin/testimonials', icon: <FormatQuoteIcon /> },
+  { key: 'menu_faqs', defaultText: 'FAQs', href: '/admin/faqs', icon: <QuizIcon /> },
+  { key: 'menu_stats', defaultText: 'Statistics', href: '/admin/statistics', icon: <BarChartIcon /> },
+  { key: 'menu_contacts', defaultText: 'Inbox Messages', href: '/admin/contacts', icon: <MailIcon /> },
+  { key: 'menu_users', defaultText: 'User Management', href: '/admin/users', icon: <AdminPanelSettingsIcon />, adminOnly: true },
+  { key: 'menu_settings', defaultText: 'Site Settings', href: '/admin/settings', icon: <SettingsIcon />, adminOnly: true },
+  { key: 'menu_nav', defaultText: 'Navigation Menus', href: '/admin/nav-menus', icon: <NavigationIcon />, adminOnly: true },
+  { key: 'menu_security', defaultText: 'Security & MFA', href: '/admin/profile', icon: <ShieldIcon /> },
 ];
 
 export default function AdminLayoutClient({
@@ -79,6 +90,7 @@ export default function AdminLayoutClient({
   children: React.ReactNode;
   user: { name: string; email: string; role: string; mfaVerified: boolean };
 }) {
+  const { t } = useLanguage();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -111,8 +123,13 @@ export default function AdminLayoutClient({
   const drawerContent = (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', bgcolor: '#0F172A', color: '#FFFFFF' }}>
       {/* Brand Logo Header */}
-      <Box sx={{ p: 2.5, display: 'flex', alignItems: 'center' }}>
-        <BrandLogo title="Thai Summit" size="small" lightText={true} />
+      <Box sx={{ p: 2, display: 'flex', alignItems: 'center' }}>
+        <BrandLogo
+          title="Indonesia Thai Summit Plastech"
+          subtitle="Automotive Plastic & Interior Systems"
+          size="small"
+          lightText={true}
+        />
       </Box>
 
       <Divider sx={{ borderColor: 'rgba(255, 255, 255, 0.08)' }} />
@@ -122,8 +139,9 @@ export default function AdminLayoutClient({
         <List disablePadding>
           {MENU_ITEMS.filter((item) => !item.adminOnly || user.role === 'admin').map((item) => {
             const isActive = pathname === item.href;
+            const label = t(item.key, item.defaultText);
             return (
-              <ListItem key={item.text} disablePadding sx={{ mb: 0.5 }}>
+              <ListItem key={item.key} disablePadding sx={{ mb: 0.5 }}>
                 <ListItemButton
                   component={Link}
                   href={item.href}
@@ -151,7 +169,7 @@ export default function AdminLayoutClient({
                     {item.icon}
                   </ListItemIcon>
                   <ListItemText
-                    primary={item.text}
+                    primary={label}
                     slotProps={{
                       primary: {
                         fontSize: '0.875rem',
@@ -186,7 +204,7 @@ export default function AdminLayoutClient({
           }}
           variant="outlined"
         >
-          Lihat Website Publik
+          {t('admin_view_site_btn', 'View Website')}
         </Button>
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
@@ -242,10 +260,10 @@ export default function AdminLayoutClient({
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
             <Typography variant="subtitle1" fontWeight={700} color="#0F172A">
-              Panel Pengelola Konten
+              {t('admin_panel_title', 'Content Management Panel')}
             </Typography>
             <Chip
-              label={user.role === 'admin' ? 'Administrator' : 'Tim Marketing'}
+              label={user.role === 'admin' ? t('admin_role_admin', 'Administrator') : t('admin_role_marketing', 'Marketing Team')}
               size="small"
               sx={{
                 bgcolor: user.role === 'admin' ? '#F1F5F9' : '#e8f6ed',
@@ -257,13 +275,16 @@ export default function AdminLayoutClient({
             />
             <Chip
               icon={<ShieldIcon sx={{ fontSize: '14px !important', color: '#018730 !important' }} />}
-              label="MFA Aktif"
+              label={t('admin_mfa_active', 'MFA Active')}
               size="small"
               sx={{ bgcolor: '#e8f6ed', color: '#018730', fontWeight: 600, fontSize: '0.75rem' }}
             />
           </Box>
 
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            {/* Bilingual Toggle Button in Admin CMS AppBar */}
+            <LanguageToggle />
+
             <IconButton onClick={handleProfileMenuOpen} size="small">
               <Avatar sx={{ width: 34, height: 34, bgcolor: '#018730', color: '#FFFFFF', fontWeight: 700, fontSize: '0.875rem' }}>
                 {user.name?.charAt(0) || 'A'}
@@ -278,48 +299,76 @@ export default function AdminLayoutClient({
               anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
               slotProps={{
                 paper: {
-                  elevation: 3,
-                  sx: { width: 220, borderRadius: 2, mt: 1, p: 0.5 },
+                  sx: { width: 220, mt: 1.5, borderRadius: 2, boxShadow: '0 10px 25px rgba(0,0,0,0.1)' },
                 },
               }}
             >
+              <Box sx={{ px: 2, py: 1.5 }}>
+                <Typography variant="subtitle2" fontWeight={700}>
+                  {user.name}
+                </Typography>
+                <Typography variant="caption" color="text.secondary" noWrap display="block">
+                  {user.email}
+                </Typography>
+              </Box>
+              <Divider />
               <MenuItem component={Link} href="/admin/profile" onClick={handleProfileMenuClose}>
-                <ListItemIcon><PersonIcon fontSize="small" /></ListItemIcon>
-                <ListItemText primary="Profil & Keamanan" />
+                <ListItemIcon>
+                  <PersonIcon fontSize="small" />
+                </ListItemIcon>
+                {t('menu_security', 'Security & MFA')}
               </MenuItem>
-              <MenuItem component={Link} href="/" target="_blank" onClick={handleProfileMenuClose}>
-                <ListItemIcon><OpenInNewIcon fontSize="small" /></ListItemIcon>
-                <ListItemText primary="Website Publik" />
-              </MenuItem>
-              <Divider sx={{ my: 0.5 }} />
-              <MenuItem onClick={handleLogout} sx={{ color: '#EF4444' }}>
-                <ListItemIcon><LogoutIcon fontSize="small" sx={{ color: '#EF4444' }} /></ListItemIcon>
-                <ListItemText primary="Keluar (Logout)" />
+              {user.role === 'admin' && (
+                <MenuItem component={Link} href="/admin/settings" onClick={handleProfileMenuClose}>
+                  <ListItemIcon>
+                    <SettingsIcon fontSize="small" />
+                  </ListItemIcon>
+                  {t('menu_settings', 'Site Settings')}
+                </MenuItem>
+              )}
+              <Divider />
+              <MenuItem onClick={handleLogout} sx={{ color: '#DC2626' }}>
+                <ListItemIcon>
+                  <LogoutIcon fontSize="small" sx={{ color: '#DC2626' }} />
+                </ListItemIcon>
+                Logout
               </MenuItem>
             </Menu>
           </Box>
         </Toolbar>
       </AppBar>
 
-      {/* Drawer */}
-      <Box component="nav" sx={{ width: { md: DRAWER_WIDTH }, flexShrink: { md: 0 } }}>
+      {/* Desktop Persistent Drawer */}
+      <Box
+        component="nav"
+        sx={{ width: { md: DRAWER_WIDTH }, flexShrink: { md: 0 } }}
+      >
         <Drawer
           variant="temporary"
           open={mobileOpen}
           onClose={handleDrawerToggle}
           ModalProps={{ keepMounted: true }}
+          slotProps={{
+            paper: {
+              sx: { boxSizing: 'border-box', width: DRAWER_WIDTH, bgcolor: '#0F172A' },
+            },
+          }}
           sx={{
             display: { xs: 'block', md: 'none' },
-            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: DRAWER_WIDTH },
           }}
         >
           {drawerContent}
         </Drawer>
+
         <Drawer
           variant="permanent"
+          slotProps={{
+            paper: {
+              sx: { boxSizing: 'border-box', width: DRAWER_WIDTH, bgcolor: '#0F172A', borderRight: 'none' },
+            },
+          }}
           sx={{
             display: { xs: 'none', md: 'block' },
-            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: DRAWER_WIDTH, borderRight: 'none' },
           }}
           open
         >

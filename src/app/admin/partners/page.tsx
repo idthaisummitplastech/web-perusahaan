@@ -31,6 +31,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import BusinessIcon from '@mui/icons-material/Business';
 import ImageUpload from '@/components/admin/ImageUpload';
+import { CmsTablePagination, CmsTableToolbar } from '@/components/admin/CmsTablePagination';
 
 interface Partner {
   id: number;
@@ -45,6 +46,9 @@ interface Partner {
 export default function AdminPartnersPage() {
   const [items, setItems] = useState<Partner[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Partner | null>(null);
   const [formData, setFormData] = useState({
@@ -178,114 +182,151 @@ export default function AdminPartnersPage() {
       {message && <Alert severity="success" onClose={() => setMessage('')} sx={{ mb: 3, borderRadius: 2 }}>{message}</Alert>}
       {error && <Alert severity="error" onClose={() => setError('')} sx={{ mb: 3, borderRadius: 2 }}>{error}</Alert>}
 
-      <Paper elevation={0} sx={{ borderRadius: 3, border: '1px solid #E2E8F0', bgcolor: '#FFFFFF', overflow: 'hidden' }}>
-        {loading ? (
-          <Box sx={{ p: 6, display: 'flex', justifyContent: 'center' }}>
-            <CircularProgress sx={{ color: '#018730' }} />
-          </Box>
-        ) : (
-          <TableContainer>
-            <Table>
-              <TableHead sx={{ bgcolor: '#F8FAFC' }}>
-                <TableRow>
-                  <TableCell sx={{ fontWeight: 700, width: 100 }}>Logo</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Nama Perusahaan / Klien</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>URL Website</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Urutan</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
-                  <TableCell align="right" sx={{ fontWeight: 700 }}>Aksi</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {items.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} align="center" sx={{ py: 6, color: '#64748B' }}>
-                      Belum ada data mitra atau klien.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  items.map((item) => (
-                    <TableRow key={item.id} hover>
-                      <TableCell>
-                        {item.logo ? (
-                          <Box
-                            sx={{
-                              width: 80,
-                              height: 48,
-                              borderRadius: 2,
-                              overflow: 'hidden',
-                              border: '1px solid #E2E8F0',
-                              bgcolor: '#F8FAFC',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              p: 0.5,
-                            }}
-                          >
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                              src={item.logo}
-                              alt={item.name}
-                              style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
-                            />
-                          </Box>
-                        ) : (
-                          <Box
-                            sx={{
-                              width: 80,
-                              height: 48,
-                              borderRadius: 2,
-                              bgcolor: '#F1F5F9',
-                              color: '#94A3B8',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                            }}
-                          >
-                            <BusinessIcon fontSize="small" />
-                          </Box>
-                        )}
-                      </TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: '#0F172A' }}>
-                        {item.name}
-                      </TableCell>
-                      <TableCell sx={{ fontFamily: 'monospace', color: '#64748B', fontSize: '0.85rem' }}>
-                        {item.url ? (
-                          <a href={item.url} target="_blank" rel="noreferrer" style={{ color: '#018730', textDecoration: 'none' }}>
-                            {item.url}
-                          </a>
-                        ) : (
-                          '-'
-                        )}
-                      </TableCell>
-                      <TableCell>{item.sortOrder}</TableCell>
-                      <TableCell>
-                        <Chip
-                          label={item.isActive ? 'Aktif' : 'Nonaktif'}
-                          size="small"
-                          sx={{
-                            bgcolor: item.isActive ? '#e8f6ed' : '#F1F5F9',
-                            color: item.isActive ? '#018730' : '#64748B',
-                            fontWeight: 700,
-                          }}
-                        />
-                      </TableCell>
-                      <TableCell align="right">
-                        <IconButton size="small" sx={{ color: '#018730' }} onClick={() => handleOpenDialog(item)}>
-                          <EditIcon fontSize="small" />
-                        </IconButton>
-                        <IconButton size="small" color="error" onClick={() => handleDelete(item.id)}>
-                          <DeleteIcon fontSize="small" />
-                        </IconButton>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        )}
-      </Paper>
+      {(() => {
+        const filteredItems = items.filter((item) => {
+          if (!searchQuery.trim()) return true;
+          const q = searchQuery.toLowerCase();
+          return (
+            (item.name && item.name.toLowerCase().includes(q)) ||
+            (item.url && item.url.toLowerCase().includes(q))
+          );
+        });
+
+        const paginatedItems = filteredItems.slice(page * rowsPerPage, (page + 1) * rowsPerPage);
+
+        return (
+          <Paper elevation={0} sx={{ borderRadius: 3, border: '1px solid #E2E8F0', bgcolor: '#FFFFFF', overflow: 'hidden' }}>
+            <CmsTableToolbar
+              searchQuery={searchQuery}
+              onSearchChange={(val) => {
+                setSearchQuery(val);
+                setPage(0);
+              }}
+              placeholder="Cari nama mitra/klien, url..."
+              totalCount={items.length}
+              filteredCount={filteredItems.length}
+            />
+            {loading ? (
+              <Box sx={{ p: 6, display: 'flex', justifyContent: 'center' }}>
+                <CircularProgress sx={{ color: '#018730' }} />
+              </Box>
+            ) : (
+              <>
+                <TableContainer>
+                  <Table>
+                    <TableHead sx={{ bgcolor: '#F8FAFC' }}>
+                      <TableRow>
+                        <TableCell sx={{ fontWeight: 700, width: 100 }}>Logo</TableCell>
+                        <TableCell sx={{ fontWeight: 700 }}>Nama Perusahaan / Klien</TableCell>
+                        <TableCell sx={{ fontWeight: 700 }}>URL Website</TableCell>
+                        <TableCell sx={{ fontWeight: 700 }}>Urutan</TableCell>
+                        <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
+                        <TableCell align="right" sx={{ fontWeight: 700 }}>Aksi</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {filteredItems.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={6} align="center" sx={{ py: 6, color: '#64748B' }}>
+                            {searchQuery ? 'Tidak ada mitra yang cocok dengan pencarian.' : 'Belum ada data mitra atau klien.'}
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        paginatedItems.map((item) => (
+                          <TableRow key={item.id} hover>
+                            <TableCell>
+                              {item.logo ? (
+                                <Box
+                                  sx={{
+                                    width: 80,
+                                    height: 48,
+                                    borderRadius: 2,
+                                    overflow: 'hidden',
+                                    border: '1px solid #E2E8F0',
+                                    bgcolor: '#F8FAFC',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    p: 0.5,
+                                  }}
+                                >
+                                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                                  <img
+                                    src={item.logo}
+                                    alt={item.name}
+                                    style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+                                  />
+                                </Box>
+                              ) : (
+                                <Box
+                                  sx={{
+                                    width: 80,
+                                    height: 48,
+                                    borderRadius: 2,
+                                    bgcolor: '#F1F5F9',
+                                    color: '#94A3B8',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                  }}
+                                >
+                                  <BusinessIcon fontSize="small" />
+                                </Box>
+                              )}
+                            </TableCell>
+                            <TableCell sx={{ fontWeight: 700, color: '#0F172A' }}>
+                              {item.name}
+                            </TableCell>
+                            <TableCell sx={{ fontFamily: 'monospace', color: '#64748B', fontSize: '0.85rem' }}>
+                              {item.url ? (
+                                <a href={item.url} target="_blank" rel="noreferrer" style={{ color: '#018730', textDecoration: 'none' }}>
+                                  {item.url}
+                                </a>
+                              ) : (
+                                '-'
+                              )}
+                            </TableCell>
+                            <TableCell>{item.sortOrder}</TableCell>
+                            <TableCell>
+                              <Chip
+                                label={item.isActive ? 'Aktif' : 'Nonaktif'}
+                                size="small"
+                                sx={{
+                                  bgcolor: item.isActive ? '#e8f6ed' : '#F1F5F9',
+                                  color: item.isActive ? '#018730' : '#64748B',
+                                  fontWeight: 700,
+                                }}
+                              />
+                            </TableCell>
+                            <TableCell align="right">
+                              <IconButton size="small" sx={{ color: '#018730' }} onClick={() => handleOpenDialog(item)}>
+                                <EditIcon fontSize="small" />
+                              </IconButton>
+                              <IconButton size="small" color="error" onClick={() => handleDelete(item.id)}>
+                                <DeleteIcon fontSize="small" />
+                              </IconButton>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+                <CmsTablePagination
+                  count={filteredItems.length}
+                  page={page}
+                  rowsPerPage={rowsPerPage}
+                  onPageChange={setPage}
+                  onRowsPerPageChange={(newRpp) => {
+                    setRowsPerPage(newRpp);
+                    setPage(0);
+                  }}
+                />
+              </>
+            )}
+          </Paper>
+        );
+      })()}
 
       {/* Dialog */}
       <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="sm" fullWidth>

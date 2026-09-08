@@ -2,10 +2,11 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { Box, Container, Typography, Button, Stack, Chip } from '@mui/material';
+import { Box, Container, Typography, Button, Stack } from '@mui/material';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import SparklesIcon from '@mui/icons-material/AutoAwesome';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import { useLanguage } from '@/lib/LanguageContext';
 
 interface HeroProps {
   badge?: string;
@@ -18,14 +19,45 @@ interface HeroProps {
 }
 
 export default function HeroSection({
-  badge = 'Solusi Manufaktur & Rekayasa Plastik Otomotif',
+  badge,
   title,
   subtitle,
   primaryBtnText,
-  primaryBtnUrl,
+  primaryBtnUrl = '/products',
   secondaryBtnText,
-  secondaryBtnUrl,
+  secondaryBtnUrl = '/about',
 }: HeroProps) {
+  const { language, t } = useLanguage();
+
+  const isEn = language === 'en';
+
+  const displayBadge = isEn
+    ? 'Automotive Plastic Engineering & Manufacturing Solutions'
+    : (badge || 'Solusi Manufaktur & Rekayasa Plastik Otomotif');
+
+  const displayTitle = isEn
+    ? 'Precision Automotive Plastic <span>Engineering</span>'
+    : (title || 'PT Indonesia Thai Summit <span>Plastech</span>');
+
+  const displaySubtitle = isEn
+    ? 'High-precision automotive plastic injection molding, robotic spray painting, and interior assembly trusted by leading global automotive OEMs.'
+    : (subtitle || 'Manufaktur komponen plastik otomotif berkualitas tinggi — Plastic Injection, Spray Painting & Interior Assembly untuk merek-merek terkemuka dunia.');
+
+  const displayPrimaryBtn = isEn ? 'Explore Our Products' : (primaryBtnText || 'Lihat Produk Kami');
+  const displaySecondaryBtn = isEn ? 'About ITSP' : (secondaryBtnText || 'Tentang ITSP');
+
+  const trustBadges = isEn
+    ? [
+        'Automotive OEM Quality Standards',
+        'High Precision & Scalability',
+        'Experienced B2B Engineering Support',
+      ]
+    : [
+        'Standar Mutu Manufaktur Otomotif',
+        'Presisi & Skalabilitas Tinggi',
+        'Dukungan Teknis B2B Berpengalaman',
+      ];
+
   return (
     <Box
       sx={{
@@ -49,7 +81,7 @@ export default function HeroSection({
         }}
       />
 
-      {/* Decorative Ambient Brand Glows (#018730 Green & #fc4509 Orange) */}
+      {/* Decorative Ambient Brand Glows */}
       <Box
         sx={{
           position: 'absolute',
@@ -76,28 +108,26 @@ export default function HeroSection({
       />
 
       <Container maxWidth="md" sx={{ position: 'relative', zIndex: 1, textAlign: 'center' }}>
-        {badge && (
-          <Box
-            sx={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 1,
-              bgcolor: '#e8f6ed',
-              color: '#018730',
-              fontWeight: 700,
-              fontSize: '0.85rem',
-              border: '1.5px solid #a3dfb7',
-              boxShadow: '0 2px 8px rgba(1, 135, 48, 0.12)',
-              mb: 3,
-              px: 2,
-              py: 0.8,
-              borderRadius: '20px',
-            }}
-          >
-            <SparklesIcon sx={{ fontSize: 16, color: '#fc4509' }} />
-            <span>{badge}</span>
-          </Box>
-        )}
+        <Box
+          sx={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 1,
+            bgcolor: '#e8f6ed',
+            color: '#018730',
+            fontWeight: 700,
+            fontSize: '0.85rem',
+            border: '1.5px solid #a3dfb7',
+            boxShadow: '0 2px 8px rgba(1, 135, 48, 0.12)',
+            mb: 3,
+            px: 2,
+            py: 0.8,
+            borderRadius: '20px',
+          }}
+        >
+          <SparklesIcon sx={{ fontSize: 16, color: '#fc4509' }} />
+          <span>{displayBadge}</span>
+        </Box>
 
         <Typography
           variant="h1"
@@ -114,88 +144,82 @@ export default function HeroSection({
               fontWeight: 900,
             },
           }}
-          dangerouslySetInnerHTML={{ __html: title }}
+          dangerouslySetInnerHTML={{ __html: displayTitle }}
         />
 
-        {subtitle && (
-          <Typography
-            variant="body1"
-            sx={{
-              color: '#475569',
-              fontSize: { xs: '1.05rem', md: '1.25rem' },
-              lineHeight: 1.7,
-              maxWidth: 720,
-              mx: 'auto',
-              mb: 4.5,
-              fontWeight: 400,
-            }}
-          >
-            {subtitle}
-          </Typography>
-        )}
+        <Typography
+          variant="body1"
+          sx={{
+            color: '#475569',
+            fontSize: { xs: '1.05rem', md: '1.25rem' },
+            lineHeight: 1.7,
+            maxWidth: 720,
+            mx: 'auto',
+            mb: 4.5,
+            fontWeight: 400,
+          }}
+        >
+          {displaySubtitle}
+        </Typography>
 
         <Stack
           direction={{ xs: 'column', sm: 'row' }}
           spacing={2}
           sx={{ justifyContent: 'center', alignItems: 'center', mb: 5 }}
         >
-          {primaryBtnText && primaryBtnUrl && (
-            <Button
-              component={Link}
-              href={primaryBtnUrl}
-              variant="contained"
-              size="large"
-              endIcon={<ArrowForwardIcon />}
-              sx={{
-                bgcolor: '#018730',
-                color: '#FFFFFF',
-                fontWeight: 700,
-                fontSize: '1.05rem',
-                borderRadius: 25,
-                py: 1.75,
-                px: 4.5,
-                boxShadow: '0 8px 24px rgba(1, 135, 48, 0.35)',
-                '&:hover': {
-                  bgcolor: '#016f27',
-                  transform: 'translateY(-2px)',
-                  boxShadow: '0 12px 28px rgba(1, 135, 48, 0.45)',
-                },
-                transition: 'all 0.2s ease',
-              }}
-            >
-              {primaryBtnText}
-            </Button>
-          )}
+          <Button
+            component={Link}
+            href={primaryBtnUrl}
+            variant="contained"
+            size="large"
+            endIcon={<ArrowForwardIcon />}
+            sx={{
+              bgcolor: '#018730',
+              color: '#FFFFFF',
+              fontWeight: 700,
+              fontSize: '1.05rem',
+              borderRadius: 25,
+              py: 1.75,
+              px: 4.5,
+              boxShadow: '0 8px 24px rgba(1, 135, 48, 0.35)',
+              '&:hover': {
+                bgcolor: '#016f27',
+                transform: 'translateY(-2px)',
+                boxShadow: '0 12px 28px rgba(1, 135, 48, 0.45)',
+              },
+              transition: 'all 0.2s ease',
+            }}
+          >
+            {displayPrimaryBtn}
+          </Button>
 
-          {secondaryBtnText && secondaryBtnUrl && (
-            <Button
-              component={Link}
-              href={secondaryBtnUrl}
-              variant="outlined"
-              size="large"
-              sx={{
-                borderColor: '#fc4509',
-                borderWidth: 1.5,
-                color: '#fc4509',
-                fontWeight: 700,
-                fontSize: '1.05rem',
-                borderRadius: 25,
-                py: 1.75,
-                px: 3.5,
-                bgcolor: '#FFFFFF',
-                boxShadow: '0 2px 8px rgba(252, 69, 9, 0.08)',
-                '&:hover': {
-                  borderColor: '#e03800',
-                  backgroundColor: '#fff1ed',
-                  color: '#e03800',
-                  transform: 'translateY(-2px)',
-                },
-                transition: 'all 0.2s ease',
-              }}
-            >
-              {secondaryBtnText}
-            </Button>
-          )}
+          <Button
+            component={Link}
+            href={secondaryBtnUrl}
+            variant="outlined"
+            size="large"
+            sx={{
+              borderColor: '#fc4509',
+              borderWidth: 1.5,
+              color: '#fc4509',
+              fontWeight: 700,
+              fontSize: '1.05rem',
+              borderRadius: 25,
+              py: 1.75,
+              px: 3.5,
+              bgcolor: '#FFFFFF',
+              boxShadow: '0 2px 8px rgba(252, 69, 9, 0.08)',
+              '&:hover': {
+                borderColor: '#e03800',
+                backgroundColor: '#fff1ed',
+                color: '#e03800',
+                transform: 'translateY(-2px)',
+              },
+              transition: 'all 0.2s ease',
+            }}
+          >
+            {displaySecondaryBtn}
+          </Button>
         </Stack>
 
         {/* Marketing Trust Badges */}
@@ -204,11 +228,7 @@ export default function HeroSection({
           spacing={2}
           sx={{ justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap', gap: 1.5 }}
         >
-          {[
-            'Standar Mutu Manufaktur Otomotif',
-            'Presisi & Skalabilitas Tinggi',
-            'Dukungan Teknis B2B Berpengalaman',
-          ].map((text, idx) => (
+          {trustBadges.map((text, idx) => (
             <Box
               key={idx}
               sx={{

@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { useState } from 'react';
+import Link from 'next/link';
 import {
   Box,
   Grid,
@@ -19,6 +20,8 @@ import ShieldIcon from '@mui/icons-material/Shield';
 import ZoomInIcon from '@mui/icons-material/ZoomIn';
 import CloseIcon from '@mui/icons-material/Close';
 import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
+import SupportAgentIcon from '@mui/icons-material/SupportAgent';
+import { useLanguage } from '@/lib/LanguageContext';
 
 export interface CertificationItem {
   id: number;
@@ -39,9 +42,40 @@ interface Props {
 
 export default function CertificateGridClient({ certifications }: Props) {
   const [selectedCert, setSelectedCert] = useState<CertificationItem | null>(null);
+  const { language, t } = useLanguage();
 
   return (
     <>
+      {/* Header Section */}
+      <Box sx={{ textAlign: 'center', mb: 8 }}>
+        <Box
+          sx={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 1,
+            bgcolor: '#e8f6ed',
+            color: '#018730',
+            fontWeight: 800,
+            fontSize: '0.85rem',
+            border: '1px solid #a3dfb7',
+            borderRadius: '20px',
+            mb: 2,
+            px: 2,
+            py: 0.6,
+          }}
+        >
+          <WorkspacePremiumIcon sx={{ fontSize: 18, color: '#018730' }} />
+          <span>{t('cert_badge', 'Global Compliance & Quality Standards')}</span>
+        </Box>
+        <Typography variant="h2" component="h1" fontWeight={900} color="#0F172A" sx={{ fontSize: { xs: '2rem', md: '2.8rem' } }}>
+          {t('cert_title', 'International Automotive Certifications')}
+        </Typography>
+        <Typography variant="body1" color="text.secondary" sx={{ mt: 1.5, maxWidth: 700, mx: 'auto', fontSize: '1.05rem' }}>
+          {t('cert_subtitle', 'All quality management, plastic injection molding, occupational health & safety, and environmental stewardship systems at PT ITSP are certified by international audit bodies.')}
+        </Typography>
+      </Box>
+
+      {/* Grid of Certificates */}
       <Grid container spacing={3.5}>
         {certifications.map((cert) => (
           <Grid size={{ xs: 12, sm: 6, md: 3 }} key={cert.id}>
@@ -117,7 +151,7 @@ export default function CertificateGridClient({ certifications }: Props) {
                     }}
                   >
                     <ZoomInIcon sx={{ fontSize: 24 }} />
-                    <span>Perbesar Sertifikat</span>
+                    <span>{t('cert_zoom', 'Zoom Certificate')}</span>
                   </Box>
                 </Box>
               ) : (
@@ -135,7 +169,7 @@ export default function CertificateGridClient({ certifications }: Props) {
                 >
                   <ShieldIcon sx={{ fontSize: 36, color: '#018730' }} />
                   <Typography variant="caption" sx={{ fontWeight: 800, color: '#018730', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                    Akreditasi Global
+                    {language === 'en' ? 'Global Accreditation' : 'Akreditasi Global'}
                   </Typography>
                 </Box>
               )}
@@ -169,7 +203,7 @@ export default function CertificateGridClient({ certifications }: Props) {
                       fontSize: '0.75rem',
                     }}
                   >
-                    No: {cert.certificateNumber}
+                    {language === 'en' ? 'Cert No:' : 'No:'} {cert.certificateNumber}
                   </Typography>
                 )}
 
@@ -187,7 +221,7 @@ export default function CertificateGridClient({ certifications }: Props) {
                     overflow: 'hidden',
                   }}
                 >
-                  {cert.description || 'Sertifikasi standar mutu dan operasional global PT ITSP.'}
+                  {cert.description || (language === 'en' ? 'Global quality management and manufacturing certification of PT ITSP.' : 'Sertifikasi standar mutu dan operasional global PT ITSP.')}
                 </Typography>
 
                 {/* Footer status */}
@@ -207,10 +241,10 @@ export default function CertificateGridClient({ certifications }: Props) {
                     }}
                   >
                     <VerifiedIcon sx={{ fontSize: 12, color: '#FFFFFF' }} />
-                    <span>Aktif</span>
+                    <span>{t('cert_active', 'Active')}</span>
                   </Box>
                   <Typography variant="caption" color="#64748B" fontWeight={600}>
-                    {cert.expiryDate ? `s/d ${new Date(cert.expiryDate).getFullYear()}` : 'Berlaku'}
+                    {cert.expiryDate ? `${t('cert_valid_until', 'Valid until')} ${new Date(cert.expiryDate).getFullYear()}` : (language === 'en' ? 'Lifetime Valid' : 'Berlaku')}
                   </Typography>
                 </Box>
               </Box>
@@ -218,6 +252,35 @@ export default function CertificateGridClient({ certifications }: Props) {
           </Grid>
         ))}
       </Grid>
+
+      {/* CTA Section */}
+      <Box sx={{ mt: 10, p: { xs: 4, md: 6 }, borderRadius: 4, bgcolor: '#018730', color: '#FFFFFF', textAlign: 'center' }}>
+        <Typography variant="h4" fontWeight={900} sx={{ mb: 1.5 }}>
+          {t('cert_cta_title', 'Need Official Certificate Documents for OEM Due Diligence?')}
+        </Typography>
+        <Typography variant="body1" sx={{ color: 'rgba(255, 255, 255, 0.9)', mb: 3.5, maxWidth: 640, mx: 'auto' }}>
+          {t('cert_cta_desc', 'Contact our Quality Assurance (QA) and marketing department for certified official copies.')}
+        </Typography>
+        <Link href="/contact" style={{ textDecoration: 'none' }}>
+          <Button
+            variant="contained"
+            size="large"
+            startIcon={<SupportAgentIcon />}
+            sx={{
+              bgcolor: '#fc4509',
+              color: '#FFFFFF',
+              fontWeight: 800,
+              px: 4,
+              py: 1.4,
+              borderRadius: '30px',
+              boxShadow: '0 4px 14px rgba(252, 69, 9, 0.35)',
+              '&:hover': { bgcolor: '#e03d08' },
+            }}
+          >
+            {t('cert_cta_btn', 'Contact QA / Marketing Team')}
+          </Button>
+        </Link>
+      </Box>
 
       {/* Lightbox Modal for High-Resolution Certificate Inspection */}
       <Dialog
@@ -250,7 +313,7 @@ export default function CertificateGridClient({ certifications }: Props) {
                 {selectedCert?.title}
               </Typography>
               <Typography variant="caption" color="#94A3B8">
-                Penerbit: {selectedCert?.issuer} | No: {selectedCert?.certificateNumber || '-'}
+                {language === 'en' ? 'Issuing Body:' : 'Penerbit:'} {selectedCert?.issuer} | {language === 'en' ? 'Cert No:' : 'No:'} {selectedCert?.certificateNumber || '-'}
               </Typography>
             </Box>
           </Box>

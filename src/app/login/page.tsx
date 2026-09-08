@@ -86,7 +86,7 @@ export default function LoginPage() {
           {/* Logo & Header */}
           <Box sx={{ textAlign: 'center', mb: 3.5 }}>
             <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
-              <BrandLogo title="Thai Summit Group" lightText={false} size="medium" />
+              <BrandLogo title="Indonesia Thai Summit Plastech" lightText={false} size="medium" />
             </Box>
             <Typography variant="h5" component="h1" sx={{ fontWeight: 800, color: '#0F172A', letterSpacing: '-0.02em' }}>
               Portal Manajemen CMS

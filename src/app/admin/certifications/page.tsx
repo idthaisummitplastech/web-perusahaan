@@ -32,6 +32,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
 import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
 import ImageUpload from '@/components/admin/ImageUpload';
+import { CmsTablePagination, CmsTableToolbar } from '@/components/admin/CmsTablePagination';
 
 interface Certification {
   id: number;
@@ -49,6 +50,9 @@ interface Certification {
 export default function AdminCertificationsPage() {
   const [items, setItems] = useState<Certification[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Certification | null>(null);
   const [formData, setFormData] = useState({
@@ -203,114 +207,153 @@ export default function AdminCertificationsPage() {
       {message && <Alert severity="success" onClose={() => setMessage('')} sx={{ mb: 3, borderRadius: 2 }}>{message}</Alert>}
       {error && <Alert severity="error" onClose={() => setError('')} sx={{ mb: 3, borderRadius: 2 }}>{error}</Alert>}
 
-      <Paper elevation={0} sx={{ borderRadius: 3, border: '1px solid #E2E8F0', bgcolor: '#FFFFFF', overflow: 'hidden' }}>
-        {loading ? (
-          <Box sx={{ p: 6, display: 'flex', justifyContent: 'center' }}>
-            <CircularProgress sx={{ color: '#018730' }} />
-          </Box>
-        ) : (
-          <TableContainer>
-            <Table>
-              <TableHead sx={{ bgcolor: '#F8FAFC' }}>
-                <TableRow>
-                  <TableCell sx={{ fontWeight: 700, width: 80 }}>Badge</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Nama Sertifikasi</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Badan Penerbit</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>No. Sertifikat</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Masa Berlaku</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
-                  <TableCell align="right" sx={{ fontWeight: 700 }}>Aksi</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {items.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={7} sx={{ textAlign: 'center', py: 6, color: 'text.secondary' }}>
-                      Belum ada data sertifikasi ISO. Klik tombol &quot;Tambah Sertifikat ISO&quot; di atas untuk menambahkan.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  items.map((item) => (
-                    <TableRow key={item.id} hover>
-                      <TableCell>
-                        {item.image ? (
-                          <Box
-                            sx={{
-                              width: 48,
-                              height: 48,
-                              borderRadius: 2,
-                              overflow: 'hidden',
-                              border: '1px solid #E2E8F0',
-                              bgcolor: '#FFFFFF',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                            }}
-                          >
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={item.image} alt={item.title} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-                          </Box>
-                        ) : (
-                          <Box
-                            sx={{
-                              width: 48,
-                              height: 48,
-                              borderRadius: 2,
-                              bgcolor: '#e8f6ed',
-                              color: '#018730',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                            }}
-                          >
-                            <VerifiedUserIcon fontSize="small" />
-                          </Box>
-                        )}
-                      </TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: '#0F172A' }}>
-                        <Typography variant="body2" fontWeight={700}>{item.title}</Typography>
-                        {item.description && (
-                          <Typography variant="caption" color="text.secondary" noWrap display="block" sx={{ maxWidth: 300 }}>
-                            {item.description}
-                          </Typography>
-                        )}
-                      </TableCell>
-                      <TableCell sx={{ fontWeight: 600, color: '#475569' }}>
-                        {item.issuer}
-                      </TableCell>
-                      <TableCell sx={{ fontFamily: 'monospace', color: '#64748B', fontSize: '0.8125rem' }}>
-                        {item.certificateNumber || '-'}
-                      </TableCell>
-                      <TableCell sx={{ fontSize: '0.8125rem', color: '#475569' }}>
-                        {item.expiryDate ? new Date(item.expiryDate).toLocaleDateString('id-ID', { year: 'numeric', month: 'short', day: 'numeric' }) : 'Tetap Aktif'}
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          label={item.isActive ? 'Aktif' : 'Nonaktif'}
-                          size="small"
-                          sx={{
-                            bgcolor: item.isActive ? '#e8f6ed' : '#F1F5F9',
-                            color: item.isActive ? '#018730' : '#64748B',
-                            fontWeight: 700,
-                          }}
-                        />
-                      </TableCell>
-                      <TableCell align="right">
-                        <IconButton size="small" sx={{ color: '#018730' }} onClick={() => handleOpenDialog(item)}>
-                          <EditIcon fontSize="small" />
-                        </IconButton>
-                        <IconButton size="small" color="error" onClick={() => handleDelete(item.id)}>
-                          <DeleteIcon fontSize="small" />
-                        </IconButton>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        )}
-      </Paper>
+      {(() => {
+        const filteredItems = items.filter((item) => {
+          if (!searchQuery.trim()) return true;
+          const q = searchQuery.toLowerCase();
+          return (
+            (item.title && item.title.toLowerCase().includes(q)) ||
+            (item.issuer && item.issuer.toLowerCase().includes(q)) ||
+            (item.certificateNumber && item.certificateNumber.toLowerCase().includes(q)) ||
+            (item.description && item.description.toLowerCase().includes(q))
+          );
+        });
+
+        const paginatedItems = filteredItems.slice(page * rowsPerPage, (page + 1) * rowsPerPage);
+
+        return (
+          <Paper elevation={0} sx={{ borderRadius: 3, border: '1px solid #E2E8F0', bgcolor: '#FFFFFF', overflow: 'hidden' }}>
+            <CmsTableToolbar
+              searchQuery={searchQuery}
+              onSearchChange={(val) => {
+                setSearchQuery(val);
+                setPage(0);
+              }}
+              placeholder="Cari sertifikasi, penerbit, nomor sertifikat..."
+              totalCount={items.length}
+              filteredCount={filteredItems.length}
+            />
+            {loading ? (
+              <Box sx={{ p: 6, display: 'flex', justifyContent: 'center' }}>
+                <CircularProgress sx={{ color: '#018730' }} />
+              </Box>
+            ) : (
+              <>
+                <TableContainer>
+                  <Table>
+                    <TableHead sx={{ bgcolor: '#F8FAFC' }}>
+                      <TableRow>
+                        <TableCell sx={{ fontWeight: 700, width: 80 }}>Badge</TableCell>
+                        <TableCell sx={{ fontWeight: 700 }}>Nama Sertifikasi</TableCell>
+                        <TableCell sx={{ fontWeight: 700 }}>Badan Penerbit</TableCell>
+                        <TableCell sx={{ fontWeight: 700 }}>No. Sertifikat</TableCell>
+                        <TableCell sx={{ fontWeight: 700 }}>Masa Berlaku</TableCell>
+                        <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
+                        <TableCell align="right" sx={{ fontWeight: 700 }}>Aksi</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {filteredItems.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={7} sx={{ textAlign: 'center', py: 6, color: 'text.secondary' }}>
+                            {searchQuery ? 'Tidak ada sertifikat yang cocok dengan pencarian.' : 'Belum ada data sertifikasi ISO. Klik tombol "Tambah Sertifikat ISO" di atas untuk menambahkan.'}
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        paginatedItems.map((item) => (
+                          <TableRow key={item.id} hover>
+                            <TableCell>
+                              {item.image ? (
+                                <Box
+                                  sx={{
+                                    width: 48,
+                                    height: 48,
+                                    borderRadius: 2,
+                                    overflow: 'hidden',
+                                    border: '1px solid #E2E8F0',
+                                    bgcolor: '#FFFFFF',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                  }}
+                                >
+                                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                                  <img src={item.image} alt={item.title} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                                </Box>
+                              ) : (
+                                <Box
+                                  sx={{
+                                    width: 48,
+                                    height: 48,
+                                    borderRadius: 2,
+                                    bgcolor: '#e8f6ed',
+                                    color: '#018730',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                  }}
+                                >
+                                  <VerifiedUserIcon fontSize="small" />
+                                </Box>
+                              )}
+                            </TableCell>
+                            <TableCell sx={{ fontWeight: 700, color: '#0F172A' }}>
+                              <Typography variant="body2" fontWeight={700}>{item.title}</Typography>
+                              {item.description && (
+                                <Typography variant="caption" color="text.secondary" noWrap display="block" sx={{ maxWidth: 300 }}>
+                                  {item.description}
+                                </Typography>
+                              )}
+                            </TableCell>
+                            <TableCell sx={{ fontWeight: 600, color: '#475569' }}>
+                              {item.issuer}
+                            </TableCell>
+                            <TableCell sx={{ fontFamily: 'monospace', color: '#64748B', fontSize: '0.8125rem' }}>
+                              {item.certificateNumber || '-'}
+                            </TableCell>
+                            <TableCell sx={{ fontSize: '0.8125rem', color: '#475569' }}>
+                              {item.expiryDate ? new Date(item.expiryDate).toLocaleDateString('id-ID', { year: 'numeric', month: 'short', day: 'numeric' }) : 'Tetap Aktif'}
+                            </TableCell>
+                            <TableCell>
+                              <Chip
+                                label={item.isActive ? 'Aktif' : 'Nonaktif'}
+                                size="small"
+                                sx={{
+                                  bgcolor: item.isActive ? '#e8f6ed' : '#F1F5F9',
+                                  color: item.isActive ? '#018730' : '#64748B',
+                                  fontWeight: 700,
+                                }}
+                              />
+                            </TableCell>
+                            <TableCell align="right">
+                              <IconButton size="small" sx={{ color: '#018730' }} onClick={() => handleOpenDialog(item)}>
+                                <EditIcon fontSize="small" />
+                              </IconButton>
+                              <IconButton size="small" color="error" onClick={() => handleDelete(item.id)}>
+                                <DeleteIcon fontSize="small" />
+                              </IconButton>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+                <CmsTablePagination
+                  count={filteredItems.length}
+                  page={page}
+                  rowsPerPage={rowsPerPage}
+                  onPageChange={setPage}
+                  onRowsPerPageChange={(newRpp) => {
+                    setRowsPerPage(newRpp);
+                    setPage(0);
+                  }}
+                />
+              </>
+            )}
+          </Paper>
+        );
+      })()}
 
       {/* Dialog Form */}
       <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="md" fullWidth>

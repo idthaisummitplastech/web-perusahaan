@@ -30,6 +30,8 @@ import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 
+import { CmsTableToolbar, CmsTablePagination } from '@/components/admin/CmsTablePagination';
+
 interface HeroSection {
   id: number;
   page: string;
@@ -45,6 +47,9 @@ interface HeroSection {
 export default function AdminHeroSectionsPage() {
   const [items, setItems] = useState<HeroSection[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<HeroSection | null>(null);
   const [formData, setFormData] = useState({
@@ -176,65 +181,169 @@ export default function AdminHeroSectionsPage() {
       {error && <Alert severity="error" onClose={() => setError('')} sx={{ mb: 3, borderRadius: 2 }}>{error}</Alert>}
 
       <Paper elevation={0} sx={{ borderRadius: 3, border: '1px solid #E2E8F0', bgcolor: '#FFFFFF', overflow: 'hidden' }}>
+        <CmsTableToolbar
+          searchQuery={searchQuery}
+          onSearchChange={(q) => { setSearchQuery(q); setPage(0); }}
+          placeholder="Cari hero section (halaman, judul, tombol)..."
+          totalCount={items.length}
+          filteredCount={items.filter((item) => {
+            if (!searchQuery.trim()) return true;
+            const q = searchQuery.toLowerCase();
+            return (
+              item.page.toLowerCase().includes(q) ||
+              item.title.toLowerCase().includes(q) ||
+              (item.subtitle && item.subtitle.toLowerCase().includes(q)) ||
+              (item.primaryBtnText && item.primaryBtnText.toLowerCase().includes(q)) ||
+              (item.secondaryBtnText && item.secondaryBtnText.toLowerCase().includes(q))
+            );
+          }).length}
+        />
+
         {loading ? (
           <Box sx={{ p: 6, display: 'flex', justifyContent: 'center' }}>
             <CircularProgress sx={{ color: '#F59E0B' }} />
           </Box>
         ) : (
-          <TableContainer>
-            <Table>
-              <TableHead sx={{ bgcolor: '#F8FAFC' }}>
-                <TableRow>
-                  <TableCell sx={{ fontWeight: 700 }}>Halaman</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Judul Hero</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Tombol Utama</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Tombol Sekunder</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
-                  <TableCell align="right" sx={{ fontWeight: 700 }}>Aksi</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {items.map((item) => (
-                  <TableRow key={item.id} hover>
-                    <TableCell sx={{ fontWeight: 700 }}>
-                      <Chip label={item.page} size="small" sx={{ bgcolor: '#FEF3C7', color: '#B45309', fontWeight: 700 }} />
-                    </TableCell>
-                    <TableCell sx={{ maxWidth: 320 }}>
-                      <Typography variant="body2" fontWeight={600} noWrap>
-                        {item.title.replace(/<[^>]*>?/gm, '')}
-                      </Typography>
-                      {item.subtitle && (
-                        <Typography variant="caption" color="text.secondary" noWrap display="block">
-                          {item.subtitle}
-                        </Typography>
+          (() => {
+            const filteredItems = items.filter((item) => {
+              if (!searchQuery.trim()) return true;
+              const q = searchQuery.toLowerCase();
+              return (
+                item.page.toLowerCase().includes(q) ||
+                item.title.toLowerCase().includes(q) ||
+                (item.subtitle && item.subtitle.toLowerCase().includes(q)) ||
+                (item.primaryBtnText && item.primaryBtnText.toLowerCase().includes(q)) ||
+                (item.secondaryBtnText && item.secondaryBtnText.toLowerCase().includes(q))
+              );
+            });
+            const paginatedItems = filteredItems.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+
+            return (
+              <>
+                <TableContainer>
+                  <Table sx={{ minWidth: 720, tableLayout: 'fixed' }}>
+                    <TableHead sx={{ bgcolor: '#F8FAFC' }}>
+                      <TableRow>
+                        <TableCell sx={{ fontWeight: 700, width: 110 }}>Halaman</TableCell>
+                        <TableCell sx={{ fontWeight: 700, width: '36%' }}>Judul Hero</TableCell>
+                        <TableCell sx={{ fontWeight: 700, width: '22%' }}>Tombol Utama</TableCell>
+                        <TableCell sx={{ fontWeight: 700, width: '22%' }}>Tombol Sekunder</TableCell>
+                        <TableCell sx={{ fontWeight: 700, width: 95 }}>Status</TableCell>
+                        <TableCell align="right" sx={{ fontWeight: 700, width: 90 }}>Aksi</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {paginatedItems.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={6} align="center" sx={{ py: 6, color: '#64748B' }}>
+                            {searchQuery ? 'Tidak ada hero section yang sesuai dengan kata kunci pencarian.' : 'Belum ada data hero section.'}
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        paginatedItems.map((item) => (
+                          <TableRow key={item.id} hover>
+                            <TableCell sx={{ fontWeight: 700 }}>
+                              <Chip label={item.page} size="small" sx={{ bgcolor: '#FEF3C7', color: '#B45309', fontWeight: 700 }} />
+                            </TableCell>
+                            <TableCell sx={{ overflow: 'hidden', pr: 2 }}>
+                              <Typography
+                                variant="body2"
+                                fontWeight={700}
+                                sx={{
+                                  color: '#0F172A',
+                                  display: '-webkit-box',
+                                  WebkitLineClamp: 2,
+                                  WebkitBoxOrient: 'vertical',
+                                  overflow: 'hidden',
+                                  wordBreak: 'break-word',
+                                  lineHeight: 1.3,
+                                }}
+                              >
+                                {item.title.replace(/<[^>]*>?/gm, '')}
+                              </Typography>
+                              {item.subtitle && (
+                                <Typography
+                                  variant="caption"
+                                  color="text.secondary"
+                                  sx={{
+                                    mt: 0.5,
+                                    display: '-webkit-box',
+                                    WebkitLineClamp: 2,
+                                    WebkitBoxOrient: 'vertical',
+                                    overflow: 'hidden',
+                                    wordBreak: 'break-word',
+                                    lineHeight: 1.3,
+                                  }}
+                                >
+                                  {item.subtitle}
+                                </Typography>
+                              )}
+                            </TableCell>
+                            <TableCell sx={{ overflow: 'hidden', pr: 2 }}>
+                              {item.primaryBtnText ? (
+                                <Box sx={{ wordBreak: 'break-word' }}>
+                                  <Typography variant="body2" fontWeight={600} sx={{ color: '#0F172A', fontSize: '0.82rem' }}>
+                                    {item.primaryBtnText}
+                                  </Typography>
+                                  <Typography variant="caption" sx={{ color: '#64748B', display: 'block', wordBreak: 'break-all' }}>
+                                    {item.primaryBtnUrl}
+                                  </Typography>
+                                </Box>
+                              ) : (
+                                '-'
+                              )}
+                            </TableCell>
+                            <TableCell sx={{ overflow: 'hidden', pr: 2 }}>
+                              {item.secondaryBtnText ? (
+                                <Box sx={{ wordBreak: 'break-word' }}>
+                                  <Typography variant="body2" fontWeight={600} sx={{ color: '#0F172A', fontSize: '0.82rem' }}>
+                                    {item.secondaryBtnText}
+                                  </Typography>
+                                  <Typography variant="caption" sx={{ color: '#64748B', display: 'block', wordBreak: 'break-all' }}>
+                                    {item.secondaryBtnUrl}
+                                  </Typography>
+                                </Box>
+                              ) : (
+                                '-'
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <Chip
+                                label={item.isActive ? 'Aktif' : 'Nonaktif'}
+                                size="small"
+                                sx={{
+                                  bgcolor: item.isActive ? '#ECFDF5' : '#F1F5F9',
+                                  color: item.isActive ? '#047857' : '#64748B',
+                                  fontWeight: 700,
+                                }}
+                              />
+                            </TableCell>
+                            <TableCell align="right">
+                              <IconButton size="small" color="primary" onClick={() => handleOpenDialog(item)}>
+                                <EditIcon fontSize="small" />
+                              </IconButton>
+                              <IconButton size="small" color="error" onClick={() => handleDelete(item.id)}>
+                                <DeleteIcon fontSize="small" />
+                              </IconButton>
+                            </TableCell>
+                          </TableRow>
+                        ))
                       )}
-                    </TableCell>
-                    <TableCell>{item.primaryBtnText ? `${item.primaryBtnText} (${item.primaryBtnUrl})` : '-'}</TableCell>
-                    <TableCell>{item.secondaryBtnText ? `${item.secondaryBtnText} (${item.secondaryBtnUrl})` : '-'}</TableCell>
-                    <TableCell>
-                      <Chip
-                        label={item.isActive ? 'Aktif' : 'Nonaktif'}
-                        size="small"
-                        sx={{
-                          bgcolor: item.isActive ? '#ECFDF5' : '#F1F5F9',
-                          color: item.isActive ? '#047857' : '#64748B',
-                          fontWeight: 700,
-                        }}
-                      />
-                    </TableCell>
-                    <TableCell align="right">
-                      <IconButton size="small" color="primary" onClick={() => handleOpenDialog(item)}>
-                        <EditIcon fontSize="small" />
-                      </IconButton>
-                      <IconButton size="small" color="error" onClick={() => handleDelete(item.id)}>
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+
+                <CmsTablePagination
+                  count={filteredItems.length}
+                  page={page}
+                  rowsPerPage={rowsPerPage}
+                  onPageChange={setPage}
+                  onRowsPerPageChange={(r) => { setRowsPerPage(r); setPage(0); }}
+                  rowsPerPageOptions={[5, 10, 25, 50]}
+                />
+              </>
+            );
+          })()
         )}
       </Paper>
 

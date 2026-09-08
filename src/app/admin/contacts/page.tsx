@@ -27,6 +27,7 @@ import {
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import DeleteIcon from '@mui/icons-material/Delete';
 import MarkEmailReadIcon from '@mui/icons-material/MarkEmailRead';
+import { CmsTablePagination, CmsTableToolbar } from '@/components/admin/CmsTablePagination';
 
 interface Contact {
   id: number;
@@ -42,6 +43,9 @@ export default function AdminContactsPage() {
   const [items, setItems] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
@@ -105,73 +109,112 @@ export default function AdminContactsPage() {
       {message && <Alert severity="success" onClose={() => setMessage('')} sx={{ mb: 3, borderRadius: 2 }}>{message}</Alert>}
       {error && <Alert severity="error" onClose={() => setError('')} sx={{ mb: 3, borderRadius: 2 }}>{error}</Alert>}
 
-      <Paper elevation={0} sx={{ borderRadius: 3, border: '1px solid #E2E8F0', bgcolor: '#FFFFFF', overflow: 'hidden' }}>
-        {loading ? (
-          <Box sx={{ p: 6, display: 'flex', justifyContent: 'center' }}>
-            <CircularProgress sx={{ color: '#F59E0B' }} />
-          </Box>
-        ) : (
-          <TableContainer>
-            <Table>
-              <TableHead sx={{ bgcolor: '#F8FAFC' }}>
-                <TableRow>
-                  <TableCell sx={{ fontWeight: 700 }}>Nama Pengirim</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Email</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Subjek</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Waktu Diterima</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
-                  <TableCell align="right" sx={{ fontWeight: 700 }}>Aksi</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {items.length > 0 ? (
-                  items.map((item) => (
-                    <TableRow key={item.id} hover sx={{ bgcolor: item.isRead ? 'inherit' : 'rgba(254, 243, 199, 0.2)' }}>
-                      <TableCell sx={{ fontWeight: item.isRead ? 500 : 700, color: '#0F172A' }}>{item.name}</TableCell>
-                      <TableCell>{item.email}</TableCell>
-                      <TableCell sx={{ fontWeight: item.isRead ? 400 : 600 }}>{item.subject || '-'}</TableCell>
-                      <TableCell>
-                        {new Date(item.createdAt).toLocaleDateString('id-ID', {
-                          day: 'numeric',
-                          month: 'short',
-                          year: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          label={item.isRead ? 'Dibaca' : 'Baru'}
-                          size="small"
-                          sx={{
-                            bgcolor: item.isRead ? '#F1F5F9' : '#FEF3C7',
-                            color: item.isRead ? '#64748B' : '#B45309',
-                            fontWeight: 700,
-                          }}
-                        />
-                      </TableCell>
-                      <TableCell align="right">
-                        <IconButton size="small" color="primary" onClick={() => handleOpenDetail(item)}>
-                          <VisibilityIcon fontSize="small" />
-                        </IconButton>
-                        <IconButton size="small" color="error" onClick={() => handleDelete(item.id)}>
-                          <DeleteIcon fontSize="small" />
-                        </IconButton>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={6} sx={{ textAlign: 'center', py: 4, color: 'text.secondary' }}>
-                      Belum ada pesan yang diterima.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        )}
-      </Paper>
+      {(() => {
+        const filteredItems = items.filter((item) => {
+          if (!searchQuery.trim()) return true;
+          const q = searchQuery.toLowerCase();
+          return (
+            (item.name && item.name.toLowerCase().includes(q)) ||
+            (item.email && item.email.toLowerCase().includes(q)) ||
+            (item.subject && item.subject.toLowerCase().includes(q)) ||
+            (item.message && item.message.toLowerCase().includes(q))
+          );
+        });
+
+        const paginatedItems = filteredItems.slice(page * rowsPerPage, (page + 1) * rowsPerPage);
+
+        return (
+          <Paper elevation={0} sx={{ borderRadius: 3, border: '1px solid #E2E8F0', bgcolor: '#FFFFFF', overflow: 'hidden' }}>
+            <CmsTableToolbar
+              searchQuery={searchQuery}
+              onSearchChange={(val) => {
+                setSearchQuery(val);
+                setPage(0);
+              }}
+              placeholder="Cari nama, email, subjek, pesan..."
+              totalCount={items.length}
+              filteredCount={filteredItems.length}
+            />
+            {loading ? (
+              <Box sx={{ p: 6, display: 'flex', justifyContent: 'center' }}>
+                <CircularProgress sx={{ color: '#F59E0B' }} />
+              </Box>
+            ) : (
+              <>
+                <TableContainer>
+                  <Table>
+                    <TableHead sx={{ bgcolor: '#F8FAFC' }}>
+                      <TableRow>
+                        <TableCell sx={{ fontWeight: 700 }}>Nama Pengirim</TableCell>
+                        <TableCell sx={{ fontWeight: 700 }}>Email</TableCell>
+                        <TableCell sx={{ fontWeight: 700 }}>Subjek</TableCell>
+                        <TableCell sx={{ fontWeight: 700 }}>Waktu Diterima</TableCell>
+                        <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
+                        <TableCell align="right" sx={{ fontWeight: 700 }}>Aksi</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {filteredItems.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={6} sx={{ textAlign: 'center', py: 4, color: 'text.secondary' }}>
+                            {searchQuery ? 'Tidak ada pesan kontak yang cocok dengan pencarian.' : 'Belum ada pesan yang diterima.'}
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        paginatedItems.map((item) => (
+                          <TableRow key={item.id} hover sx={{ bgcolor: item.isRead ? 'inherit' : 'rgba(254, 243, 199, 0.2)' }}>
+                            <TableCell sx={{ fontWeight: item.isRead ? 500 : 700, color: '#0F172A' }}>{item.name}</TableCell>
+                            <TableCell>{item.email}</TableCell>
+                            <TableCell sx={{ fontWeight: item.isRead ? 400 : 600 }}>{item.subject || '-'}</TableCell>
+                            <TableCell>
+                              {new Date(item.createdAt).toLocaleDateString('id-ID', {
+                                day: 'numeric',
+                                month: 'short',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })}
+                            </TableCell>
+                            <TableCell>
+                              <Chip
+                                label={item.isRead ? 'Dibaca' : 'Baru'}
+                                size="small"
+                                sx={{
+                                  bgcolor: item.isRead ? '#F1F5F9' : '#FEF3C7',
+                                  color: item.isRead ? '#64748B' : '#B45309',
+                                  fontWeight: 700,
+                                }}
+                              />
+                            </TableCell>
+                            <TableCell align="right">
+                              <IconButton size="small" color="primary" onClick={() => handleOpenDetail(item)}>
+                                <VisibilityIcon fontSize="small" />
+                              </IconButton>
+                              <IconButton size="small" color="error" onClick={() => handleDelete(item.id)}>
+                                <DeleteIcon fontSize="small" />
+                              </IconButton>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+                <CmsTablePagination
+                  count={filteredItems.length}
+                  page={page}
+                  rowsPerPage={rowsPerPage}
+                  onPageChange={setPage}
+                  onRowsPerPageChange={(newRpp) => {
+                    setRowsPerPage(newRpp);
+                    setPage(0);
+                  }}
+                />
+              </>
+            )}
+          </Paper>
+        );
+      })()}
 
       {/* Message Details Modal */}
       <Dialog open={Boolean(selectedContact)} onClose={() => setSelectedContact(null)} maxWidth="sm" fullWidth>

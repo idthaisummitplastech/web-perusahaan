@@ -45,6 +45,7 @@ import CheckIcon from '@mui/icons-material/Check';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import PeopleIcon from '@mui/icons-material/People';
 import EngineeringIcon from '@mui/icons-material/Engineering';
+import { CmsTablePagination, CmsTableToolbar } from '@/components/admin/CmsTablePagination';
 
 interface UserItem {
   id: number;
@@ -102,6 +103,9 @@ const ROLES = [
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<UserItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<UserItem | null>(null);
   const [formData, setFormData] = useState({
@@ -399,137 +403,184 @@ export default function AdminUsersPage() {
       {error && <Alert severity="error" onClose={() => setError('')} sx={{ mb: 3, borderRadius: 2 }}>{error}</Alert>}
 
       {/* Users Table */}
-      <Paper elevation={0} sx={{ borderRadius: 3, border: '1px solid #E2E8F0', bgcolor: '#FFFFFF', overflow: 'hidden' }}>
-        {loading ? (
-          <Box sx={{ p: 6, display: 'flex', justifyContent: 'center' }}>
-            <CircularProgress sx={{ color: '#018730' }} />
-          </Box>
-        ) : (
-          <TableContainer>
-            <Table>
-              <TableHead sx={{ bgcolor: '#F8FAFC' }}>
-                <TableRow>
-                  <TableCell sx={{ fontWeight: 700 }}>Pengguna</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Email Login</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Peran (Role)</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Keamanan MFA (Aktifkan/Nonaktifkan)</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Terdaftar Pada</TableCell>
-                  <TableCell align="right" sx={{ fontWeight: 700 }}>Aksi</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {users.map((u) => {
-                  const roleConfig = ROLES.find((r) => r.value === u.role) || ROLES[0];
-                  const isToggling = togglingMfaId === u.id;
+      {(() => {
+        const filteredUsers = users.filter((u) => {
+          if (!searchQuery.trim()) return true;
+          const q = searchQuery.toLowerCase();
+          return (
+            (u.name && u.name.toLowerCase().includes(q)) ||
+            (u.email && u.email.toLowerCase().includes(q)) ||
+            (u.role && u.role.toLowerCase().includes(q))
+          );
+        });
 
-                  return (
-                    <TableRow key={u.id} hover>
-                      <TableCell>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                          <Avatar sx={{ width: 38, height: 38, bgcolor: roleConfig.color, color: '#FFFFFF', fontWeight: 700, fontSize: '0.875rem' }}>
-                            {u.name?.charAt(0).toUpperCase() || 'U'}
-                          </Avatar>
-                          <Box>
-                            <Typography variant="body2" fontWeight={700} color="#0F172A">
-                              {u.name}
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary">
-                              ID: #{u.id}
-                            </Typography>
-                          </Box>
-                        </Box>
-                      </TableCell>
-                      <TableCell sx={{ color: '#334155', fontWeight: 500 }}>
-                        {u.email}
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          icon={roleConfig.icon}
-                          label={u.role.toUpperCase()}
-                          size="small"
-                          sx={{
-                            bgcolor: roleConfig.bg,
-                            color: roleConfig.color,
-                            fontWeight: 700,
-                            border: `1px solid ${roleConfig.color}33`,
-                            '& .MuiChip-icon': { color: `${roleConfig.color} !important` },
-                          }}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
-                          <Tooltip title={u.mfaEnabled ? 'Klik untuk menonaktifkan MFA bagi pengguna ini' : 'Klik untuk mengaktifkan MFA bagi pengguna ini'}>
-                            <span>
-                              <Switch
-                                size="small"
-                                checked={Boolean(u.mfaEnabled)}
-                                disabled={isToggling}
-                                onChange={() => handleToggleMfa(u)}
-                                sx={{
-                                  '& .MuiSwitch-switchBase.Mui-checked': {
-                                    color: '#018730',
-                                  },
-                                  '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
-                                    backgroundColor: '#018730',
-                                  },
-                                }}
-                              />
-                            </span>
-                          </Tooltip>
-                          {isToggling ? (
-                            <CircularProgress size={16} sx={{ color: '#018730' }} />
-                          ) : (
-                            <Chip
-                              icon={<ShieldIcon sx={{ fontSize: '13px !important' }} />}
-                              label={u.mfaEnabled ? 'MFA Aktif' : 'Standar'}
-                              size="small"
-                              sx={{
-                                bgcolor: u.mfaEnabled ? '#e8f6ed' : '#F1F5F9',
-                                color: u.mfaEnabled ? '#018730' : '#64748B',
-                                fontWeight: 700,
-                                fontSize: '0.75rem',
-                              }}
-                            />
-                          )}
+        const paginatedUsers = filteredUsers.slice(page * rowsPerPage, (page + 1) * rowsPerPage);
 
-                          {u.mfaEnabled && (
-                            <Tooltip title="Lihat / Salin Kode Cadangan Pengguna">
-                              <IconButton
-                                size="small"
-                                onClick={() => handleOpenBackupCodes(u)}
-                                sx={{
-                                  color: '#fc4509',
-                                  p: 0.6,
-                                  bgcolor: '#FFF7ED',
-                                  border: '1px solid #FFEDD5',
-                                  '&:hover': { bgcolor: '#FFEDD5' },
-                                }}
-                              >
-                                <VpnKeyIcon sx={{ fontSize: 16 }} />
-                              </IconButton>
-                            </Tooltip>
-                          )}
-                        </Box>
-                      </TableCell>
-                      <TableCell sx={{ color: '#64748B', fontSize: '0.8125rem' }}>
-                        {new Date(u.createdAt).toLocaleDateString('id-ID', { year: 'numeric', month: 'short', day: 'numeric' })}
-                      </TableCell>
-                      <TableCell align="right">
-                        <IconButton size="small" sx={{ color: '#018730' }} onClick={() => handleOpenDialog(u)} title="Ubah data atau reset password">
-                          <EditIcon fontSize="small" />
-                        </IconButton>
-                        <IconButton size="small" color="error" onClick={() => handleDelete(u.id, u.name)} title="Hapus pengguna">
-                          <DeleteIcon fontSize="small" />
-                        </IconButton>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        )}
-      </Paper>
+        return (
+          <Paper elevation={0} sx={{ borderRadius: 3, border: '1px solid #E2E8F0', bgcolor: '#FFFFFF', overflow: 'hidden' }}>
+            <CmsTableToolbar
+              searchQuery={searchQuery}
+              onSearchChange={(val) => {
+                setSearchQuery(val);
+                setPage(0);
+              }}
+              placeholder="Cari nama, email, role pengguna..."
+              totalCount={users.length}
+              filteredCount={filteredUsers.length}
+            />
+            {loading ? (
+              <Box sx={{ p: 6, display: 'flex', justifyContent: 'center' }}>
+                <CircularProgress sx={{ color: '#018730' }} />
+              </Box>
+            ) : (
+              <>
+                <TableContainer>
+                  <Table>
+                    <TableHead sx={{ bgcolor: '#F8FAFC' }}>
+                      <TableRow>
+                        <TableCell sx={{ fontWeight: 700 }}>Pengguna</TableCell>
+                        <TableCell sx={{ fontWeight: 700 }}>Email Login</TableCell>
+                        <TableCell sx={{ fontWeight: 700 }}>Peran (Role)</TableCell>
+                        <TableCell sx={{ fontWeight: 700 }}>Keamanan MFA (Aktifkan/Nonaktifkan)</TableCell>
+                        <TableCell sx={{ fontWeight: 700 }}>Terdaftar Pada</TableCell>
+                        <TableCell align="right" sx={{ fontWeight: 700 }}>Aksi</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {filteredUsers.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={6} sx={{ textAlign: 'center', py: 6, color: 'text.secondary' }}>
+                            {searchQuery ? 'Tidak ada pengguna yang cocok dengan pencarian.' : 'Belum ada data pengguna.'}
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        paginatedUsers.map((u) => {
+                          const roleConfig = ROLES.find((r) => r.value === u.role) || ROLES[0];
+                          const isToggling = togglingMfaId === u.id;
+
+                          return (
+                            <TableRow key={u.id} hover>
+                              <TableCell>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                  <Avatar sx={{ width: 38, height: 38, bgcolor: roleConfig.color, color: '#FFFFFF', fontWeight: 700, fontSize: '0.875rem' }}>
+                                    {u.name?.charAt(0).toUpperCase() || 'U'}
+                                  </Avatar>
+                                  <Box>
+                                    <Typography variant="body2" fontWeight={700} color="#0F172A">
+                                      {u.name}
+                                    </Typography>
+                                    <Typography variant="caption" color="text.secondary">
+                                      ID: #{u.id}
+                                    </Typography>
+                                  </Box>
+                                </Box>
+                              </TableCell>
+                              <TableCell sx={{ color: '#334155', fontWeight: 500 }}>
+                                {u.email}
+                              </TableCell>
+                              <TableCell>
+                                <Chip
+                                  icon={roleConfig.icon}
+                                  label={u.role.toUpperCase()}
+                                  size="small"
+                                  sx={{
+                                    bgcolor: roleConfig.bg,
+                                    color: roleConfig.color,
+                                    fontWeight: 700,
+                                    fontSize: '0.75rem',
+                                    '& .MuiChip-icon': { color: 'inherit' },
+                                  }}
+                                />
+                              </TableCell>
+                              <TableCell>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                  <FormControlLabel
+                                    control={
+                                      <Switch
+                                        size="small"
+                                        checked={u.mfaEnabled}
+                                        disabled={isToggling}
+                                        onChange={() => handleToggleMfa(u)}
+                                        sx={{
+                                          '& .MuiSwitch-switchBase.Mui-checked': { color: '#018730' },
+                                          '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { bgcolor: '#018730' },
+                                        }}
+                                      />
+                                    }
+                                    label={
+                                      <Typography variant="caption" fontWeight={700} color={u.mfaEnabled ? '#018730' : 'text.secondary'}>
+                                        {isToggling ? 'Menyimpan...' : u.mfaEnabled ? 'Aktif' : 'Nonaktif'}
+                                      </Typography>
+                                    }
+                                    sx={{ m: 0 }}
+                                  />
+
+                                  {u.mfaEnabled && (
+                                    <Chip
+                                      icon={<ShieldIcon sx={{ fontSize: '14px !important' }} />}
+                                      label="MFA 2FA"
+                                      size="small"
+                                      sx={{
+                                        bgcolor: '#e8f6ed',
+                                        color: '#018730',
+                                        fontWeight: 700,
+                                        fontSize: '0.75rem',
+                                      }}
+                                    />
+                                  )}
+
+                                  {u.mfaEnabled && (
+                                    <Tooltip title="Lihat / Salin Kode Cadangan Pengguna">
+                                      <IconButton
+                                        size="small"
+                                        onClick={() => handleOpenBackupCodes(u)}
+                                        sx={{
+                                          color: '#fc4509',
+                                          p: 0.6,
+                                          bgcolor: '#FFF7ED',
+                                          border: '1px solid #FFEDD5',
+                                          '&:hover': { bgcolor: '#FFEDD5' },
+                                        }}
+                                      >
+                                        <VpnKeyIcon sx={{ fontSize: 16 }} />
+                                      </IconButton>
+                                    </Tooltip>
+                                  )}
+                                </Box>
+                              </TableCell>
+                              <TableCell sx={{ color: '#64748B', fontSize: '0.8125rem' }}>
+                                {new Date(u.createdAt).toLocaleDateString('id-ID', { year: 'numeric', month: 'short', day: 'numeric' })}
+                              </TableCell>
+                              <TableCell align="right">
+                                <IconButton size="small" sx={{ color: '#018730' }} onClick={() => handleOpenDialog(u)} title="Ubah data atau reset password">
+                                  <EditIcon fontSize="small" />
+                                </IconButton>
+                                <IconButton size="small" color="error" onClick={() => handleDelete(u.id, u.name)} title="Hapus pengguna">
+                                  <DeleteIcon fontSize="small" />
+                                </IconButton>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })
+                      )}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+                <CmsTablePagination
+                  count={filteredUsers.length}
+                  page={page}
+                  rowsPerPage={rowsPerPage}
+                  onPageChange={setPage}
+                  onRowsPerPageChange={(newRpp) => {
+                    setRowsPerPage(newRpp);
+                    setPage(0);
+                  }}
+                />
+              </>
+            )}
+          </Paper>
+        );
+      })()}
 
       {/* Dialog Form Tambah / Edit */}
       <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="sm" fullWidth>

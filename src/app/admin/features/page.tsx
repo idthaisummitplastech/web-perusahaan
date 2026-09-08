@@ -30,6 +30,7 @@ import {
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import { CmsTablePagination, CmsTableToolbar } from '@/components/admin/CmsTablePagination';
 
 interface Feature {
   id: number;
@@ -43,6 +44,9 @@ interface Feature {
 export default function AdminFeaturesPage() {
   const [items, setItems] = useState<Feature[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Feature | null>(null);
   const [formData, setFormData] = useState({
@@ -164,59 +168,105 @@ export default function AdminFeaturesPage() {
       {message && <Alert severity="success" onClose={() => setMessage('')} sx={{ mb: 3, borderRadius: 2 }}>{message}</Alert>}
       {error && <Alert severity="error" onClose={() => setError('')} sx={{ mb: 3, borderRadius: 2 }}>{error}</Alert>}
 
-      <Paper elevation={0} sx={{ borderRadius: 3, border: '1px solid #E2E8F0', bgcolor: '#FFFFFF', overflow: 'hidden' }}>
-        {loading ? (
-          <Box sx={{ p: 6, display: 'flex', justifyContent: 'center' }}>
-            <CircularProgress sx={{ color: '#F59E0B' }} />
-          </Box>
-        ) : (
-          <TableContainer>
-            <Table>
-              <TableHead sx={{ bgcolor: '#F8FAFC' }}>
-                <TableRow>
-                  <TableCell sx={{ fontWeight: 700 }}>Judul Fitur</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Ikon</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Deskripsi</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Urutan</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
-                  <TableCell align="right" sx={{ fontWeight: 700 }}>Aksi</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {items.map((item) => (
-                  <TableRow key={item.id} hover>
-                    <TableCell sx={{ fontWeight: 700, color: '#0F172A' }}>{item.title}</TableCell>
-                    <TableCell>
-                      <Chip label={item.svgIcon || 'Default'} size="small" sx={{ bgcolor: '#FEF3C7', color: '#B45309', fontWeight: 700 }} />
-                    </TableCell>
-                    <TableCell sx={{ color: 'text.secondary', maxWidth: 350 }}>{item.description}</TableCell>
-                    <TableCell>{item.sortOrder}</TableCell>
-                    <TableCell>
-                      <Chip
-                        label={item.isActive ? 'Aktif' : 'Nonaktif'}
-                        size="small"
-                        sx={{
-                          bgcolor: item.isActive ? '#ECFDF5' : '#F1F5F9',
-                          color: item.isActive ? '#047857' : '#64748B',
-                          fontWeight: 700,
-                        }}
-                      />
-                    </TableCell>
-                    <TableCell align="right">
-                      <IconButton size="small" color="primary" onClick={() => handleOpenDialog(item)}>
-                        <EditIcon fontSize="small" />
-                      </IconButton>
-                      <IconButton size="small" color="error" onClick={() => handleDelete(item.id)}>
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        )}
-      </Paper>
+      {(() => {
+        const filteredItems = items.filter((item) => {
+          if (!searchQuery.trim()) return true;
+          const q = searchQuery.toLowerCase();
+          return (
+            (item.title && item.title.toLowerCase().includes(q)) ||
+            (item.description && item.description.toLowerCase().includes(q)) ||
+            (item.svgIcon && item.svgIcon.toLowerCase().includes(q))
+          );
+        });
+
+        const paginatedItems = filteredItems.slice(page * rowsPerPage, (page + 1) * rowsPerPage);
+
+        return (
+          <Paper elevation={0} sx={{ borderRadius: 3, border: '1px solid #E2E8F0', bgcolor: '#FFFFFF', overflow: 'hidden' }}>
+            <CmsTableToolbar
+              searchQuery={searchQuery}
+              onSearchChange={(val) => {
+                setSearchQuery(val);
+                setPage(0);
+              }}
+              placeholder="Cari fitur, ikon, deskripsi..."
+              totalCount={items.length}
+              filteredCount={filteredItems.length}
+            />
+            {loading ? (
+              <Box sx={{ p: 6, display: 'flex', justifyContent: 'center' }}>
+                <CircularProgress sx={{ color: '#F59E0B' }} />
+              </Box>
+            ) : (
+              <>
+                <TableContainer>
+                  <Table>
+                    <TableHead sx={{ bgcolor: '#F8FAFC' }}>
+                      <TableRow>
+                        <TableCell sx={{ fontWeight: 700 }}>Judul Fitur</TableCell>
+                        <TableCell sx={{ fontWeight: 700 }}>Ikon</TableCell>
+                        <TableCell sx={{ fontWeight: 700 }}>Deskripsi</TableCell>
+                        <TableCell sx={{ fontWeight: 700 }}>Urutan</TableCell>
+                        <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
+                        <TableCell align="right" sx={{ fontWeight: 700 }}>Aksi</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {filteredItems.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={6} sx={{ textAlign: 'center', py: 6, color: 'text.secondary' }}>
+                            {searchQuery ? 'Tidak ada fitur yang cocok dengan pencarian.' : 'Belum ada data fitur. Klik tombol "Tambah Fitur" di atas untuk menambahkan.'}
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        paginatedItems.map((item) => (
+                          <TableRow key={item.id} hover>
+                            <TableCell sx={{ fontWeight: 700, color: '#0F172A' }}>{item.title}</TableCell>
+                            <TableCell>
+                              <Chip label={item.svgIcon || 'Default'} size="small" sx={{ bgcolor: '#FEF3C7', color: '#B45309', fontWeight: 700 }} />
+                            </TableCell>
+                            <TableCell sx={{ color: 'text.secondary', maxWidth: 350 }}>{item.description}</TableCell>
+                            <TableCell>{item.sortOrder}</TableCell>
+                            <TableCell>
+                              <Chip
+                                label={item.isActive ? 'Aktif' : 'Nonaktif'}
+                                size="small"
+                                sx={{
+                                  bgcolor: item.isActive ? '#ECFDF5' : '#F1F5F9',
+                                  color: item.isActive ? '#047857' : '#64748B',
+                                  fontWeight: 700,
+                                }}
+                              />
+                            </TableCell>
+                            <TableCell align="right">
+                              <IconButton size="small" color="primary" onClick={() => handleOpenDialog(item)}>
+                                <EditIcon fontSize="small" />
+                              </IconButton>
+                              <IconButton size="small" color="error" onClick={() => handleDelete(item.id)}>
+                                <DeleteIcon fontSize="small" />
+                              </IconButton>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+                <CmsTablePagination
+                  count={filteredItems.length}
+                  page={page}
+                  rowsPerPage={rowsPerPage}
+                  onPageChange={setPage}
+                  onRowsPerPageChange={(newRpp) => {
+                    setRowsPerPage(newRpp);
+                    setPage(0);
+                  }}
+                />
+              </>
+            )}
+          </Paper>
+        );
+      })()}
 
       {/* Dialog */}
       <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="sm" fullWidth>

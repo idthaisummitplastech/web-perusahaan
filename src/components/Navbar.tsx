@@ -32,6 +32,8 @@ import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
 import BrandLogo from '@/components/BrandLogo';
+import LanguageToggle from '@/components/LanguageToggle';
+import { useLanguage } from '@/lib/LanguageContext';
 
 export interface NavItem {
   id: number;
@@ -46,7 +48,7 @@ interface NavbarProps {
 }
 
 export default function Navbar({
-  siteTitle = 'Thai Summit Group',
+  siteTitle = 'PT Indonesia Thai Summit Plastech',
   navItems = [
     { id: 1, title: 'Beranda', url: '/' },
     { id: 2, title: 'Produk', url: '/products' },
@@ -60,6 +62,27 @@ export default function Navbar({
   const [mobileExpanded, setMobileExpanded] = useState<Record<number, boolean>>({});
   const [activeDropdownId, setActiveDropdownId] = useState<number | null>(null);
   const pathname = usePathname();
+  const { language, t } = useLanguage();
+
+  const getDisplayTitle = (title: string) => {
+    if (language === 'id') return title;
+    const map: Record<string, string> = {
+      'beranda': 'Home',
+      'produk': 'Products',
+      'layanan': 'Services',
+      'sertifikasi': 'Certifications',
+      'fasilitas': 'Facilities',
+      'tentang kami': 'About Us',
+      'berita': 'News & Media',
+      'berita & artikel': 'News & Articles',
+      'artikel': 'Articles',
+      'blog': 'News & Media',
+      'kontak': 'Contact Us',
+      'karir': 'Careers',
+    };
+    const key = title.trim().toLowerCase();
+    return map[key] || title;
+  };
 
   // Mobile drawer toggle
   const toggleDrawer = (open: boolean) => (event: React.KeyboardEvent | React.MouseEvent) => {
@@ -180,7 +203,7 @@ export default function Navbar({
                             transition: 'all 0.2s ease',
                           }}
                         >
-                          {item.title}
+                          {getDisplayTitle(item.title)}
                         </Button>
 
                         {/* Dropdown Menu Container */}
@@ -227,7 +250,7 @@ export default function Navbar({
                                 transition: 'all 0.15s ease',
                               }}
                             >
-                              Semua {item.title} →
+                              {language === 'en' ? `All ${getDisplayTitle(item.title)} →` : `Semua ${item.title} →`}
                             </Box>
                           )}
 
@@ -261,7 +284,7 @@ export default function Navbar({
                                   transition: 'all 0.15s ease',
                                 }}
                               >
-                                {child.title}
+                                {getDisplayTitle(child.title)}
                               </Box>
                             );
                           })}
@@ -310,7 +333,7 @@ export default function Navbar({
                         transition: 'all 0.2s ease',
                       }}
                     >
-                      {item.title}
+                      {getDisplayTitle(item.title)}
                     </Button>
                   );
                 })}
@@ -326,6 +349,9 @@ export default function Navbar({
                   flexShrink: 0,
                 }}
               >
+                {/* Modern Bilingual Language Switcher (Default: English) */}
+                <LanguageToggle size="small" />
+
                 <Button
                   component={Link}
                   href="/login"
@@ -386,20 +412,23 @@ export default function Navbar({
                     transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                   }}
                 >
-                  Hubungi Kami
+                  {t('nav_contact_cta', 'Contact Us')}
                 </Button>
               </Stack>
 
-              {/* Mobile Hamburger Button */}
-              <IconButton
-                color="inherit"
-                aria-label="open drawer"
-                edge="end"
-                onClick={toggleDrawer(true)}
-                sx={{ display: { xs: 'flex', md: 'none' }, color: '#018730' }}
-              >
-                <MenuIcon />
-              </IconButton>
+              {/* Mobile Right Controls: Language Switcher & Hamburger */}
+              <Box sx={{ display: { xs: 'flex', md: 'none' }, alignItems: 'center', gap: 1 }}>
+                <LanguageToggle size="small" />
+                <IconButton
+                  color="inherit"
+                  aria-label="open drawer"
+                  edge="end"
+                  onClick={toggleDrawer(true)}
+                  sx={{ color: '#018730' }}
+                >
+                  <MenuIcon />
+                </IconButton>
+              </Box>
             </Toolbar>
           </Container>
         </AppBar>
@@ -425,9 +454,12 @@ export default function Navbar({
       >
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2.5 }}>
           <BrandLogo title={siteTitle} lightText={false} size="small" />
-          <IconButton onClick={toggleDrawer(false)} sx={{ color: '#64748B' }}>
-            <CloseIcon />
-          </IconButton>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <LanguageToggle size="small" />
+            <IconButton onClick={toggleDrawer(false)} sx={{ color: '#64748B' }}>
+              <CloseIcon />
+            </IconButton>
+          </Box>
         </Box>
         <Divider sx={{ borderColor: '#E2E8F0', mb: 2 }} />
 
@@ -459,7 +491,7 @@ export default function Navbar({
                       }}
                     >
                       <Typography sx={{ fontWeight: isParentActive ? 700 : 600, fontSize: '0.95rem' }}>
-                        {item.title}
+                        {getDisplayTitle(item.title)}
                       </Typography>
                       {isExpanded ? <ExpandLess sx={{ color: '#018730' }} /> : <ExpandMore sx={{ color: '#64748B' }} />}
                     </ListItemButton>
@@ -480,7 +512,7 @@ export default function Navbar({
                           }}
                         >
                           <Typography sx={{ fontSize: '0.85rem', fontWeight: 700, color: '#018730' }}>
-                            {`Semua ${item.title} →`}
+                            {language === 'en' ? `All ${getDisplayTitle(item.title)} →` : `Semua ${item.title} →`}
                           </Typography>
                         </ListItemButton>
                       )}
@@ -504,7 +536,7 @@ export default function Navbar({
                             }}
                           >
                             <Typography sx={{ fontSize: '0.875rem', fontWeight: isChildActive ? 700 : 500 }}>
-                              {child.title}
+                              {getDisplayTitle(child.title)}
                             </Typography>
                           </ListItemButton>
                         );
@@ -530,7 +562,7 @@ export default function Navbar({
                   }}
                 >
                   <Typography sx={{ fontWeight: isParentActive ? 700 : 500, fontSize: '0.95rem' }}>
-                    {item.title}
+                    {getDisplayTitle(item.title)}
                   </Typography>
                 </ListItemButton>
               </ListItem>

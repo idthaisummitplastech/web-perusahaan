@@ -6,6 +6,7 @@ import { Box, Container, Typography, Button, IconButton } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import Link from 'next/link';
+import { useLanguage } from '@/lib/LanguageContext';
 
 interface AnnouncementProps {
   announcement?: {
@@ -18,8 +19,19 @@ interface AnnouncementProps {
 
 export default function AnnouncementBanner({ announcement }: AnnouncementProps) {
   const [visible, setVisible] = useState(true);
+  const { language } = useLanguage();
 
   if (!announcement || !visible) return null;
+
+  const displayMessage =
+    language === 'en'
+      ? 'PT Indonesia Thai Summit Plastech — High-Quality Automotive Plastic Component Manufacturing. "Before We Build Parts, We Build People."'
+      : announcement.message;
+
+  const displayBtnText =
+    language === 'en'
+      ? 'Explore Products'
+      : (announcement.btnText || 'Lihat Produk');
 
   return (
     <Box
@@ -56,10 +68,10 @@ export default function AnnouncementBanner({ announcement }: AnnouncementProps) 
             letterSpacing: '0.01em',
           }}
         >
-          {announcement.message}
+          {displayMessage}
         </Typography>
 
-        {announcement.btnText && announcement.btnUrl && (
+        {displayBtnText && announcement.btnUrl && (
           <Button
             component={Link}
             href={announcement.btnUrl}
@@ -82,7 +94,7 @@ export default function AnnouncementBanner({ announcement }: AnnouncementProps) 
               },
             }}
           >
-            {announcement.btnText}
+            {displayBtnText}
           </Button>
         )}
 
@@ -96,7 +108,7 @@ export default function AnnouncementBanner({ announcement }: AnnouncementProps) 
             p: 0.5,
             '&:hover': { color: '#FFFFFF' },
           }}
-          aria-label="Tutup pengumuman"
+          aria-label="Close announcement"
         >
           <CloseIcon sx={{ fontSize: 16 }} />
         </IconButton>

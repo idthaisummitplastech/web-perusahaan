@@ -25,11 +25,11 @@ interface FooterProps {
 }
 
 export default function Footer({
-  siteTitle = 'Thai Summit Group',
-  siteDescription = 'Pemimpin industri manufaktur komponen otomotif dengan komitmen mutu tinggi, inovasi teknologi berkelanjutan, dan kepuasan mitra global.',
-  contactEmail = 'info@thaisummit.co.id',
-  contactPhone = '+62 21 8980 1234',
-  contactAddress = 'Kawasan Industri GIIC Blok AA No. 1, Cikarang Pusat, Bekasi',
+  siteTitle = 'PT Indonesia Thai Summit Plastech',
+  siteDescription = 'Pemimpin industri manufaktur komponen plastik otomotif dengan komitmen mutu tinggi, inovasi teknologi berkelanjutan, dan kepuasan mitra global.',
+  contactEmail = 'info@itsp.co.id',
+  contactPhone = '+62 267 864 1234',
+  contactAddress = 'Jl. Permata Raya Lot FF-5, KIIC Karawang, Jawa Barat 41361, Indonesia',
   footerItems = [],
 }: FooterProps) {
   // Group footer items by section

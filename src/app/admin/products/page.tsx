@@ -37,6 +37,7 @@ import ImageIcon from '@mui/icons-material/Image';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
 import TwoWheelerIcon from '@mui/icons-material/TwoWheeler';
 import ImageUpload from '@/components/admin/ImageUpload';
+import { CmsTableToolbar, CmsTablePagination } from '@/components/admin/CmsTablePagination';
 
 interface Product {
   id: number;
@@ -52,6 +53,9 @@ interface Product {
 export default function AdminProductsPage() {
   const [items, setItems] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Product | null>(null);
   const [activeTab, setActiveTab] = useState<'all' | 'mobil' | 'motor'>('all');
@@ -165,10 +169,18 @@ export default function AdminProductsPage() {
   };
 
   const filteredItems = items.filter((item) => {
-    if (activeTab === 'mobil') return item.category !== 'motor';
-    if (activeTab === 'motor') return item.category === 'motor';
-    return true;
+    if (activeTab === 'mobil' && item.category === 'motor') return false;
+    if (activeTab === 'motor' && item.category !== 'motor') return false;
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase();
+    return (
+      item.title.toLowerCase().includes(q) ||
+      (item.description && item.description.toLowerCase().includes(q)) ||
+      item.slug.toLowerCase().includes(q)
+    );
   });
+
+  const paginatedItems = filteredItems.slice(page * rowsPerPage, (page + 1) * rowsPerPage);
 
   const countMobil = items.filter((i) => i.category !== 'motor').length;
   const countMotor = items.filter((i) => i.category === 'motor').length;
@@ -233,124 +245,142 @@ export default function AdminProductsPage() {
         </Tabs>
       </Paper>
 
-      {/* Products Table */}
       <Paper elevation={0} sx={{ borderRadius: 3, border: '1px solid #E2E8F0', bgcolor: '#FFFFFF', overflow: 'hidden' }}>
+        <CmsTableToolbar
+          searchQuery={searchQuery}
+          onSearchChange={(q) => { setSearchQuery(q); setPage(0); }}
+          placeholder="Cari produk (nama, deskripsi, slug)..."
+          totalCount={items.length}
+          filteredCount={filteredItems.length}
+        />
+
         {loading ? (
           <Box sx={{ p: 6, display: 'flex', justifyContent: 'center' }}>
             <CircularProgress sx={{ color: '#018730' }} />
           </Box>
         ) : (
-          <TableContainer>
-            <Table>
-              <TableHead sx={{ bgcolor: '#F8FAFC' }}>
-                <TableRow>
-                  <TableCell sx={{ fontWeight: 700, width: 80 }}>Foto</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Nama Produk</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Kategori</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Harga / MOQ</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>URL Slug</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
-                  <TableCell align="right" sx={{ fontWeight: 700 }}>Aksi</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {filteredItems.length === 0 ? (
+          <>
+            <TableContainer>
+              <Table>
+                <TableHead sx={{ bgcolor: '#F8FAFC' }}>
                   <TableRow>
-                    <TableCell colSpan={7} align="center" sx={{ py: 6, color: '#64748B' }}>
-                      Tidak ada produk dalam kategori ini.
-                    </TableCell>
+                    <TableCell sx={{ fontWeight: 700, width: 80 }}>Foto</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>Nama Produk</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>Kategori</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>Harga / MOQ</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>URL Slug</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
+                    <TableCell align="right" sx={{ fontWeight: 700 }}>Aksi</TableCell>
                   </TableRow>
-                ) : (
-                  filteredItems.map((item) => (
-                    <TableRow key={item.id} hover>
-                      <TableCell>
-                        {item.image ? (
-                          <Box
-                            sx={{
-                              width: 52,
-                              height: 52,
-                              borderRadius: 2,
-                              overflow: 'hidden',
-                              border: '1px solid #E2E8F0',
-                              bgcolor: '#0B1320',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              p: 0.5,
-                            }}
-                          >
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={item.image} alt={item.title} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-                          </Box>
-                        ) : (
-                          <Box
-                            sx={{
-                              width: 52,
-                              height: 52,
-                              borderRadius: 2,
-                              bgcolor: '#F1F5F9',
-                              color: '#94A3B8',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                            }}
-                          >
-                            <ImageIcon fontSize="small" />
-                          </Box>
-                        )}
-                      </TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: '#0F172A' }}>
-                        <Typography variant="body2" fontWeight={700}>{item.title}</Typography>
-                        {item.description && (
-                          <Typography variant="caption" color="text.secondary" noWrap display="block" sx={{ maxWidth: 360 }}>
-                            {item.description}
-                          </Typography>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          icon={item.category === 'motor' ? <TwoWheelerIcon sx={{ fontSize: '14px !important' }} /> : <DirectionsCarIcon sx={{ fontSize: '14px !important' }} />}
-                          label={item.category === 'motor' ? 'Motor (2W)' : 'Mobil (4W)'}
-                          size="small"
-                          sx={{
-                            bgcolor: item.category === 'motor' ? '#FEF3C7' : '#EFF6FF',
-                            color: item.category === 'motor' ? '#B45309' : '#1D4ED8',
-                            fontWeight: 800,
-                            border: item.category === 'motor' ? '1px solid #FDE68A' : '1px solid #BFDBFE',
-                          }}
-                        />
-                      </TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: '#018730' }}>
-                        {item.price ? `Rp ${Number(item.price).toLocaleString('id-ID')}` : 'Hubungi Kami'}
-                      </TableCell>
-                      <TableCell sx={{ fontFamily: 'monospace', color: '#64748B', fontSize: '0.8rem' }}>
-                        /products/{item.slug}
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          label={item.isActive ? 'Aktif' : 'Nonaktif'}
-                          size="small"
-                          sx={{
-                            bgcolor: item.isActive ? '#e8f6ed' : '#F1F5F9',
-                            color: item.isActive ? '#018730' : '#64748B',
-                            fontWeight: 700,
-                          }}
-                        />
-                      </TableCell>
-                      <TableCell align="right">
-                        <IconButton size="small" sx={{ color: '#018730' }} onClick={() => handleOpenDialog(item)}>
-                          <EditIcon fontSize="small" />
-                        </IconButton>
-                        <IconButton size="small" color="error" onClick={() => handleDelete(item.id)}>
-                          <DeleteIcon fontSize="small" />
-                        </IconButton>
+                </TableHead>
+                <TableBody>
+                  {paginatedItems.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={7} align="center" sx={{ py: 6, color: '#64748B' }}>
+                        {searchQuery ? 'Tidak ada produk yang sesuai dengan kata kunci pencarian.' : 'Tidak ada produk dalam kategori ini.'}
                       </TableCell>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
+                  ) : (
+                    paginatedItems.map((item) => (
+                      <TableRow key={item.id} hover>
+                        <TableCell>
+                          {item.image ? (
+                            <Box
+                              sx={{
+                                width: 52,
+                                height: 52,
+                                borderRadius: 2,
+                                overflow: 'hidden',
+                                border: '1px solid #E2E8F0',
+                                bgcolor: '#0B1320',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                p: 0.5,
+                              }}
+                            >
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img src={item.image} alt={item.title} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                            </Box>
+                          ) : (
+                            <Box
+                              sx={{
+                                width: 52,
+                                height: 52,
+                                borderRadius: 2,
+                                bgcolor: '#F1F5F9',
+                                color: '#94A3B8',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                              }}
+                            >
+                              <ImageIcon fontSize="small" />
+                            </Box>
+                          )}
+                        </TableCell>
+                        <TableCell sx={{ fontWeight: 700, color: '#0F172A' }}>
+                          <Typography variant="body2" fontWeight={700}>{item.title}</Typography>
+                          {item.description && (
+                            <Typography variant="caption" color="text.secondary" noWrap display="block" sx={{ maxWidth: 360 }}>
+                              {item.description}
+                            </Typography>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Chip
+                            icon={item.category === 'motor' ? <TwoWheelerIcon sx={{ fontSize: '14px !important' }} /> : <DirectionsCarIcon sx={{ fontSize: '14px !important' }} />}
+                            label={item.category === 'motor' ? 'Motor (2W)' : 'Mobil (4W)'}
+                            size="small"
+                            sx={{
+                              bgcolor: item.category === 'motor' ? '#FEF3C7' : '#EFF6FF',
+                              color: item.category === 'motor' ? '#B45309' : '#1D4ED8',
+                              fontWeight: 800,
+                              border: item.category === 'motor' ? '1px solid #FDE68A' : '1px solid #BFDBFE',
+                            }}
+                          />
+                        </TableCell>
+                        <TableCell sx={{ fontWeight: 700, color: '#018730' }}>
+                          {item.price ? `Rp ${Number(item.price).toLocaleString('id-ID')}` : 'Hubungi Kami'}
+                        </TableCell>
+                        <TableCell sx={{ fontFamily: 'monospace', color: '#64748B', fontSize: '0.8rem' }}>
+                          /products/{item.slug}
+                        </TableCell>
+                        <TableCell>
+                          <Chip
+                            label={item.isActive ? 'Aktif' : 'Nonaktif'}
+                            size="small"
+                            sx={{
+                              bgcolor: item.isActive ? '#e8f6ed' : '#F1F5F9',
+                              color: item.isActive ? '#018730' : '#64748B',
+                              fontWeight: 700,
+                            }}
+                          />
+                        </TableCell>
+                        <TableCell align="right">
+                          <IconButton size="small" sx={{ color: '#018730' }} onClick={() => handleOpenDialog(item)}>
+                            <EditIcon fontSize="small" />
+                          </IconButton>
+                          <IconButton size="small" color="error" onClick={() => handleDelete(item.id)}>
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+
+            <CmsTablePagination
+              count={filteredItems.length}
+              page={page}
+              rowsPerPage={rowsPerPage}
+              onPageChange={setPage}
+              onRowsPerPageChange={(r) => { setRowsPerPage(r); setPage(0); }}
+              rowsPerPageOptions={[5, 10, 25, 50]}
+            />
+          </>
         )}
       </Paper>
 

@@ -32,6 +32,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import PrecisionManufacturingIcon from '@mui/icons-material/PrecisionManufacturing';
 import ImageUpload from '@/components/admin/ImageUpload';
+import { CmsTableToolbar, CmsTablePagination } from '@/components/admin/CmsTablePagination';
 
 interface Facility {
   id: number;
@@ -57,6 +58,9 @@ const FACILITY_CATEGORIES = [
 export default function AdminFacilitiesPage() {
   const [items, setItems] = useState<Facility[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Facility | null>(null);
   const [formData, setFormData] = useState({
@@ -200,113 +204,178 @@ export default function AdminFacilitiesPage() {
       {error && <Alert severity="error" onClose={() => setError('')} sx={{ mb: 3, borderRadius: 2 }}>{error}</Alert>}
 
       <Paper elevation={0} sx={{ borderRadius: 3, border: '1px solid #E2E8F0', bgcolor: '#FFFFFF', overflow: 'hidden' }}>
+        <CmsTableToolbar
+          searchQuery={searchQuery}
+          onSearchChange={(q) => { setSearchQuery(q); setPage(0); }}
+          placeholder="Cari fasilitas (nama, kategori, spesifikasi)..."
+          totalCount={items.length}
+          filteredCount={items.filter((item) => {
+            if (!searchQuery.trim()) return true;
+            const q = searchQuery.toLowerCase();
+            return (
+              item.title.toLowerCase().includes(q) ||
+              item.category.toLowerCase().includes(q) ||
+              (item.description && item.description.toLowerCase().includes(q)) ||
+              (item.specifications && item.specifications.toLowerCase().includes(q))
+            );
+          }).length}
+        />
+
         {loading ? (
           <Box sx={{ p: 6, display: 'flex', justifyContent: 'center' }}>
             <CircularProgress sx={{ color: '#018730' }} />
           </Box>
         ) : (
-          <TableContainer>
-            <Table>
-              <TableHead sx={{ bgcolor: '#F8FAFC' }}>
-                <TableRow>
-                  <TableCell sx={{ fontWeight: 700, width: 80 }}>Foto</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Nama Fasilitas / Mesin</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Kategori</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Spesifikasi Teknis</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
-                  <TableCell align="right" sx={{ fontWeight: 700 }}>Aksi</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {items.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} sx={{ textAlign: 'center', py: 6, color: 'text.secondary' }}>
-                      Belum ada data fasilitas pabrik. Klik tombol &quot;Tambah Fasilitas Pabrik&quot; di atas untuk menambahkan.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  items.map((item) => (
-                    <TableRow key={item.id} hover>
-                      <TableCell>
-                        {item.image ? (
-                          <Box
-                            sx={{
-                              width: 54,
-                              height: 54,
-                              borderRadius: 2,
-                              overflow: 'hidden',
-                              border: '1px solid #E2E8F0',
-                              bgcolor: '#FFFFFF',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                            }}
-                          >
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={item.image} alt={item.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                          </Box>
-                        ) : (
-                          <Box
-                            sx={{
-                              width: 54,
-                              height: 54,
-                              borderRadius: 2,
-                              bgcolor: '#e8f6ed',
-                              color: '#018730',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                            }}
-                          >
-                            <PrecisionManufacturingIcon fontSize="small" />
-                          </Box>
-                        )}
-                      </TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: '#0F172A' }}>
-                        <Typography variant="body2" fontWeight={700}>{item.title}</Typography>
-                        {item.description && (
-                          <Typography variant="caption" color="text.secondary" noWrap display="block" sx={{ maxWidth: 320 }}>
-                            {item.description}
-                          </Typography>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          label={item.category}
-                          size="small"
-                          sx={{ bgcolor: '#F0FDF4', color: '#166534', border: '1px solid #BBF7D0', fontWeight: 600, fontSize: '0.75rem' }}
-                        />
-                      </TableCell>
-                      <TableCell sx={{ color: '#475569', fontSize: '0.8125rem' }}>
-                        <Typography variant="caption" sx={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                          {item.specifications || '-'}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          label={item.isActive ? 'Aktif' : 'Nonaktif'}
-                          size="small"
-                          sx={{
-                            bgcolor: item.isActive ? '#e8f6ed' : '#F1F5F9',
-                            color: item.isActive ? '#018730' : '#64748B',
-                            fontWeight: 700,
-                          }}
-                        />
-                      </TableCell>
-                      <TableCell align="right">
-                        <IconButton size="small" sx={{ color: '#018730' }} onClick={() => handleOpenDialog(item)}>
-                          <EditIcon fontSize="small" />
-                        </IconButton>
-                        <IconButton size="small" color="error" onClick={() => handleDelete(item.id)}>
-                          <DeleteIcon fontSize="small" />
-                        </IconButton>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
+          (() => {
+            const filteredItems = items.filter((item) => {
+              if (!searchQuery.trim()) return true;
+              const q = searchQuery.toLowerCase();
+              return (
+                item.title.toLowerCase().includes(q) ||
+                item.category.toLowerCase().includes(q) ||
+                (item.description && item.description.toLowerCase().includes(q)) ||
+                (item.specifications && item.specifications.toLowerCase().includes(q))
+              );
+            });
+            const paginatedItems = filteredItems.slice(page * rowsPerPage, (page + 1) * rowsPerPage);
+
+            return (
+              <>
+                <TableContainer>
+                  <Table>
+                    <TableHead sx={{ bgcolor: '#F8FAFC' }}>
+                      <TableRow>
+                        <TableCell sx={{ fontWeight: 700, width: 80 }}>Foto</TableCell>
+                        <TableCell sx={{ fontWeight: 700 }}>Nama Fasilitas / Mesin</TableCell>
+                        <TableCell sx={{ fontWeight: 700 }}>Kategori</TableCell>
+                        <TableCell sx={{ fontWeight: 700 }}>Spesifikasi Teknis</TableCell>
+                        <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
+                        <TableCell align="right" sx={{ fontWeight: 700 }}>Aksi</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {paginatedItems.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={6} sx={{ textAlign: 'center', py: 6, color: 'text.secondary' }}>
+                            {searchQuery ? 'Tidak ada fasilitas pabrik yang sesuai dengan kata kunci pencarian.' : 'Belum ada data fasilitas pabrik.'}
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        paginatedItems.map((item) => (
+                          <TableRow key={item.id} hover>
+                            <TableCell>
+                              {item.image ? (
+                                <Box
+                                  sx={{
+                                    width: 54,
+                                    height: 54,
+                                    borderRadius: 2,
+                                    overflow: 'hidden',
+                                    border: '1px solid #E2E8F0',
+                                    bgcolor: '#FFFFFF',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                  }}
+                                >
+                                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                                  <img
+                                    src={item.image}
+                                    alt={item.title}
+                                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                  />
+                                </Box>
+                              ) : (
+                                <Box
+                                  sx={{
+                                    width: 54,
+                                    height: 54,
+                                    borderRadius: 2,
+                                    bgcolor: '#F1F5F9',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    color: '#94A3B8',
+                                  }}
+                                >
+                                  <PrecisionManufacturingIcon />
+                                </Box>
+                              )}
+                            </TableCell>
+                            <TableCell sx={{ fontWeight: 700, color: '#0F172A' }}>
+                              <Typography variant="body2" fontWeight={700}>
+                                {item.title}
+                              </Typography>
+                              {item.description && (
+                                <Typography
+                                  variant="caption"
+                                  color="text.secondary"
+                                  sx={{
+                                    display: '-webkit-box',
+                                    WebkitLineClamp: 2,
+                                    WebkitBoxOrient: 'vertical',
+                                    overflow: 'hidden',
+                                    mt: 0.5,
+                                  }}
+                                >
+                                  {item.description}
+                                </Typography>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <Chip
+                                label={item.category}
+                                size="small"
+                                sx={{
+                                  bgcolor: '#E0F2FE',
+                                  color: '#0369A1',
+                                  fontWeight: 700,
+                                  border: '1px solid #BAE6FD',
+                                }}
+                              />
+                            </TableCell>
+                            <TableCell sx={{ color: '#475569', fontSize: '0.8125rem' }}>
+                              <Typography variant="caption" sx={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                                {item.specifications || '-'}
+                              </Typography>
+                            </TableCell>
+                            <TableCell>
+                              <Chip
+                                label={item.isActive ? 'Aktif' : 'Nonaktif'}
+                                size="small"
+                                sx={{
+                                  bgcolor: item.isActive ? '#e8f6ed' : '#F1F5F9',
+                                  color: item.isActive ? '#018730' : '#64748B',
+                                  fontWeight: 700,
+                                }}
+                              />
+                            </TableCell>
+                            <TableCell align="right">
+                              <IconButton size="small" sx={{ color: '#018730' }} onClick={() => handleOpenDialog(item)}>
+                                <EditIcon fontSize="small" />
+                              </IconButton>
+                              <IconButton size="small" color="error" onClick={() => handleDelete(item.id)}>
+                                <DeleteIcon fontSize="small" />
+                              </IconButton>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+
+                <CmsTablePagination
+                  count={filteredItems.length}
+                  page={page}
+                  rowsPerPage={rowsPerPage}
+                  onPageChange={setPage}
+                  onRowsPerPageChange={(r) => { setRowsPerPage(r); setPage(0); }}
+                  rowsPerPageOptions={[5, 10, 25, 50]}
+                />
+              </>
+            );
+          })()
         )}
       </Paper>
 

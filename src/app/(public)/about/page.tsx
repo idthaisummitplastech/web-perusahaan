@@ -24,7 +24,7 @@ import ShieldIcon from '@mui/icons-material/Shield';
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
-  title: 'Profil Perusahaan, Fasilitas Pabrik & Sertifikasi ISO | Thai Summit Group',
+  title: 'Profil Perusahaan, Fasilitas Pabrik & Sertifikasi ISO | PT Indonesia Thai Summit Plastech',
   description: 'Mengenal kapabilitas fasilitas pabrik manufaktur otomotif, mesin stamping press tonase tinggi, sel pengelasan robotik, serta sertifikasi IATF 16949 dan ISO.',
 };
 
