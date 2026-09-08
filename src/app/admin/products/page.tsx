@@ -182,9 +182,6 @@ export default function AdminProductsPage() {
 
   const paginatedItems = filteredItems.slice(page * rowsPerPage, (page + 1) * rowsPerPage);
 
-  const countMobil = items.filter((i) => i.category !== 'motor').length;
-  const countMotor = items.filter((i) => i.category === 'motor').length;
-
   return (
     <Box>
       <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
@@ -229,17 +226,17 @@ export default function AdminProductsPage() {
             '& .Mui-selected': { color: '#018730 !important', fontWeight: 800 },
           }}
         >
-          <Tab label={`Semua Komponen (${items.length})`} value="all" />
+          <Tab label="Semua Komponen" value="all" />
           <Tab
             icon={<DirectionsCarIcon sx={{ fontSize: 18 }} />}
             iconPosition="start"
-            label={`Mobil / 4-Wheeler (${countMobil})`}
+            label="Mobil / 4-Wheeler"
             value="mobil"
           />
           <Tab
             icon={<TwoWheelerIcon sx={{ fontSize: 18 }} />}
             iconPosition="start"
-            label={`Sepeda Motor / 2-Wheeler (${countMotor})`}
+            label="Sepeda Motor / 2-Wheeler"
             value="motor"
           />
         </Tabs>
