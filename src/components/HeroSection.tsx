@@ -169,7 +169,7 @@ export default function HeroSection({
         >
           <Button
             component={Link}
-            href={primaryBtnUrl}
+            href={primaryBtnUrl || '/products'}
             variant="contained"
             size="large"
             endIcon={<ArrowForwardIcon />}
@@ -195,7 +195,7 @@ export default function HeroSection({
 
           <Button
             component={Link}
-            href={secondaryBtnUrl}
+            href={secondaryBtnUrl || '/about'}
             variant="outlined"
             size="large"
             sx={{
