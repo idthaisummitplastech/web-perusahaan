@@ -1,5 +1,5 @@
 import * as React from 'react';
-import prisma from '@/lib/prisma';
+import { cmsApi } from '@/lib/api-client';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import AnnouncementBanner from '@/components/AnnouncementBanner';
@@ -12,33 +12,34 @@ export default async function PublicLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // 1. Fetch Announcement
-  const announcement = await prisma.announcement.findFirst({
-    where: { isActive: true },
-    orderBy: { id: 'desc' },
-  });
+  // 1. Fetch Announcement via Python Backend
+  const announcements = await cmsApi.getItems('announcements').catch(() => []);
+  const announcement = announcements.find((a: any) => a.is_active ?? a.isActive) || null;
 
-  // 2. Fetch Nav Menus (Top-level items with active children for dropdowns)
-  const navMenus = await prisma.navMenu.findMany({
-    where: { location: 'navbar', isActive: true, parentId: null },
-    include: {
-      children: {
-        where: { isActive: true },
-        orderBy: { sortOrder: 'asc' },
-      },
-    },
-    orderBy: { sortOrder: 'asc' },
-  });
+  // 2. Fetch Nav Menus via Python Backend
+  const allNavMenus = await cmsApi.getItems('nav-menus').catch(() => []);
+  const activeMenus = allNavMenus.filter((m: any) => m.is_active ?? m.isActive);
+
+  // Top-level navbar items with active children
+  const navMenus = activeMenus
+    .filter((m: any) => m.location === 'navbar' && !m.parent_id && !m.parentId)
+    .sort((a: any, b: any) => (a.sort_order ?? a.sortOrder ?? 0) - (b.sort_order ?? b.sortOrder ?? 0))
+    .map((parent: any) => ({
+      ...parent,
+      sortOrder: parent.sort_order ?? parent.sortOrder ?? 0,
+      children: activeMenus
+        .filter((c: any) => (c.parent_id ?? c.parentId) === parent.id)
+        .sort((a: any, b: any) => (a.sort_order ?? a.sortOrder ?? 0) - (b.sort_order ?? b.sortOrder ?? 0)),
+    }));
 
   // 3. Fetch Footer Menus
-  const footerMenus = await prisma.navMenu.findMany({
-    where: { location: 'footer', isActive: true },
-    orderBy: { sortOrder: 'asc' },
-  });
+  const footerMenus = activeMenus
+    .filter((m: any) => m.location === 'footer')
+    .sort((a: any, b: any) => (a.sort_order ?? a.sortOrder ?? 0) - (b.sort_order ?? b.sortOrder ?? 0));
 
-  // 4. Fetch Site Settings
-  const settingsRows = await prisma.siteSetting.findMany();
-  const settings = settingsRows.reduce((acc, row) => {
+  // 4. Fetch Site Settings via Python Backend
+  const settingsRows = await cmsApi.getItems('settings').catch(() => []);
+  const settings = (settingsRows || []).reduce((acc: any, row: any) => {
     acc[row.key] = row.value;
     return acc;
   }, {} as Record<string, string>);

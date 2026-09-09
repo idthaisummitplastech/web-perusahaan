@@ -1,6 +1,6 @@
 import * as React from 'react';
 import Link from 'next/link';
-import prisma from '@/lib/prisma';
+import { cmsApi } from '@/lib/api-client';
 import { Box, Container, Grid, Typography, Card, Button, Chip, Stack } from '@mui/material';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
@@ -9,10 +9,9 @@ import PersonOutlineIcon from '@mui/icons-material/PersonOutlined';
 export const dynamic = 'force-dynamic';
 
 export default async function BlogPage() {
-  const posts = await prisma.blogPost.findMany({
-    where: { isPublished: true },
-    orderBy: { publishedAt: 'desc' },
-  });
+  const rawPosts = await cmsApi.getItems<any>('blog-posts').catch(() => []);
+  const posts = rawPosts.filter((p: any) => (p.isPublished ?? p.is_published) !== false);
+
 
   return (
     <Box sx={{ py: { xs: 8, md: 10 }, bgcolor: '#F8FAFC' }}>

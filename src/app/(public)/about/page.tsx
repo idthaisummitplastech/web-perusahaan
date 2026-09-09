@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { Metadata } from 'next';
 import Link from 'next/link';
-import prisma from '@/lib/prisma';
+import { cmsApi } from '@/lib/api-client';
 import {
   Box,
   Container,
@@ -29,12 +29,18 @@ export const metadata: Metadata = {
 };
 
 export default async function AboutPage() {
-  const [certifications, facilities, stats, partners] = await Promise.all([
-    prisma.certification.findMany({ where: { isActive: true }, orderBy: { sortOrder: 'asc' } }),
-    prisma.facility.findMany({ where: { isActive: true }, orderBy: { sortOrder: 'asc' } }),
-    prisma.statistic.findMany({ where: { isActive: true }, orderBy: { sortOrder: 'asc' } }),
-    prisma.partner.findMany({ where: { isActive: true }, orderBy: { sortOrder: 'asc' } }),
+  const [rawCertifications = [], rawFacilities = [], rawStats = [], rawPartners = []] = await Promise.all([
+    cmsApi.getItems<any>('certifications').catch(() => []),
+    cmsApi.getItems<any>('facilities').catch(() => []),
+    cmsApi.getItems<any>('statistics').catch(() => []),
+    cmsApi.getItems<any>('partners').catch(() => []),
   ]);
+
+  const certifications = rawCertifications.filter((c: any) => (c.isActive ?? c.is_active) !== false);
+  const facilities = rawFacilities.filter((f: any) => (f.isActive ?? f.is_active) !== false);
+  const stats = rawStats.filter((s: any) => (s.isActive ?? s.is_active) !== false);
+  const partners = rawPartners.filter((p: any) => (p.isActive ?? p.is_active) !== false);
+
 
   return (
     <Box>

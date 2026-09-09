@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
+import { fetchFromBackend } from '@/lib/api-client';
+
+const SECRET_KEY = process.env.BACKEND_INTERNAL_SECRET || 'pt-itsp-recruitment-ats-enterprise-jwt-secret-key-2026';
 
 export async function POST(req: Request) {
   const user = await getCurrentUser();
@@ -16,21 +18,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Data urutan menu harus berupa array.' }, { status: 400 });
     }
 
-    // Update sortOrder (and optional parentId) for each item in a transaction
-    await prisma.$transaction(
-      items.map((item: { id: number; sortOrder: number; parentId?: number | null }) => {
-        const data: any = { sortOrder: item.sortOrder };
-        if (item.parentId !== undefined) {
-          data.parentId = item.parentId;
-        }
-        return prisma.navMenu.update({
-          where: { id: parseInt(String(item.id)) },
-          data,
-        });
-      })
-    );
+    const res = await fetchFromBackend('/cms/nav-menus/reorder', {
+      method: 'POST',
+      headers: { 'X-Internal-Secret': SECRET_KEY },
+      body: JSON.stringify(items),
+    });
 
-    return NextResponse.json({ success: true, message: 'Urutan menu berhasil diperbarui.' });
+    return NextResponse.json({ success: true, message: 'Urutan menu berhasil diperbarui.', data: res });
   } catch (error: any) {
     console.error('Error POST /api/cms/nav-menus/reorder:', error);
     return NextResponse.json({ error: error.message || 'Gagal memperbarui urutan menu.' }, { status: 500 });

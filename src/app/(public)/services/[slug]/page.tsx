@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import prisma from '@/lib/prisma';
+import { cmsApi } from '@/lib/api-client';
 import { Box, Container, Typography, Button, Paper, Stack, Chip, Divider } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -14,13 +14,13 @@ export default async function ServiceDetailPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const service = await prisma.service.findUnique({
-    where: { slug },
-  });
+  const rawServices = await cmsApi.getItems<any>('services').catch(() => []);
+  const service = rawServices.find((s: any) => s.slug === slug);
 
-  if (!service || !service.isActive) {
+  if (!service || (service.isActive ?? service.is_active) === false) {
     notFound();
   }
+
 
   return (
     <Box sx={{ py: { xs: 8, md: 12 }, bgcolor: '#F8FAFC' }}>

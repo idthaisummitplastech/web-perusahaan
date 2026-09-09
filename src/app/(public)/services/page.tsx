@@ -1,16 +1,15 @@
 import * as React from 'react';
 import Link from 'next/link';
-import prisma from '@/lib/prisma';
+import { cmsApi } from '@/lib/api-client';
 import { Box, Container, Grid, Typography, Card, Button, Chip } from '@mui/material';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 
 export const dynamic = 'force-dynamic';
 
 export default async function ServicesPage() {
-  const services = await prisma.service.findMany({
-    where: { isActive: true },
-    orderBy: { sortOrder: 'asc' },
-  });
+  const rawServices = await cmsApi.getItems<any>('services').catch(() => []);
+  const services = rawServices.filter((s: any) => (s.isActive ?? s.is_active) !== false);
+
 
   return (
     <Box sx={{ py: { xs: 8, md: 10 }, bgcolor: '#F8FAFC' }}>

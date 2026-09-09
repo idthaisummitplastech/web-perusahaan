@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
+import { cmsApi } from '@/lib/api-client';
 
 export async function POST(req: Request) {
   try {
@@ -12,13 +12,11 @@ export async function POST(req: Request) {
       );
     }
 
-    const submission = await prisma.contactSubmission.create({
-      data: {
-        name: name.trim(),
-        email: email.trim().toLowerCase(),
-        subject: subject?.trim() || 'Pertanyaan Umum',
-        message: message.trim(),
-      },
+    const submission = await cmsApi.submitContact({
+      name: name.trim(),
+      email: email.trim().toLowerCase(),
+      subject: subject?.trim() || 'Pertanyaan Umum',
+      message: message.trim(),
     });
 
     return NextResponse.json({

@@ -1,5 +1,5 @@
 import * as React from 'react';
-import prisma from '@/lib/prisma';
+import { cmsApi } from '@/lib/api-client';
 import { Box, Container } from '@mui/material';
 import CertificateGridClient from './CertificateGridClient';
 
@@ -11,10 +11,9 @@ export const metadata = {
 };
 
 export default async function CertificationsPage() {
-  const certifications = await prisma.certification.findMany({
-    where: { isActive: true },
-    orderBy: { sortOrder: 'asc' },
-  });
+  const rawCertifications = await cmsApi.getItems<any>('certifications').catch(() => []);
+  const certifications = rawCertifications.filter((c: any) => (c.isActive ?? c.is_active) !== false);
+
 
   return (
     <Box sx={{ py: { xs: 8, md: 10 }, bgcolor: '#F8FAFC' }}>

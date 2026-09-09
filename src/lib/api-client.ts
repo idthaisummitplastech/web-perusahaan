@@ -1,0 +1,117 @@
+/**
+ * Central Enterprise API Client for PT Indonesia Thai Summit Plastech (Company Profile)
+ * Routes all data access to Python FastAPI Backend (Zero Direct DB Touch)
+ */
+
+const FALLBACK_BACKEND_URL = 'http://localhost:8000';
+const INTERNAL_SECRET_FALLBACK = 'pt-itsp-recruitment-ats-enterprise-jwt-secret-key-2026';
+
+/**
+ * Normalise backend base URL:
+ * - trim whitespace, remove trailing slashes
+ * - always ensure single `/api/v1` suffix (no double prefix)
+ */
+function getBackendBase(): string {
+  const raw = (process.env.BACKEND_API_URL || FALLBACK_BACKEND_URL).trim().replace(/\/+$/, '');
+  return raw.endsWith('/api/v1') ? raw : `${raw}/api/v1`;
+}
+
+/** Build full backend URL consistently (handles trailing slash + optional /api/v1 prefix). */
+export function buildBackendUrl(endpoint: string): string {
+  const base = getBackendBase();
+  const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+  const path = cleanEndpoint.startsWith('/api/v1') ? cleanEndpoint.slice('/api/v1'.length) : cleanEndpoint;
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  return `${base}${normalizedPath}`;
+}
+
+// Always normalised (no trailing slash, includes /api/v1).
+export const BACKEND_API_URL = getBackendBase();
+
+// Recursively ensures both camelCase and snake_case properties are available
+function dualCaseObject(obj: any): any {
+  if (Array.isArray(obj)) {
+    return obj.map(dualCaseObject);
+  }
+  if (obj !== null && typeof obj === 'object' && obj.constructor === Object) {
+    const result: any = {};
+    for (const key of Object.keys(obj)) {
+      const val = dualCaseObject(obj[key]);
+      result[key] = val;
+
+      // Convert snake_case to camelCase
+      if (key.includes('_')) {
+        const camelKey = key.replace(/_([a-z0-9])/g, (_, l) => l.toUpperCase());
+        result[camelKey] = val;
+      }
+      // Convert camelCase to snake_case
+      const snakeKey = key.replace(/([A-Z])/g, '_$1').toLowerCase();
+      if (snakeKey !== key) {
+        result[snakeKey] = val;
+      }
+    }
+    return result;
+  }
+  return obj;
+}
+
+export async function fetchFromBackend<T = any>(
+  endpoint: string,
+  options?: RequestInit
+): Promise<T> {
+  const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+  const url = buildBackendUrl(cleanEndpoint);
+
+  try {
+    const internalSecret = process.env.BACKEND_INTERNAL_SECRET || INTERNAL_SECRET_FALLBACK;
+    const res = await fetch(url, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Internal-Secret': internalSecret,
+        ...options?.headers,
+      },
+      cache: 'no-store',
+    });
+
+    if (!res.ok) {
+      const errorJson = await res.json().catch(() => ({}));
+      throw new Error(errorJson.detail || errorJson.message || `Backend API error (HTTP ${res.status})`);
+    }
+
+    const json = await res.json();
+    const data = json.data !== undefined ? json.data : json;
+    return dualCaseObject(data) as T;
+  } catch (err: any) {
+    console.error(`[API-CLIENT ERROR] ${cleanEndpoint}:`, err.message);
+    throw err;
+  }
+}
+
+export const cmsApi = {
+  getItems: <T = any>(model: string) => fetchFromBackend<T[]>(`/cms/${model}`),
+  getItem: <T = any>(model: string, id: number | string) => fetchFromBackend<T>(`/cms/${model}/${id}`),
+  createItem: <T = any>(model: string, data: any, token?: string) =>
+    fetchFromBackend<T>(`/cms/${model}`, {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: JSON.stringify(data),
+    }),
+  updateItem: <T = any>(model: string, id: number | string, data: any, token?: string) =>
+    fetchFromBackend<T>(`/cms/${model}/${id}`, {
+      method: 'PUT',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: JSON.stringify(data),
+    }),
+  deleteItem: (model: string, id: number | string, token?: string) =>
+    fetchFromBackend(`/cms/${model}/${id}`, {
+      method: 'DELETE',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    }),
+  submitContact: (data: any) =>
+    fetchFromBackend('/cms/contact-us', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+};
+

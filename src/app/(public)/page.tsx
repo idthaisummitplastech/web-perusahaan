@@ -1,6 +1,6 @@
 import * as React from 'react';
 import Link from 'next/link';
-import prisma from '@/lib/prisma';
+import { cmsApi } from '@/lib/api-client';
 import HeroSection from '@/components/HeroSection';
 import {
   Box,
@@ -36,18 +36,41 @@ function getFeatureIcon(iconName: string | null) {
 }
 
 export default async function HomePage() {
-  const [hero, partners, features, services, products, stats, testimonials, faqs, certifications, facilities] = await Promise.all([
-    prisma.heroSection.findFirst({ where: { page: 'home', isActive: true } }),
-    prisma.partner.findMany({ where: { isActive: true }, orderBy: { sortOrder: 'asc' } }),
-    prisma.feature.findMany({ where: { isActive: true }, orderBy: { sortOrder: 'asc' } }),
-    prisma.service.findMany({ where: { isActive: true }, orderBy: { sortOrder: 'asc' }, take: 4 }),
-    prisma.product.findMany({ where: { isActive: true }, orderBy: { id: 'asc' }, take: 3 }),
-    prisma.statistic.findMany({ where: { isActive: true }, orderBy: { sortOrder: 'asc' } }),
-    prisma.testimonial.findMany({ where: { isActive: true }, take: 3 }),
-    prisma.faq.findMany({ where: { isActive: true }, orderBy: { sortOrder: 'asc' } }),
-    prisma.certification.findMany({ where: { isActive: true }, orderBy: { sortOrder: 'asc' }, take: 4 }),
-    prisma.facility.findMany({ where: { isActive: true }, orderBy: { sortOrder: 'asc' }, take: 4 }),
+  const [
+    heroSections = [],
+    rawPartners = [],
+    rawFeatures = [],
+    rawServices = [],
+    rawProducts = [],
+    rawStats = [],
+    rawTestimonials = [],
+    rawFaqs = [],
+    rawCertifications = [],
+    rawFacilities = [],
+  ] = await Promise.all([
+    cmsApi.getItems<any>('hero-sections').catch(() => []),
+    cmsApi.getItems<any>('partners').catch(() => []),
+    cmsApi.getItems<any>('features').catch(() => []),
+    cmsApi.getItems<any>('services').catch(() => []),
+    cmsApi.getItems<any>('products').catch(() => []),
+    cmsApi.getItems<any>('statistics').catch(() => []),
+    cmsApi.getItems<any>('testimonials').catch(() => []),
+    cmsApi.getItems<any>('faqs').catch(() => []),
+    cmsApi.getItems<any>('certifications').catch(() => []),
+    cmsApi.getItems<any>('facilities').catch(() => []),
   ]);
+
+  const hero = heroSections.find((h: any) => h.page === 'home' && (h.isActive ?? h.is_active ?? true)) || heroSections[0];
+  const partners = rawPartners.filter((p: any) => (p.isActive ?? p.is_active) !== false);
+  const features = rawFeatures.filter((f: any) => (f.isActive ?? f.is_active) !== false);
+  const services = rawServices.filter((s: any) => (s.isActive ?? s.is_active) !== false).slice(0, 4);
+  const products = rawProducts.filter((p: any) => (p.isActive ?? p.is_active) !== false).slice(0, 3);
+  const stats = rawStats.filter((st: any) => (st.isActive ?? st.is_active) !== false);
+  const testimonials = rawTestimonials.filter((t: any) => (t.isActive ?? t.is_active) !== false).slice(0, 3);
+  const faqs = rawFaqs.filter((fq: any) => (fq.isActive ?? fq.is_active) !== false);
+  const certifications = rawCertifications.filter((c: any) => (c.isActive ?? c.is_active) !== false).slice(0, 4);
+  const facilities = rawFacilities.filter((fc: any) => (fc.isActive ?? fc.is_active) !== false).slice(0, 4);
+
 
   return (
     <Box>

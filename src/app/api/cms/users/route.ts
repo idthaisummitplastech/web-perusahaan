@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
-import bcrypt from 'bcryptjs';
 import { getCurrentUser } from '@/lib/auth';
-import { generateMfaSetup, generateBackupCodes } from '@/lib/mfa';
+import { fetchFromBackend } from '@/lib/api-client';
 
 // GET /api/cms/users - Ambil daftar semua pengguna CMS
 export async function GET() {
@@ -11,7 +9,6 @@ export async function GET() {
     return NextResponse.json({ error: 'Tidak memiliki hak akses.' }, { status: 401 });
   }
 
-  // Hanya admin yang dapat melihat daftar pengguna
   if (currentUser.role !== 'admin') {
     return NextResponse.json(
       { error: 'Akses ditolak. Fitur ini hanya untuk Administrator.' },
@@ -20,20 +17,7 @@ export async function GET() {
   }
 
   try {
-    const users = await prisma.user.findMany({
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true,
-        mfaEnabled: true,
-        backupCodes: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-      orderBy: { id: 'asc' },
-    });
-
+    const users = await fetchFromBackend('/cms/users');
     return NextResponse.json(users);
   } catch (error: any) {
     console.error('Error GET /api/cms/users:', error);
@@ -73,51 +57,15 @@ export async function POST(req: Request) {
       );
     }
 
-    const normalizedEmail = email.toLowerCase().trim();
-    const existing = await prisma.user.findUnique({
-      where: { email: normalizedEmail },
-    });
-
-    if (existing) {
-      return NextResponse.json(
-        { error: 'Email sudah terdaftar. Gunakan email lain.' },
-        { status: 400 }
-      );
-    }
-
-    const validRole = ['admin', 'marketing', 'editor', 'hr', 'user_dept'].includes(role) ? role : 'marketing';
-    const currentYear = new Date().getFullYear();
-    const finalPassword = password && password.trim().length >= 6 ? password.trim() : `Itsp@${currentYear}`;
-    const hashedPassword = await bcrypt.hash(finalPassword, 12);
-
-    const isMfa = Boolean(mfaEnabled);
-    let mfaSecret = null;
-    let backupCodes = null;
-    if (isMfa) {
-      const setup = await generateMfaSetup(normalizedEmail);
-      mfaSecret = setup.secret;
-      backupCodes = JSON.stringify(generateBackupCodes(8));
-    }
-
-    const newUser = await prisma.user.create({
-      data: {
+    const newUser = await fetchFromBackend('/cms/users', {
+      method: 'POST',
+      body: JSON.stringify({
         name: name.trim(),
-        email: normalizedEmail,
-        password: hashedPassword,
-        role: validRole,
-        mfaEnabled: isMfa,
-        mfaSecret,
-        backupCodes,
-      },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true,
-        mfaEnabled: true,
-        backupCodes: true,
-        createdAt: true,
-      },
+        email: email.toLowerCase().trim(),
+        password,
+        role: role || 'marketing',
+        mfa_enabled: Boolean(mfaEnabled),
+      }),
     });
 
     return NextResponse.json({ success: true, user: newUser });
@@ -149,109 +97,19 @@ export async function PUT(req: Request) {
       return NextResponse.json({ error: 'ID pengguna wajib disertakan.' }, { status: 400 });
     }
 
-    const targetUser = await prisma.user.findUnique({ where: { id: parseInt(id) } });
-    if (!targetUser) {
-      return NextResponse.json({ error: 'Pengguna tidak ditemukan.' }, { status: 404 });
+    const payload: any = {};
+    if (name) payload.name = name.trim();
+    if (email) payload.email = email.toLowerCase().trim();
+    if (role) payload.role = role;
+    if (typeof mfaEnabled === 'boolean') payload.mfa_enabled = mfaEnabled;
+    if (newPassword && newPassword.trim().length >= 6) {
+      payload.password = newPassword.trim();
     }
 
-    const updateData: any = {};
-    if (name) updateData.name = name.trim();
-
-    if (email && typeof email === 'string') {
-      const normalizedEmail = email.toLowerCase().trim();
-      if (normalizedEmail !== targetUser.email.toLowerCase().trim()) {
-        if (!normalizedEmail.includes('@') || normalizedEmail.length < 5) {
-          return NextResponse.json({ error: 'Format alamat email tidak valid.' }, { status: 400 });
-        }
-        const existing = await prisma.user.findUnique({
-          where: { email: normalizedEmail },
-        });
-        if (existing && existing.id !== targetUser.id) {
-          return NextResponse.json(
-            { error: 'Alamat email ini sudah terdaftar untuk akun lain. Gunakan email berbeda.' },
-            { status: 400 }
-          );
-        }
-        updateData.email = normalizedEmail;
-      }
-    }
-
-    if (role && ['admin', 'marketing', 'editor', 'hr', 'user_dept'].includes(role)) {
-      // Cegah admin mengubah rolenya sendiri jika hanya tersisa 1 admin
-      if (targetUser.id === currentUser.id && role !== 'admin') {
-        return NextResponse.json(
-          { error: 'Anda tidak dapat mencabut hak Administrator dari akun Anda sendiri.' },
-          { status: 400 }
-        );
-      }
-      updateData.role = role;
-    }
-
-    if (typeof mfaEnabled === 'boolean') {
-      updateData.mfaEnabled = mfaEnabled;
-      if (mfaEnabled && (!targetUser.mfaSecret || !targetUser.backupCodes)) {
-        const setup = await generateMfaSetup(updateData.email || targetUser.email);
-        updateData.mfaSecret = setup.secret;
-        updateData.backupCodes = JSON.stringify(generateBackupCodes(8));
-      }
-    }
-
-    if (regenerateBackupCodes) {
-      updateData.backupCodes = JSON.stringify(generateBackupCodes(8));
-      updateData.mfaEnabled = true;
-    }
-
-    if (newPassword && newPassword.trim().length > 0) {
-      if (newPassword.length < 6) {
-        return NextResponse.json(
-          { error: 'Kata sandi baru minimal 6 karakter.' },
-          { status: 400 }
-        );
-      }
-      updateData.password = await bcrypt.hash(newPassword, 12);
-    }
-
-    const updated = await prisma.user.update({
-      where: { id: parseInt(id) },
-      data: updateData,
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true,
-        mfaEnabled: true,
-        backupCodes: true,
-        updatedAt: true,
-      },
+    const updated = await fetchFromBackend(`/cms/users/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
     });
-
-    // Sinkronisasi update ke database rekrutmen ATS jika akun terdaftar di sana
-    try {
-      const karirPrisma = new (await import('@prisma/client')).PrismaClient({
-        datasources: {
-          db: {
-            url: process.env.KARIR_DATABASE_URL || 'postgresql://sydit:syditsp@localhost:5432/web_karir?schema=public',
-          },
-        },
-      });
-      await karirPrisma.$queryRawUnsafe(
-        'UPDATE recruitment_admins SET email = $1, name = $2, role = $3, updated_at = NOW() WHERE email = $4',
-        updated.email,
-        updated.name,
-        updated.role,
-        targetUser.email
-      );
-      if (updateData.password) {
-        await karirPrisma.$queryRawUnsafe(
-          'UPDATE recruitment_admins SET password = $1 WHERE email = $2',
-          updateData.password,
-          updated.email
-        );
-      }
-      await karirPrisma.$disconnect();
-    } catch {
-      // Sinkronisasi bersifat best-effort jika tabel ATS ada
-    }
 
     return NextResponse.json({ success: true, user: updated });
   } catch (error: any) {
@@ -289,7 +147,10 @@ export async function DELETE(req: Request) {
       );
     }
 
-    await prisma.user.delete({ where: { id } });
+    await fetchFromBackend(`/cms/users/${id}`, {
+      method: 'DELETE',
+    });
+
     return NextResponse.json({ success: true });
   } catch (error: any) {
     console.error('Error DELETE /api/cms/users:', error);

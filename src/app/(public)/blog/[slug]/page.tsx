@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import prisma from '@/lib/prisma';
+import { cmsApi } from '@/lib/api-client';
 import { Box, Container, Typography, Button, Paper, Stack, Chip, Divider } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
@@ -15,13 +15,13 @@ export default async function BlogPostDetailPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const post = await prisma.blogPost.findUnique({
-    where: { slug },
-  });
+  const rawPosts = await cmsApi.getItems<any>('blog-posts').catch(() => []);
+  const post = rawPosts.find((p: any) => p.slug === slug);
 
-  if (!post || !post.isPublished) {
+  if (!post || (post.isPublished ?? post.is_published) === false) {
     notFound();
   }
+
 
   return (
     <Box sx={{ py: { xs: 8, md: 12 }, bgcolor: '#F8FAFC' }}>

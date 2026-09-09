@@ -1,6 +1,6 @@
 import * as React from 'react';
 import Link from 'next/link';
-import prisma from '@/lib/prisma';
+import { cmsApi } from '@/lib/api-client';
 import { Box, Container, Grid, Typography, Card, Chip, Button } from '@mui/material';
 import PrecisionManufacturingIcon from '@mui/icons-material/PrecisionManufacturing';
 import VerifiedIcon from '@mui/icons-material/Verified';
@@ -14,10 +14,9 @@ export const metadata = {
 };
 
 export default async function FacilitiesPage() {
-  const facilities = await prisma.facility.findMany({
-    where: { isActive: true },
-    orderBy: { sortOrder: 'asc' },
-  });
+  const rawFacilities = await cmsApi.getItems<any>('facilities').catch(() => []);
+  const facilities = rawFacilities.filter((f: any) => (f.isActive ?? f.is_active) !== false);
+
 
   return (
     <Box sx={{ py: { xs: 8, md: 10 }, bgcolor: '#F8FAFC' }}>

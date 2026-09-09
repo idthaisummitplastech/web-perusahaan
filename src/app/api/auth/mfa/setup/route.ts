@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
 import {
   getTempUser,
   getCurrentUser,
@@ -8,6 +7,7 @@ import {
   TEMP_COOKIE_NAME,
 } from '@/lib/auth';
 import { generateMfaSetup, verifyMfaToken, generateBackupCodes, getCurrentTotp } from '@/lib/mfa';
+import { fetchFromBackend } from '@/lib/api-client';
 
 export async function GET() {
   try {
@@ -23,18 +23,16 @@ export async function GET() {
       );
     }
 
-    const user = await prisma.user.findUnique({
-      where: { id: targetUser.id },
-    });
+    const user = await fetchFromBackend(`/auth/cms-mfa/${targetUser.id}`);
 
     // Reuse existing secret so QR code remains 100% stable across re-renders
-    let secret = user?.mfaSecret;
+    let secret = user?.mfaSecret || user?.mfa_secret;
     if (!secret) {
       const setup = await generateMfaSetup(targetUser.email);
       secret = setup.secret;
-      await prisma.user.update({
-        where: { id: targetUser.id },
-        data: { mfaSecret: secret },
+      await fetchFromBackend(`/auth/cms-mfa/${targetUser.id}/save-secret`, {
+        method: 'PUT',
+        body: JSON.stringify({ secret }),
       });
     }
 
@@ -84,24 +82,18 @@ export async function POST(req: Request) {
       );
     }
 
-    const user = await prisma.user.findUnique({
-      where: { id: targetUserId },
-    });
-
-    if (!user) {
-      return NextResponse.json({ error: 'Pengguna tidak ditemukan.' }, { status: 404 });
-    }
-
     const backupCodes = generateBackupCodes(8);
 
-    await prisma.user.update({
-      where: { id: user.id },
-      data: {
-        mfaEnabled: true,
-        mfaSecret: secret,
-        backupCodes: JSON.stringify(backupCodes),
-      },
+    const activateRes = await fetchFromBackend('/auth/cms-mfa/activate', {
+      method: 'POST',
+      body: JSON.stringify({
+        user_id: targetUserId,
+        secret,
+        backup_codes: backupCodes,
+      }),
     });
+
+    const user = activateRes.user;
 
     const sessionToken = await signSessionToken({
       id: user.id,

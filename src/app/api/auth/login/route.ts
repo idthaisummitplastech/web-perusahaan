@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
-import bcrypt from 'bcryptjs';
-import prisma from '@/lib/prisma';
+import { fetchFromBackend } from '@/lib/api-client';
 import { signTempToken, TEMP_COOKIE_NAME } from '@/lib/auth';
 
 export async function POST(req: Request) {
@@ -14,27 +13,24 @@ export async function POST(req: Request) {
       );
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: email.toLowerCase().trim() },
-    });
-
-    if (!user) {
+    let authResult: any;
+    try {
+      authResult = await fetchFromBackend('/auth/cms-login', {
+        method: 'POST',
+        body: JSON.stringify({ email: email.toLowerCase().trim(), password }),
+      });
+    } catch (err: any) {
       return NextResponse.json(
-        { error: 'Email atau password salah.' },
+        { error: err.message || 'Email atau password salah.' },
         { status: 401 }
       );
     }
 
-    const passwordMatch = await bcrypt.compare(password, user.password);
-    if (!passwordMatch) {
-      return NextResponse.json(
-        { error: 'Email atau password salah.' },
-        { status: 401 }
-      );
-    }
+    const { user, requires_mfa } = authResult;
+    const isMfaEnabled = requires_mfa ?? user.mfa_enabled ?? user.mfaEnabled;
 
-    if (!user.mfaEnabled) {
-      // Login langsung jika pengguna belum mengaktifkan MFA
+    if (!isMfaEnabled) {
+      // Direct login if MFA is not enabled
       const { signSessionToken, COOKIE_NAME } = await import('@/lib/auth');
       const sessionToken = await signSessionToken({
         id: user.id,

@@ -1,6 +1,6 @@
 import * as React from 'react';
 import Link from 'next/link';
-import prisma from '@/lib/prisma';
+import { cmsApi } from '@/lib/api-client';
 import { Box, Container, Grid, Typography, Card, Button, Stack, Paper } from '@mui/material';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import PrecisionManufacturingIcon from '@mui/icons-material/PrecisionManufacturing';
@@ -19,24 +19,20 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
   const resolvedParams = searchParams ? await searchParams : {};
   const currentCategory = resolvedParams.category?.toLowerCase() || 'all';
 
-  // Build where condition based on category
-  const whereCondition: any = { isActive: true };
+  const rawProducts = await cmsApi.getItems<any>('products').catch(() => []);
+  const activeProducts = rawProducts.filter((p: any) => (p.isActive ?? p.is_active) !== false);
+
+  const totalCount = activeProducts.length;
+  const mobilCount = activeProducts.filter((p: any) => (p.category || '').toLowerCase() === 'mobil').length;
+  const motorCount = activeProducts.filter((p: any) => (p.category || '').toLowerCase() === 'motor').length;
+
+  let products = activeProducts;
   if (currentCategory === 'mobil') {
-    whereCondition.category = 'mobil';
+    products = activeProducts.filter((p: any) => (p.category || '').toLowerCase() === 'mobil');
   } else if (currentCategory === 'motor') {
-    whereCondition.category = 'motor';
+    products = activeProducts.filter((p: any) => (p.category || '').toLowerCase() === 'motor');
   }
 
-  // Fetch counts & products in parallel
-  const [products, totalCount, mobilCount, motorCount] = await Promise.all([
-    prisma.product.findMany({
-      where: whereCondition,
-      orderBy: { id: 'asc' },
-    }),
-    prisma.product.count({ where: { isActive: true } }),
-    prisma.product.count({ where: { isActive: true, category: 'mobil' } }),
-    prisma.product.count({ where: { isActive: true, category: 'motor' } }),
-  ]);
 
   const tabs = [
     {

@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import prisma from '@/lib/prisma';
+import { cmsApi } from '@/lib/api-client';
 import { Box, Container, Typography, Button, Paper, Stack, Grid, Chip, Divider } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -17,13 +17,13 @@ export default async function ProductDetailPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const product = await prisma.product.findUnique({
-    where: { slug },
-  });
+  const rawProducts = await cmsApi.getItems<any>('products').catch(() => []);
+  const product = rawProducts.find((p: any) => p.slug === slug);
 
-  if (!product || !product.isActive) {
+  if (!product || (product.isActive ?? product.is_active) === false) {
     notFound();
   }
+
 
   return (
     <Box sx={{ py: { xs: 6, md: 10 }, bgcolor: '#F8FAFC' }}>
