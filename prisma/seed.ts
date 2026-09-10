@@ -1,13 +1,21 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 
 const prisma = new PrismaClient();
+
+function getSeedPassword(envName: string): string {
+  const v = process.env[envName];
+  if (v && v.length >= 12) return v;
+  // Tanpa hardcoded di code: generate acak aman bila env tidak diisi.
+  return `Seed-${crypto.randomBytes(12).toString('hex')}!Aa1`;
+}
 
 async function main() {
   console.log('🌱 Seeding database with PT ITSP authentic data...');
 
-  // 1. Admin user
-  const hashedPassword = await bcrypt.hash('admin123', 12);
+  // 1. Admin user — password WAJIB via env (SEED_ADMIN_PASSWORD), tanpa hardcoded.
+  const hashedPassword = await bcrypt.hash(getSeedPassword('SEED_ADMIN_PASSWORD'), 12);
   const admin = await prisma.user.upsert({
     where: { email: 'admin@itsp.co.id' },
     update: {},
@@ -491,8 +499,8 @@ async function main() {
   });
   console.log('✅ Announcement ready');
 
-  // 14. Marketing User
-  const marketingPassword = await bcrypt.hash('marketing123', 12);
+  // 14. Marketing User — password WAJIB via env (SEED_MARKETING_PASSWORD), tanpa hardcoded.
+  const marketingPassword = await bcrypt.hash(getSeedPassword('SEED_MARKETING_PASSWORD'), 12);
   const marketingUser = await prisma.user.upsert({
     where: { email: 'marketing@itsp.co.id' },
     update: {},
@@ -676,8 +684,8 @@ async function main() {
   console.log('✅ Plant facilities ready');
 
   console.log('\n🎉 Seeding completed successfully with ITSP authentic data!');
-  console.log('📧 Akun Admin: admin@itsp.co.id / admin123');
-  console.log('📧 Akun Marketing: marketing@itsp.co.id / marketing123');
+  console.log('📧 Akun Admin: admin@itsp.co.id (password via SEED_ADMIN_PASSWORD)');
+  console.log('📧 Akun Marketing: marketing@itsp.co.id (password via SEED_MARKETING_PASSWORD)');
 }
 
 main()

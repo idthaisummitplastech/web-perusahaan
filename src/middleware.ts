@@ -2,9 +2,13 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { jwtVerify } from 'jose';
 
-const SECRET_KEY = new TextEncoder().encode(
-  process.env.NEXTAUTH_SECRET || 'super-secret-key-portal-cms-enterprise-2025'
-);
+function getSecretKey(): Uint8Array {
+  const secret = process.env.NEXTAUTH_SECRET;
+  if (!secret || secret.length < 32) {
+    throw new Error('NEXTAUTH_SECRET belum diisi via env (min 32 karakter). Isi file .env - lihat .env.example.');
+  }
+  return new TextEncoder().encode(secret);
+}
 
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
@@ -15,7 +19,7 @@ export async function middleware(request: NextRequest) {
   let userRole = '';
   if (sessionCookie) {
     try {
-      const { payload } = await jwtVerify(sessionCookie, SECRET_KEY);
+      const { payload } = await jwtVerify(sessionCookie, getSecretKey());
       if (payload && payload.mfaVerified) {
         isAuthenticated = true;
         userRole = (payload as any)?.role || '';

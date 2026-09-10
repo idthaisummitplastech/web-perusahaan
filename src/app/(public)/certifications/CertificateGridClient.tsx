@@ -288,10 +288,12 @@ export default function CertificateGridClient({ certifications }: Props) {
         onClose={() => setSelectedCert(null)}
         maxWidth="md"
         fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: 3.5,
-            overflow: 'hidden',
+        slotProps={{
+          paper: {
+            sx: {
+              borderRadius: 3.5,
+              overflow: 'hidden',
+            },
           },
         }}
       >

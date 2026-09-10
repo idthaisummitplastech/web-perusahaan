@@ -2,7 +2,11 @@ import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { fetchFromBackend } from '@/lib/api-client';
 
-const SECRET_KEY = process.env.BACKEND_INTERNAL_SECRET || 'pt-itsp-recruitment-ats-enterprise-jwt-secret-key-2026';
+function getInternalSecret(): string {
+  const s = process.env.BACKEND_INTERNAL_SECRET;
+  if (!s) throw new Error('BACKEND_INTERNAL_SECRET belum diisi via env. Isi file .env - lihat .env.example.');
+  return s;
+}
 
 export async function POST(req: Request) {
   const user = await getCurrentUser();
@@ -20,7 +24,7 @@ export async function POST(req: Request) {
 
     const res = await fetchFromBackend('/cms/nav-menus/reorder', {
       method: 'POST',
-      headers: { 'X-Internal-Secret': SECRET_KEY },
+      headers: { 'X-Internal-Secret': getInternalSecret() },
       body: JSON.stringify(items),
     });
 

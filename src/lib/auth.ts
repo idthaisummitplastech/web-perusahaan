@@ -1,9 +1,13 @@
 import { SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
 
-const SECRET_KEY = new TextEncoder().encode(
-  process.env.NEXTAUTH_SECRET || 'super-secret-key-portal-cms-enterprise-2025'
-);
+function getSecretKey(): Uint8Array {
+  const secret = process.env.NEXTAUTH_SECRET;
+  if (!secret || secret.length < 32) {
+    throw new Error('NEXTAUTH_SECRET belum diisi via env (min 32 karakter). Isi file .env - lihat .env.example. Dilarang fallback hardcoded di code.');
+  }
+  return new TextEncoder().encode(secret);
+}
 
 export const COOKIE_NAME = 'cms_session';
 export const TEMP_COOKIE_NAME = 'cms_temp_mfa';
@@ -27,7 +31,7 @@ export async function signSessionToken(payload: UserSessionPayload): Promise<str
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setExpirationTime('7d')
-    .sign(SECRET_KEY);
+    .sign(getSecretKey());
 }
 
 export async function signTempToken(payload: TempMfaPayload): Promise<string> {
@@ -35,12 +39,12 @@ export async function signTempToken(payload: TempMfaPayload): Promise<string> {
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setExpirationTime('15m')
-    .sign(SECRET_KEY);
+    .sign(getSecretKey());
 }
 
 export async function verifyToken<T>(token: string): Promise<T | null> {
   try {
-    const { payload } = await jwtVerify(token, SECRET_KEY);
+    const { payload } = await jwtVerify(token, getSecretKey());
     return payload as unknown as T;
   } catch (error) {
     return null;

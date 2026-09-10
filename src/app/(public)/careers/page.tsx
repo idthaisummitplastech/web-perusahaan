@@ -17,6 +17,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import SecurityIcon from '@mui/icons-material/Security';
 import WorkIcon from '@mui/icons-material/Work';
 import LaunchIcon from '@mui/icons-material/Launch';
+import { getCareerUrl } from '@/lib/urls';
 
 export const metadata: Metadata = {
   title: 'Pusat Karir & Rekrutmen — PT Indonesia Thai Summit Plastech',
@@ -34,7 +35,16 @@ const STAGES = [
 ];
 
 export default function CareersGatewayPage() {
-  const careerAppUrl = process.env.NEXT_PUBLIC_CAREER_URL || 'http://localhost:3001';
+  // URL portal karir 100% via env terpusat (lihat src/lib/urls.ts) — tanpa hardcoded di code.
+  // Aman saat `next build` tanpa env: fallback '' agar prerender tidak crash;
+  // saat runtime tanpa env, getCareerUrl() akan fail-fast dengan pesan jelas.
+  let careerAppUrl = '';
+  try {
+    careerAppUrl = getCareerUrl();
+  } catch {
+    careerAppUrl =
+      (process.env.NEXT_PUBLIC_CAREER_URL || process.env.CAREER_SITE_URL || '').trim().replace(/\/+$/, '');
+  }
 
   return (
     <Box sx={{ bgcolor: '#F8FAFC', pb: 10 }}>

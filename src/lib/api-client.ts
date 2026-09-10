@@ -1,19 +1,29 @@
 /**
  * Central Enterprise API Client for PT Indonesia Thai Summit Plastech (Company Profile)
  * Routes all data access to Python FastAPI Backend (Zero Direct DB Touch)
+ * URL 100% via env (lihat src/lib/urls.ts) — tanpa hardcoded localhost/domain.
  */
+import { getBackendBaseUrl } from './urls';
 
-const FALLBACK_BACKEND_URL = 'http://localhost:8000';
-const INTERNAL_SECRET_FALLBACK = 'pt-itsp-recruitment-ats-enterprise-jwt-secret-key-2026';
+function getInternalSecret(): string {
+  const s = process.env.BACKEND_INTERNAL_SECRET;
+  if (!s) throw new Error('BACKEND_INTERNAL_SECRET belum diisi via env. Isi file .env - lihat .env.example.');
+  return s;
+}
 
 /**
- * Normalise backend base URL:
+ * Normalise backend base URL (100% via env):
  * - trim whitespace, remove trailing slashes
  * - always ensure single `/api/v1` suffix (no double prefix)
+ * Ganti backend cukup via env BACKEND_API_URL — tanpa ubah code.
  */
 function getBackendBase(): string {
-  const raw = (process.env.BACKEND_API_URL || FALLBACK_BACKEND_URL).trim().replace(/\/+$/, '');
-  return raw.endsWith('/api/v1') ? raw : `${raw}/api/v1`;
+  return getBackendBaseUrl();
+}
+
+/** Lazy getter (fail-fast via env, tanpa evaluasi saat import). */
+export function getBackendApiUrl(): string {
+  return getBackendBase();
 }
 
 /** Build full backend URL consistently (handles trailing slash + optional /api/v1 prefix). */
@@ -25,8 +35,8 @@ export function buildBackendUrl(endpoint: string): string {
   return `${base}${normalizedPath}`;
 }
 
-// Always normalised (no trailing slash, includes /api/v1).
-export const BACKEND_API_URL = getBackendBase();
+// Selalu ternormalisasi (tanpa trailing slash, termasuk /api/v1) — lazy via getter.
+// Gunakan getBackendApiUrl() agar `next build` tanpa env tidak crash saat import.
 
 // Recursively ensures both camelCase and snake_case properties are available
 function dualCaseObject(obj: any): any {
@@ -63,7 +73,7 @@ export async function fetchFromBackend<T = any>(
   const url = buildBackendUrl(cleanEndpoint);
 
   try {
-    const internalSecret = process.env.BACKEND_INTERNAL_SECRET || INTERNAL_SECRET_FALLBACK;
+    const internalSecret = getInternalSecret();
     const res = await fetch(url, {
       ...options,
       headers: {

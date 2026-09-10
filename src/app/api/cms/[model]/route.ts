@@ -2,7 +2,11 @@ import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { fetchFromBackend } from '@/lib/api-client';
 
-const SECRET_KEY = process.env.BACKEND_INTERNAL_SECRET || 'pt-itsp-recruitment-ats-enterprise-jwt-secret-key-2026';
+function getInternalSecret(): string {
+  const s = process.env.BACKEND_INTERNAL_SECRET;
+  if (!s) throw new Error('BACKEND_INTERNAL_SECRET belum diisi via env. Isi file .env - lihat .env.example.');
+  return s;
+}
 
 export async function GET(
   req: Request,
@@ -16,7 +20,7 @@ export async function GET(
   const { model } = await params;
   try {
     const items = await fetchFromBackend(`/cms/${model}`, {
-      headers: { 'X-Internal-Secret': SECRET_KEY },
+      headers: { 'X-Internal-Secret': getInternalSecret() },
     });
     return NextResponse.json(items);
   } catch (error: any) {
@@ -38,7 +42,7 @@ export async function POST(
     const data = await req.json();
     const created = await fetchFromBackend(`/cms/${model}`, {
       method: 'POST',
-      headers: { 'X-Internal-Secret': SECRET_KEY },
+      headers: { 'X-Internal-Secret': getInternalSecret() },
       body: JSON.stringify(data),
     });
     return NextResponse.json(created);
@@ -62,7 +66,7 @@ export async function PUT(
     const id = data.id || (model === 'settings' ? 0 : null);
     const updated = await fetchFromBackend(`/cms/${model}/${id ?? ''}`, {
       method: 'PUT',
-      headers: { 'X-Internal-Secret': SECRET_KEY },
+      headers: { 'X-Internal-Secret': getInternalSecret() },
       body: JSON.stringify(data),
     });
     return NextResponse.json(updated);
@@ -86,7 +90,7 @@ export async function DELETE(
     const id = searchParams.get('id');
     await fetchFromBackend(`/cms/${model}/${id}`, {
       method: 'DELETE',
-      headers: { 'X-Internal-Secret': SECRET_KEY },
+      headers: { 'X-Internal-Secret': getInternalSecret() },
     });
     return NextResponse.json({ success: true });
   } catch (error: any) {
