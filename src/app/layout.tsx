@@ -11,12 +11,25 @@ const jakarta = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_COMPANY_URL ||
+      process.env.COMPANY_SITE_URL ||
+      process.env.NEXTAUTH_URL ||
+      'https://thaisummitplastech.co.id',
+  ),
   title: {
     default: 'PT Indonesia Thai Summit Plastech — Automotive Plastic Injection & Interior Assembly',
     template: '%s | PT ITSP',
   },
   description: 'PT Indonesia Thai Summit Plastech (ITSP) — Manufaktur komponen plastik otomotif berkualitas tinggi. Plastic Injection Molding, Spray Painting & Interior Assembly untuk Mitsubishi, Hyundai, Toyota, Suzuki, Wuling.',
   keywords: ['PT ITSP', 'Indonesia Thai Summit Plastech', 'plastic injection molding', 'automotive parts', 'instrument panel', 'dashboard mobil', 'door trim', 'bumper', 'Karawang', 'Cikarang', 'Thai Summit Group'],
+  alternates: { canonical: '/' },
+  openGraph: {
+    type: 'website',
+    locale: 'id_ID',
+    siteName: 'PT Indonesia Thai Summit Plastech',
+  },
+  robots: { index: true, follow: true },
 };
 
 export default function RootLayout({
