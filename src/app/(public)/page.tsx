@@ -25,6 +25,7 @@ import LayersIcon from '@mui/icons-material/Layers';
 import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
 import PrecisionManufacturingIcon from '@mui/icons-material/PrecisionManufacturing';
 import VerifiedIcon from '@mui/icons-material/Verified';
+import ZoomableCertImage from '@/components/ZoomableCertImage';
 
 export const dynamic = 'force-dynamic';
 
@@ -708,21 +709,32 @@ export default async function HomePage() {
                     }}
                   >
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
-                      <Box
-                        sx={{
-                          width: 48,
-                          height: 48,
-                          borderRadius: 2.5,
-                          bgcolor: '#e8f6ed',
-                          color: '#018730',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          flexShrink: 0,
-                        }}
-                      >
-                        <WorkspacePremiumIcon />
-                      </Box>
+                      {cert.image ? (
+                        <ZoomableCertImage
+                          image={cert.image}
+                          title={cert.title}
+                          issuer={cert.issuer}
+                          certificateNumber={cert.certificateNumber ?? cert.certificate_number ?? null}
+                          description={cert.description}
+                          borderColor="#E2E8F0"
+                        />
+                      ) : (
+                        <Box
+                          sx={{
+                            width: 48,
+                            height: 48,
+                            borderRadius: 2.5,
+                            bgcolor: '#e8f6ed',
+                            color: '#018730',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexShrink: 0,
+                          }}
+                        >
+                          <WorkspacePremiumIcon />
+                        </Box>
+                      )}
                       <Box>
                         <Typography variant="subtitle1" fontWeight={900} color="#0F172A" sx={{ lineHeight: 1.2 }}>
                           {cert.title}

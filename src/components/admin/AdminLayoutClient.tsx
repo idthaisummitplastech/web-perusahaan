@@ -36,6 +36,7 @@ import StarIcon from '@mui/icons-material/Star';
 import MiscellaneousServicesIcon from '@mui/icons-material/MiscellaneousServices';
 import Inventory2Icon from '@mui/icons-material/Inventory2';
 import ArticleIcon from '@mui/icons-material/Article';
+import ReportIcon from '@mui/icons-material/Assessment';
 import FormatQuoteIcon from '@mui/icons-material/FormatQuote';
 import QuizIcon from '@mui/icons-material/Quiz';
 import BarChartIcon from '@mui/icons-material/BarChart';
@@ -69,6 +70,7 @@ const MENU_ITEMS: MenuItemConfig[] = [
   { key: 'menu_facilities', defaultText: 'Plant Facilities', href: '/admin/facilities', icon: <PrecisionManufacturingIcon /> },
   { key: 'menu_services', defaultText: 'Services', href: '/admin/services', icon: <MiscellaneousServicesIcon /> },
   { key: 'menu_blog', defaultText: 'Blog Articles', href: '/admin/blog-posts', icon: <ArticleIcon /> },
+  { key: 'menu_reports', defaultText: 'Sustainability Reports', href: '/admin/sustainability-reports', icon: <ReportIcon /> },
   { key: 'menu_hero', defaultText: 'Hero Banners', href: '/admin/hero-sections', icon: <ViewCarouselIcon /> },
   { key: 'menu_announcements', defaultText: 'Announcements', href: '/admin/announcements', icon: <CampaignIcon /> },
   { key: 'menu_features', defaultText: 'Key Features', href: '/admin/features', icon: <StarIcon /> },

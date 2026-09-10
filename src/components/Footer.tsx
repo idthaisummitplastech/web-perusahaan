@@ -196,6 +196,7 @@ export default function Footer({
                 <Stack spacing={1.75}>
                   <Link href="/services" style={{ color: '#94A3B8', textDecoration: 'none', fontSize: '0.875rem' }}>Layanan</Link>
                   <Link href="/products" style={{ color: '#94A3B8', textDecoration: 'none', fontSize: '0.875rem' }}>Produk</Link>
+                  <Link href="/news" style={{ color: '#94A3B8', textDecoration: 'none', fontSize: '0.875rem' }}>News & Sustainability</Link>
                   <Link href="/blog" style={{ color: '#94A3B8', textDecoration: 'none', fontSize: '0.875rem' }}>Artikel & Berita</Link>
                 </Stack>
               </Grid>

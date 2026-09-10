@@ -53,9 +53,10 @@ export default function Navbar({
     { id: 1, title: 'Beranda', url: '/' },
     { id: 2, title: 'Produk', url: '/products' },
     { id: 3, title: 'Layanan', url: '/services' },
-    { id: 4, title: 'Blog', url: '/blog' },
-    { id: 5, title: 'Kontak', url: '/contact' },
-    { id: 6, title: 'Karir', url: '/careers' },
+    { id: 4, title: 'News', url: '/news' },
+    { id: 5, title: 'Blog', url: '/blog' },
+    { id: 6, title: 'Kontak', url: '/contact' },
+    { id: 7, title: 'Karir', url: '/careers' },
   ],
 }: NavbarProps) {
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -73,6 +74,7 @@ export default function Navbar({
       'sertifikasi': 'Certifications',
       'fasilitas': 'Facilities',
       'tentang kami': 'About Us',
+      'news': 'News',
       'berita': 'News & Media',
       'berita & artikel': 'News & Articles',
       'artikel': 'Articles',

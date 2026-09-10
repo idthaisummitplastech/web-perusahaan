@@ -19,11 +19,12 @@ export default async function CertificationsPage() {
     <Box sx={{ py: { xs: 8, md: 10 }, bgcolor: '#F8FAFC' }}>
       <Container maxWidth="lg">
         <CertificateGridClient
-          certifications={certifications.map((c) => ({
+          certifications={certifications.map((c: any) => ({
             ...c,
-            issuedDate: c.issuedDate ? c.issuedDate.toISOString() : null,
-            expiryDate: c.expiryDate ? c.expiryDate.toISOString() : null,
+            issuedDate: c.issuedDate ?? c.issued_date ?? null,
+            expiryDate: c.expiryDate ?? c.expiry_date ?? null,
           }))}
+
         />
       </Container>
     </Box>

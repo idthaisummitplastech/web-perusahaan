@@ -20,6 +20,7 @@ import FactoryIcon from '@mui/icons-material/Factory';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import ShieldIcon from '@mui/icons-material/Shield';
+import ZoomableCertImage from '@/components/ZoomableCertImage';
 
 export const dynamic = 'force-dynamic';
 
@@ -362,22 +363,33 @@ export default async function AboutPage() {
                     }}
                   >
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
-                      <Box
-                        sx={{
-                          width: 48,
-                          height: 48,
-                          borderRadius: 2.5,
-                          bgcolor: '#FFFFFF',
-                          color: '#018730',
-                          border: '1px solid #cbead5',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          flexShrink: 0,
-                        }}
-                      >
-                        <ShieldIcon />
-                      </Box>
+                      {cert.image ? (
+                        <ZoomableCertImage
+                          image={cert.image}
+                          title={cert.title}
+                          issuer={cert.issuer}
+                          certificateNumber={cert.certificateNumber ?? cert.certificate_number ?? null}
+                          description={cert.description}
+                          borderColor="#cbead5"
+                        />
+                      ) : (
+                        <Box
+                          sx={{
+                            width: 48,
+                            height: 48,
+                            borderRadius: 2.5,
+                            bgcolor: '#FFFFFF',
+                            color: '#018730',
+                            border: '1px solid #cbead5',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexShrink: 0,
+                          }}
+                        >
+                          <ShieldIcon />
+                        </Box>
+                      )}
                       <Box>
                         <Typography variant="subtitle1" fontWeight={900} color="#0F172A" sx={{ lineHeight: 1.2 }}>
                           {cert.title}

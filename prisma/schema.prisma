@@ -239,3 +239,24 @@ model Facility {
 
   @@map("facilities")
 }
+
+model SustainabilityReport {
+  id               Int      @id @default(autoincrement())
+  title            String
+  category         String   @default("general")
+  categoryTitleEn  String?  @map("category_title_en")
+  categoryTitleId  String?  @map("category_title_id")
+  categoryDescEn   String?  @map("category_desc_en") @db.Text
+  categoryDescId   String?  @map("category_desc_id") @db.Text
+  categoryBadge    String?  @map("category_badge")
+  fileUrl          String   @map("file_url")
+  fileType         String   @default("PDF") @map("file_type")
+  fileSize         String?  @map("file_size")
+  tag              String?
+  sortOrder        Int      @default(0) @map("sort_order")
+  isActive         Boolean  @default(true) @map("is_active")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  @@map("sustainability_reports")
+}

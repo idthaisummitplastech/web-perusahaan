@@ -62,7 +62,8 @@ async function main() {
     { title: 'Produk', url: '/products', location: 'navbar', sortOrder: 3 },
     { title: 'Fasilitas', url: '/facilities', location: 'navbar', sortOrder: 4 },
     { title: 'Sertifikasi', url: '/certifications', location: 'navbar', sortOrder: 5 },
-    { title: 'Kontak', url: '/contact', location: 'navbar', sortOrder: 6 },
+    { title: 'News', url: '/news', location: 'navbar', sortOrder: 6 },
+    { title: 'Kontak', url: '/contact', location: 'navbar', sortOrder: 7 },
     // Footer menus
     { title: 'Tentang ITSP', url: '/about', location: 'footer', section: 'Perusahaan', sortOrder: 1 },
     { title: 'Produk Kami', url: '/products', location: 'footer', section: 'Perusahaan', sortOrder: 2 },

@@ -13,6 +13,7 @@ export default async function AdminDashboardPage() {
       facilityCount: 0,
       serviceCount: 0,
       blogCount: 0,
+      reportCount: 0,
       contactCount: 0,
       unreadContacts: 0,
       userCount: 0,
@@ -28,6 +29,7 @@ export default async function AdminDashboardPage() {
       contactCount={stats.contactCount ?? stats.contact_count ?? 0}
       unreadContacts={stats.unreadContacts ?? stats.unread_contacts ?? 0}
       blogCount={stats.blogCount ?? stats.blog_count ?? 0}
+      reportCount={stats.reportCount ?? stats.report_count ?? 0}
       userCount={stats.userCount ?? stats.user_count ?? 0}
       recentContacts={(stats.recentContacts ?? stats.recent_contacts ?? []).map((c: any) => ({
         id: c.id,

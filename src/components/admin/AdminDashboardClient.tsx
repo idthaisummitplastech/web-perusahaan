@@ -24,6 +24,7 @@ import MailIcon from '@mui/icons-material/Mail';
 import SettingsIcon from '@mui/icons-material/Settings';
 import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
 import PrecisionManufacturingIcon from '@mui/icons-material/PrecisionManufacturing';
+import ReportIcon from '@mui/icons-material/Assessment';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import ShieldIcon from '@mui/icons-material/Shield';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
@@ -45,6 +46,7 @@ interface Props {
   contactCount: number;
   unreadContacts: number;
   blogCount: number;
+  reportCount: number;
   userCount: number;
   recentContacts: RecentContactItem[];
 }
@@ -56,6 +58,7 @@ export default function AdminDashboardClient({
   contactCount,
   unreadContacts,
   blogCount,
+  reportCount,
   userCount,
   recentContacts,
 }: Props) {
@@ -102,6 +105,14 @@ export default function AdminDashboardClient({
       href: '/admin/blog-posts',
       color: '#7C3AED',
       bg: '#EDE9FE',
+    },
+    {
+      title: t('admin_stat_reports', 'Sustainability Reports'),
+      count: reportCount,
+      icon: <ReportIcon sx={{ fontSize: 28 }} />,
+      href: '/admin/sustainability-reports',
+      color: '#018730',
+      bg: '#e8f6ed',
     },
     {
       title: t('admin_stat_users', 'CMS Users'),

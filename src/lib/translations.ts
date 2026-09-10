@@ -92,6 +92,7 @@ export interface Translations {
   admin_stat_inbox: string;
   admin_stat_new: string;
   admin_stat_blog: string;
+  admin_stat_reports: string;
   admin_stat_users: string;
 
   // Admin Menus
@@ -101,6 +102,7 @@ export interface Translations {
   menu_facilities: string;
   menu_services: string;
   menu_blog: string;
+  menu_reports: string;
   menu_hero: string;
   menu_announcements: string;
   menu_features: string;
@@ -219,6 +221,7 @@ export const translations: Record<Language, Translations> = {
     admin_stat_inbox: 'Inbox Messages',
     admin_stat_new: 'New',
     admin_stat_blog: 'Blog Articles',
+    admin_stat_reports: 'Sustainability Reports',
     admin_stat_users: 'CMS Users',
 
     // Admin Menus
@@ -228,6 +231,7 @@ export const translations: Record<Language, Translations> = {
     menu_facilities: 'Plant Facilities',
     menu_services: 'Services',
     menu_blog: 'Blog Articles',
+    menu_reports: 'Sustainability Reports',
     menu_hero: 'Hero Banners',
     menu_announcements: 'Announcements',
     menu_features: 'Key Features',
@@ -344,6 +348,7 @@ export const translations: Record<Language, Translations> = {
     admin_stat_inbox: 'Pesan Masuk',
     admin_stat_new: 'Baru',
     admin_stat_blog: 'Artikel Blog',
+    admin_stat_reports: 'Laporan Sustainability',
     admin_stat_users: 'Pengguna CMS',
 
     // Admin Menus
@@ -353,6 +358,7 @@ export const translations: Record<Language, Translations> = {
     menu_facilities: 'Fasilitas Pabrik',
     menu_services: 'Layanan',
     menu_blog: 'Artikel Blog',
+    menu_reports: 'Laporan Sustainability',
     menu_hero: 'Hero Sections',
     menu_announcements: 'Pengumuman',
     menu_features: 'Fitur Utama',
