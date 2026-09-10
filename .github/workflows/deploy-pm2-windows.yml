@@ -1,0 +1,41 @@
+name: Deploy web-perusahaan to D PM2
+
+# FULL OTOMATIS: push ke main -> server D:\itsp-perusahaan langsung update (:3008).
+# Butuh 1x pasang GitHub Self-Hosted Runner Windows di server (lihat PANDUAN_DEPLOY_D_PM2.md S8b).
+# .env.production di D:\itsp-perusahaan AMAN (di-ignore git, tidak tertimpa reset).
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-itsp-perusahaan
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Pull + build + pm2 restart :3008
+    runs-on: self-hosted
+    defaults:
+      run:
+        shell: powershell
+    steps:
+      - name: Update D:\itsp-perusahaan dari GitHub
+        run: |
+          $ErrorActionPreference = "Stop"
+          Set-Location D:\itsp-perusahaan
+          git fetch origin main
+          git reset --hard origin/main
+          npm ci --legacy-peer-deps
+          npm run build
+          pm2 restart itsp-perusahaan
+          pm2 save
+          pm2 list
+
+      - name: Health check :3008
+        run: |
+          $ErrorActionPreference = "Stop"
+          Start-Sleep -Seconds 10
+          Invoke-WebRequest http://localhost:3008/ -UseBasicParsing | Select-Object StatusCode | Out-String | Write-Host
+          Invoke-WebRequest http://localhost:3008/sitemap.xml -UseBasicParsing | Select-Object StatusCode | Out-String | Write-Host
