@@ -1,7 +1,8 @@
 name: Deploy web-perusahaan to D PM2
 
 # FULL OTOMATIS: push ke main -> server D:\itsp-perusahaan langsung update (:3008).
-# Butuh 1x pasang GitHub Self-Hosted Runner Windows di server (lihat PANDUAN_DEPLOY_D_PM2.md S8b).
+# Syarat 1x di server (terakhir sentuh): runner jalan sebagai Administrator + pm2 global.
+# Setelah itu: tidak perlu RDP lagi, cukup git push.
 # .env.production di D:\itsp-perusahaan AMAN (di-ignore git, tidak tertimpa reset).
 
 on:
@@ -24,23 +25,19 @@ jobs:
       - name: Update D:\itsp-perusahaan dari GitHub
         run: |
           $ErrorActionPreference = "Stop"
-          if (!(Test-Path D:\itsp-perusahaan\.git)) { throw "D:\itsp-perusahaan belum git clone web-perusahaan. Clone dulu di Server: git clone https://github.com/idthaisummitplastech/web-perusahaan.git D:\itsp-perusahaan" }
+          if (!(Test-Path D:\itsp-perusahaan\.git)) { throw "D:\itsp-perusahaan belum git clone web-perusahaan. Clone dulu di Server sebagai Administrator: git clone https://github.com/idthaisummitplastech/web-perusahaan.git D:\itsp-perusahaan" }
           Set-Location D:\itsp-perusahaan
-          git config --global --add safe.directory D:/itsp-perusahaan
-          git config --global --add safe.directory D:\itsp-perusahaan
-          git fetch origin main
-          if ($LASTEXITCODE -ne 0) {
-            Write-Host "WARNING fetch gagal, coba self-heal FETCH_HEAD..."
-            Remove-Item -Path .git\FETCH_HEAD -Force -ErrorAction SilentlyContinue
-            try { icacls D:\itsp-perusahaan\.git /grant 'NETWORK SERVICE:(OI)(CI)F' /T 2>&1 | Out-String | Write-Host } catch {}
-            git fetch origin main
-          }
-          git reset --hard origin/main
-          if ($LASTEXITCODE -ne 0) { throw "git reset gagal. Fix: icacls D:\itsp-perusahaan /grant 'NETWORK SERVICE:(OI)(CI)F' /T" }
+          # Anti dubious-ownership (wajib bila runner ganti user)
+          git config --global --add safe.directory D:/itsp-perusahaan 2>$null
+          git config --global --add safe.directory D:\itsp-perusahaan 2>$null
+          git config --global --add safe.directory '*' 2>$null
+
           Write-Host "--- VERSIONS ---"
           node -v
           npm.cmd -v
           whoami
+          Write-Host "USERPROFILE=$env:USERPROFILE APPDATA=$env:APPDATA"
+
           $extraPaths = @(
             (Join-Path $env:APPDATA "npm"),
             "C:\Users\Administrator\AppData\Roaming\npm",
@@ -57,7 +54,7 @@ jobs:
             }
           }
           if (-not $pm2Cmd) {
-            Write-Host "pm2.cmd tidak ditemukan, install global untuk NETWORK SERVICE..."
+            Write-Host "pm2.cmd tidak ditemukan, install global..."
             npm.cmd i -g pm2
             $pm2Cmd = (Get-Command pm2.cmd -ErrorAction SilentlyContinue).Source
             if (-not $pm2Cmd) {
@@ -65,13 +62,31 @@ jobs:
               if (Test-Path $maybe) { $pm2Cmd = $maybe }
             }
           }
-          if (-not $pm2Cmd) { throw "pm2.cmd tetap tidak ditemukan setelah npm i -g pm2. Cek manual di server: npm.cmd i -g pm2" }
+          if (-not $pm2Cmd) { throw "pm2.cmd tetap tidak ditemukan setelah npm i -g pm2. Fix 1x di server sebagai Administrator: npm i -g pm2" }
           Write-Host "pm2 at: $pm2Cmd"
           & $pm2Cmd -v
-          Write-Host "--- STOP app agar lepas lock node_modules/.next (fix EPERM) ---"
+
+          Write-Host "--- STOP app dulu agar lepas lock node_modules/.next (wajib untuk full-otomatis) ---"
           try { & $pm2Cmd stop itsp-perusahaan 2>&1 | Out-String | Write-Host } catch {}
           Start-Sleep -Seconds 3
-          try { icacls D:\itsp-perusahaan /grant 'NETWORK SERVICE:(OI)(CI)F' /T 2>&1 | Out-Null } catch {}
+
+          Write-Host "--- GIT FETCH + RESET (best-effort self-heal, tanpa butuh RDP) ---"
+          # Hapus FETCH_HEAD korup bila ada (jangan throw bila permission kurang, lanjut ke pesan jelas)
+          try { Remove-Item -Path .git\FETCH_HEAD -Force -ErrorAction SilentlyContinue } catch {}
+          git fetch origin main
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "WARNING fetch gagal, coba hapus FETCH_HEAD sekali lagi..."
+            try { Remove-Item -Path .git\FETCH_HEAD -Force -ErrorAction SilentlyContinue } catch {}
+            Start-Sleep -Seconds 2
+            git fetch origin main
+          }
+          if ($LASTEXITCODE -ne 0) {
+            throw "git fetch gagal terus: 'cannot open .git/FETCH_HEAD: Permission denied'. Artinya folder D:\itsp-perusahaan\.git milik Administrator tapi runner jalan sebagai NETWORK SERVICE. Fix 1x TERAKHIR di server (Administrator CMD): takeown /F D:\itsp-perusahaan /R /D Y + icacls D:\itsp-perusahaan /grant 'NETWORK SERVICE:(OI)(CI)F' /T ATAU (disarankan untuk full-otomatis) ganti service runner jadi Administrator. Lihat PANDUAN_DEPLOY_D_PM2.md S8b."
+          }
+          git reset --hard origin/main
+          if ($LASTEXITCODE -ne 0) { throw "git reset gagal (unable to unlink package-lock.json). File dikunci / permission. Pastikan pm2 stop sukses + runner sudah Administrator. Coba Re-run jobs sekali lagi." }
+
+          Write-Host "--- BUILD (hapus .next dulu, tanpa sentuh server) ---"
           if (Test-Path .next) { Remove-Item -Recurse -Force .next -ErrorAction SilentlyContinue; Start-Sleep -Seconds 2; if (Test-Path .next) { Remove-Item -Recurse -Force .next } }
           npm.cmd ci --legacy-peer-deps
           npm.cmd run build
