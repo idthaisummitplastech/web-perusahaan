@@ -24,14 +24,64 @@ jobs:
       - name: Update D:\itsp-perusahaan dari GitHub
         run: |
           $ErrorActionPreference = "Stop"
+          if (!(Test-Path D:\itsp-perusahaan\.git)) { throw "D:\itsp-perusahaan belum git clone web-perusahaan. Clone dulu di Server: git clone https://github.com/idthaisummitplastech/web-perusahaan.git D:\itsp-perusahaan" }
           Set-Location D:\itsp-perusahaan
+          git config --global --add safe.directory D:/itsp-perusahaan
+          git config --global --add safe.directory D:\itsp-perusahaan
           git fetch origin main
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "WARNING fetch gagal, coba self-heal FETCH_HEAD..."
+            Remove-Item -Path .git\FETCH_HEAD -Force -ErrorAction SilentlyContinue
+            try { icacls D:\itsp-perusahaan\.git /grant 'NETWORK SERVICE:(OI)(CI)F' /T 2>&1 | Out-String | Write-Host } catch {}
+            git fetch origin main
+          }
           git reset --hard origin/main
-          npm ci --legacy-peer-deps
-          npm run build
-          pm2 restart itsp-perusahaan
-          pm2 save
-          pm2 list
+          if ($LASTEXITCODE -ne 0) { throw "git reset gagal. Fix: icacls D:\itsp-perusahaan /grant 'NETWORK SERVICE:(OI)(CI)F' /T" }
+          Write-Host "--- VERSIONS ---"
+          node -v
+          npm.cmd -v
+          whoami
+          $extraPaths = @(
+            (Join-Path $env:APPDATA "npm"),
+            "C:\Users\Administrator\AppData\Roaming\npm",
+            "C:\Program Files\nodejs"
+          )
+          foreach ($p in $extraPaths) {
+            if ((Test-Path $p) -and ($env:Path -notlike "*$p*")) { $env:Path = "$env:Path;$p" }
+          }
+          $pm2Cmd = (Get-Command pm2.cmd -ErrorAction SilentlyContinue).Source
+          if (-not $pm2Cmd) {
+            foreach ($p in $extraPaths) {
+              $cand = Join-Path $p "pm2.cmd"
+              if (Test-Path $cand) { $pm2Cmd = $cand; break }
+            }
+          }
+          if (-not $pm2Cmd) {
+            Write-Host "pm2.cmd tidak ditemukan, install global untuk NETWORK SERVICE..."
+            npm.cmd i -g pm2
+            $pm2Cmd = (Get-Command pm2.cmd -ErrorAction SilentlyContinue).Source
+            if (-not $pm2Cmd) {
+              $maybe = Join-Path (Join-Path $env:APPDATA "npm") "pm2.cmd"
+              if (Test-Path $maybe) { $pm2Cmd = $maybe }
+            }
+          }
+          if (-not $pm2Cmd) { throw "pm2.cmd tetap tidak ditemukan setelah npm i -g pm2. Cek manual di server: npm.cmd i -g pm2" }
+          Write-Host "pm2 at: $pm2Cmd"
+          & $pm2Cmd -v
+          Write-Host "--- STOP app agar lepas lock node_modules/.next (fix EPERM) ---"
+          try { & $pm2Cmd stop itsp-perusahaan 2>&1 | Out-String | Write-Host } catch {}
+          Start-Sleep -Seconds 3
+          try { icacls D:\itsp-perusahaan /grant 'NETWORK SERVICE:(OI)(CI)F' /T 2>&1 | Out-Null } catch {}
+          if (Test-Path .next) { Remove-Item -Recurse -Force .next -ErrorAction SilentlyContinue; Start-Sleep -Seconds 2; if (Test-Path .next) { Remove-Item -Recurse -Force .next } }
+          npm.cmd ci --legacy-peer-deps
+          npm.cmd run build
+          & $pm2Cmd restart itsp-perusahaan
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "pm2 restart gagal, coba pm2 start pertama kali..."
+            & $pm2Cmd start npm --name "itsp-perusahaan" -- start
+          }
+          & $pm2Cmd save
+          & $pm2Cmd list
 
       - name: Health check :3008
         run: |
