@@ -2,6 +2,8 @@
 
 Platform Website Perusahaan & Content Management System (CMS) modern yang dibangun dengan Next.js 16 (App Router), React 19, Material UI (MUI), PostgreSQL, dan Prisma ORM.
 
+<!-- Continuous Deployment: PM2 Windows Runner Active -->
+
 ## 🚀 Fitur Utama
 
 ### 1. Website Publik
