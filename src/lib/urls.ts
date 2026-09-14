@@ -40,11 +40,8 @@ export function getBackendBaseUrl(): string {
 
 /** URL publik portal karir (dipakai halaman Careers gateway). */
 export function getCareerUrl(): string {
-  // SEMENTARA DINONAKTIFKAN: Dinetralkan ke '#' agar bisa diklik tapi tidak membuka web-karir
-  return '#';
-  // KODE ASLI (aktifkan kembali bila web-karir sudah siap diperlihatkan):
-  // Dukung dua nama agar fleksibel: NEXT_PUBLIC_* (client) & CAREER_SITE_URL (compose/server).
-  // return stripTrailingSlash(requiredEnv('NEXT_PUBLIC_CAREER_URL', ['CAREER_SITE_URL']));
+  const configured = readEnv('NEXT_PUBLIC_CAREER_URL') || readEnv('CAREER_SITE_URL');
+  return stripTrailingSlash(configured || 'https://careers.thaisummitplastech.co.id');
 }
 
 /** URL publik company profile (untuk canonical / email). */
