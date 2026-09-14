@@ -43,6 +43,9 @@ next-env.d.ts
 # scratch directory
 scratch/
 
+# GitHub Runner (if placed inside app)
+runner/
+
 # Private Documentation, SOP, & Credentials (STRICTLY DO NOT PUSH)
 docs/
 *docs*
