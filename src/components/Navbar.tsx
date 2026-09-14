@@ -101,35 +101,31 @@ export default function Navbar({
     setMobileExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
-  // Hide on scroll down, show on scroll up using MUI's useScrollTrigger
-  const trigger = useScrollTrigger();
-
   // Filter out /contact from inline desktop navigation so it doesn't duplicate the dedicated 'Hubungi Kami' CTA button
   const desktopNavItems = navItems.filter((item) => item.url !== '/contact');
 
   return (
     <>
-      <Slide appear={false} direction="down" in={!trigger}>
-        <AppBar
-          position="sticky"
-          elevation={0}
-          sx={{
-            top: 0,
-            zIndex: 1100,
-            backgroundColor: 'rgba(255, 255, 255, 0.97)',
-            backdropFilter: 'blur(16px)',
-            borderTop: '3px solid #018730',
-            borderBottom: '1px solid rgba(226, 232, 240, 0.85)',
-            boxShadow: '0 4px 20px -2px rgba(15, 23, 42, 0.05)',
-            color: '#0F172A',
-          }}
-        >
-          <Container maxWidth="xl" sx={{ px: { xs: 2, sm: 3, md: 4 } }}>
-            <Toolbar disableGutters sx={{ height: { xs: 68, md: 74 }, justifyContent: 'space-between', gap: 2 }}>
-              {/* Brand Logo with Green & Orange Symbol */}
-              <Link href="/" style={{ textDecoration: 'none', flexShrink: 0 }}>
-                <BrandLogo title={siteTitle} lightText={false} size="medium" />
-              </Link>
+      <AppBar
+        position="sticky"
+        elevation={0}
+        sx={{
+          top: 0,
+          zIndex: 1100,
+          backgroundColor: 'rgba(255, 255, 255, 0.98)',
+          backdropFilter: 'blur(16px)',
+          borderTop: '3px solid #018730',
+          borderBottom: '1px solid rgba(226, 232, 240, 0.85)',
+          boxShadow: '0 4px 20px -2px rgba(15, 23, 42, 0.05)',
+          color: '#0F172A',
+        }}
+      >
+        <Container maxWidth="xl" sx={{ px: { xs: 1.5, sm: 2.5, md: 4 } }}>
+          <Toolbar disableGutters sx={{ height: { xs: 62, sm: 68, md: 74 }, justifyContent: 'space-between', gap: { xs: 1, sm: 2 } }}>
+            {/* Brand Logo with Green & Orange Symbol */}
+            <Link href="/" style={{ textDecoration: 'none', minWidth: 0, flex: 1, display: 'flex', alignItems: 'center' }}>
+              <BrandLogo title={siteTitle} lightText={false} size="medium" />
+            </Link>
 
               {/* Desktop Navigation Links */}
               <Stack
@@ -148,6 +144,11 @@ export default function Navbar({
                     (item.url !== '/' && pathname.startsWith(item.url)) ||
                     (hasChildren && item.children?.some((child) => pathname === child.url || pathname.startsWith(child.url)));
                   const isOpen = activeDropdownId === item.id;
+                  const isCareerItem =
+                    item.url === '/careers' ||
+                    item.url?.includes('career') ||
+                    item.title?.trim().toLowerCase() === 'karir' ||
+                    item.title?.trim().toLowerCase() === 'careers';
 
                   if (hasChildren) {
                     return (
@@ -159,7 +160,15 @@ export default function Navbar({
                       >
                         <Button
                           component={Link}
-                          href={item.url}
+                          href={isCareerItem ? '#' : item.url}
+                          onClick={
+                            isCareerItem
+                              ? (e: React.MouseEvent) => {
+                                  e.preventDefault();
+                                  // SEMENTARA DINONAKTIFKAN: Bisa diklik tapi tidak ke mana-mana dahulu (tidak terhubung ke web-karir)
+                                }
+                              : undefined
+                          }
                           endIcon={
                             <KeyboardArrowDownIcon
                               sx={{
@@ -235,8 +244,13 @@ export default function Navbar({
                           {item.url && item.url !== '#' && (
                             <Box
                               component={Link}
-                              href={item.url}
-                              onClick={() => setActiveDropdownId(null)}
+                              href={isCareerItem ? '#' : item.url}
+                              onClick={(e: React.MouseEvent) => {
+                                if (isCareerItem) {
+                                  e.preventDefault();
+                                }
+                                setActiveDropdownId(null);
+                              }}
                               sx={{
                                 display: 'block',
                                 px: 1.8,
@@ -259,12 +273,22 @@ export default function Navbar({
                           {/* Sub-menu items */}
                           {item.children?.map((child) => {
                             const isChildActive = pathname === child.url;
+                            const isChildCareer =
+                              child.url === '/careers' ||
+                              child.url?.includes('career') ||
+                              child.title?.trim().toLowerCase() === 'karir' ||
+                              child.title?.trim().toLowerCase() === 'careers';
                             return (
                               <Box
                                 key={child.id}
                                 component={Link}
-                                href={child.url}
-                                onClick={() => setActiveDropdownId(null)}
+                                href={isChildCareer ? '#' : child.url}
+                                onClick={(e: React.MouseEvent) => {
+                                  if (isChildCareer) {
+                                    e.preventDefault();
+                                  }
+                                  setActiveDropdownId(null);
+                                }}
                                 sx={{
                                   display: 'flex',
                                   alignItems: 'center',
@@ -300,7 +324,16 @@ export default function Navbar({
                     <Button
                       key={item.id}
                       component={Link}
-                      href={item.url}
+                      href={isCareerItem ? '#' : item.url}
+                      onClick={
+                        isCareerItem
+                          ? (e: React.MouseEvent) => {
+                              e.preventDefault();
+                              // SEMENTARA DINONAKTIFKAN: Bisa diklik tapi tidak ke mana-mana dahulu (tidak terhubung ke web-karir)
+                              // KODE ASLI: Hapus onClick ini dan kembalikan href={item.url}
+                            }
+                          : undefined
+                      }
                       sx={{
                         color: isParentActive ? '#018730' : '#334155',
                         fontWeight: isParentActive ? 700 : 500,
@@ -419,22 +452,27 @@ export default function Navbar({
               </Stack>
 
               {/* Mobile Right Controls: Language Switcher & Hamburger */}
-              <Box sx={{ display: { xs: 'flex', md: 'none' }, alignItems: 'center', gap: 1 }}>
+              <Box sx={{ display: { xs: 'flex', md: 'none' }, alignItems: 'center', gap: { xs: 0.75, sm: 1 }, flexShrink: 0 }}>
                 <LanguageToggle size="small" />
                 <IconButton
                   color="inherit"
                   aria-label="open drawer"
                   edge="end"
                   onClick={toggleDrawer(true)}
-                  sx={{ color: '#018730' }}
+                  sx={{
+                    color: '#018730',
+                    p: { xs: 0.75, sm: 1 },
+                    bgcolor: 'rgba(1, 135, 48, 0.08)',
+                    borderRadius: '10px',
+                    '&:hover': { bgcolor: 'rgba(1, 135, 48, 0.16)' },
+                  }}
                 >
-                  <MenuIcon />
+                  <MenuIcon sx={{ fontSize: { xs: 24, sm: 26 } }} />
                 </IconButton>
               </Box>
             </Toolbar>
           </Container>
         </AppBar>
-      </Slide>
 
       {/* Mobile Drawer Navigation */}
       <Drawer
@@ -454,14 +492,45 @@ export default function Navbar({
           },
         }}
       >
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2.5 }}>
-          <BrandLogo title={siteTitle} lightText={false} size="small" />
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <LanguageToggle size="small" />
-            <IconButton onClick={toggleDrawer(false)} sx={{ color: '#64748B' }}>
-              <CloseIcon />
-            </IconButton>
+        {/* Drawer Header: Brand Logo & Close Button */}
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1, mb: 2 }}>
+          <Box sx={{ minWidth: 0, flex: 1, overflow: 'hidden' }}>
+            <BrandLogo title={siteTitle} lightText={false} size="small" />
           </Box>
+          <IconButton
+            onClick={toggleDrawer(false)}
+            aria-label="close drawer"
+            sx={{
+              color: '#475569',
+              p: 1,
+              bgcolor: '#F1F5F9',
+              borderRadius: '10px',
+              flexShrink: 0,
+              '&:hover': { bgcolor: '#E2E8F0', color: '#0F172A' },
+            }}
+          >
+            <CloseIcon fontSize="small" />
+          </IconButton>
+        </Box>
+
+        {/* Drawer Language Switcher Row */}
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            bgcolor: '#F8FAFC',
+            border: '1px solid #E2E8F0',
+            py: 1,
+            px: 1.5,
+            borderRadius: 2,
+            mb: 2,
+          }}
+        >
+          <Typography variant="body2" sx={{ fontWeight: 600, color: '#475569', fontSize: '0.85rem' }}>
+            {language === 'en' ? 'Language / Bahasa:' : 'Bahasa / Language:'}
+          </Typography>
+          <LanguageToggle size="small" />
         </Box>
         <Divider sx={{ borderColor: '#E2E8F0', mb: 2 }} />
 
@@ -473,6 +542,11 @@ export default function Navbar({
               (item.url !== '/' && pathname.startsWith(item.url)) ||
               (hasChildren && item.children?.some((child) => pathname === child.url || pathname.startsWith(child.url)));
             const isExpanded = Boolean(mobileExpanded[item.id]);
+            const isCareerItem =
+              item.url === '/careers' ||
+              item.url?.includes('career') ||
+              item.title?.trim().toLowerCase() === 'karir' ||
+              item.title?.trim().toLowerCase() === 'careers';
 
             if (hasChildren) {
               return (
@@ -504,8 +578,13 @@ export default function Navbar({
                       {item.url && item.url !== '#' && (
                         <ListItemButton
                           component={Link}
-                          href={item.url}
-                          onClick={toggleDrawer(false)}
+                          href={isCareerItem ? '#' : item.url}
+                          onClick={(e: React.MouseEvent) => {
+                            if (isCareerItem) {
+                              e.preventDefault();
+                            }
+                            toggleDrawer(false)(e);
+                          }}
                           sx={{
                             borderRadius: 1.5,
                             py: 0.8,
@@ -521,12 +600,22 @@ export default function Navbar({
 
                       {item.children?.map((child) => {
                         const isChildActive = pathname === child.url;
+                        const isChildCareer =
+                          child.url === '/careers' ||
+                          child.url?.includes('career') ||
+                          child.title?.trim().toLowerCase() === 'karir' ||
+                          child.title?.trim().toLowerCase() === 'careers';
                         return (
                           <ListItemButton
                             key={child.id}
                             component={Link}
-                            href={child.url}
-                            onClick={toggleDrawer(false)}
+                            href={isChildCareer ? '#' : child.url}
+                            onClick={(e: React.MouseEvent) => {
+                              if (isChildCareer) {
+                                e.preventDefault();
+                              }
+                              toggleDrawer(false)(e);
+                            }}
                             sx={{
                               borderRadius: 1.5,
                               py: 0.8,
@@ -553,8 +642,15 @@ export default function Navbar({
               <ListItem key={item.id} disablePadding sx={{ mb: 0.5 }}>
                 <ListItemButton
                   component={Link}
-                  href={item.url}
-                  onClick={toggleDrawer(false)}
+                  href={isCareerItem ? '#' : item.url}
+                  onClick={(e: React.MouseEvent) => {
+                    if (isCareerItem) {
+                      e.preventDefault();
+                      // SEMENTARA DINONAKTIFKAN: Bisa diklik tapi tidak ke mana-mana dahulu (tidak terhubung ke web-karir)
+                      // KODE ASLI: Cukup toggleDrawer(false)(e) dan biarkan href={item.url}
+                    }
+                    toggleDrawer(false)(e);
+                  }}
                   sx={{
                     borderRadius: 2,
                     color: isParentActive ? '#018730' : '#334155',

@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
 export const metadata: Metadata = {
   title: 'News & Sustainability Reports | PT Indonesia Thai Summit Plastech',
   description:
-    'Waste, GHG emissions, hazardous B3, and water management reports from PT ITSP — verified ESG documents ready for tender, audit, and buyer questionnaires.',
+    'Dokumen resmi kepatuhan lingkungan, inventarisasi emisi GRK, pengelolaan limbah B3, dan neraca air PT Indonesia Thai Summit Plastech untuk kebutuhan audit kepatuhan mitra industri dan pelaporan ESG.',
 };
 
 export default async function NewsPage() {

@@ -20,22 +20,24 @@ export default async function PublicLayout({
   const allNavMenus = await cmsApi.getItems('nav-menus').catch(() => []);
   const activeMenus = allNavMenus.filter((m: any) => m.is_active ?? m.isActive);
 
-  // Guarantee News (/news) is always present in navbar (CMS-editable, fallback-safe)
-  let ensuredMenus = [...activeMenus];
-  if (!ensuredMenus.some((m: any) => m.url === '/news' && m.location === 'navbar')) {
-    ensuredMenus.push({ id: 9001, title: 'News', url: '/news', location: 'navbar', sort_order: 6, sortOrder: 6, is_active: true, isActive: true, parent_id: null, parentId: null });
-  }
   // Top-level navbar items with active children
-  const navMenus = ensuredMenus
-    .filter((m: any) => m.location === 'navbar' && !m.parent_id && !m.parentId)
-    .sort((a: any, b: any) => (a.sort_order ?? a.sortOrder ?? 0) - (b.sort_order ?? b.sortOrder ?? 0))
-    .map((parent: any) => ({
-      ...parent,
-      sortOrder: parent.sort_order ?? parent.sortOrder ?? 0,
-      children: ensuredMenus
-        .filter((c: any) => (c.parent_id ?? c.parentId) === parent.id)
-        .sort((a: any, b: any) => (a.sort_order ?? a.sortOrder ?? 0) - (b.sort_order ?? b.sortOrder ?? 0)),
-    }));
+  let navMenus: any[] = [];
+  if (activeMenus.length > 0) {
+    let ensuredMenus = [...activeMenus];
+    if (!ensuredMenus.some((m: any) => m.url === '/news' && m.location === 'navbar')) {
+      ensuredMenus.push({ id: 9001, title: 'News', url: '/news', location: 'navbar', sort_order: 6, sortOrder: 6, is_active: true, isActive: true, parent_id: null, parentId: null });
+    }
+    navMenus = ensuredMenus
+      .filter((m: any) => m.location === 'navbar' && !m.parent_id && !m.parentId)
+      .sort((a: any, b: any) => (a.sort_order ?? a.sortOrder ?? 0) - (b.sort_order ?? b.sortOrder ?? 0))
+      .map((parent: any) => ({
+        ...parent,
+        sortOrder: parent.sort_order ?? parent.sortOrder ?? 0,
+        children: ensuredMenus
+          .filter((c: any) => (c.parent_id ?? c.parentId) === parent.id)
+          .sort((a: any, b: any) => (a.sort_order ?? a.sortOrder ?? 0) - (b.sort_order ?? b.sortOrder ?? 0)),
+      }));
+  }
 
   // 3. Fetch Footer Menus
   const footerMenus = activeMenus

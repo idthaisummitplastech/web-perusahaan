@@ -94,12 +94,13 @@ export default function CareersGatewayPage() {
           </Typography>
 
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+            {/* SEMENTARA DINONAKTIFKAN: dinetralkan ke '#' agar tetap bisa diklik tapi tidak membuka web-karir */}
+            {/* KODE ASLI: href={`${careerAppUrl}/#lowongan`} target="_blank" */}
             <Button
               variant="contained"
               size="large"
               component="a"
-              href={`${careerAppUrl}/#lowongan`}
-              target="_blank"
+              href="#"
               endIcon={<LaunchIcon />}
               sx={{
                 bgcolor: '#fc4509',
@@ -114,12 +115,13 @@ export default function CareersGatewayPage() {
             >
               Buka Portal Rekrutmen & Lamar Lowongan &rarr;
             </Button>
+            {/* SEMENTARA DINONAKTIFKAN: dinetralkan ke '#' agar tetap bisa diklik tapi tidak membuka web-karir */}
+            {/* KODE ASLI: href={`${careerAppUrl}/login`} target="_blank" */}
             <Button
               variant="outlined"
               size="large"
               component="a"
-              href={`${careerAppUrl}/login`}
-              target="_blank"
+              href="#"
               sx={{
                 color: '#FFFFFF',
                 borderColor: 'rgba(255,255,255,0.4)',
@@ -237,12 +239,13 @@ export default function CareersGatewayPage() {
             </Typography>
           </Box>
 
+          {/* SEMENTARA DINONAKTIFKAN: dinetralkan ke '#' agar tetap bisa diklik tapi tidak membuka web-karir */}
+          {/* KODE ASLI: href={careerAppUrl} target="_blank" */}
           <Button
             variant="contained"
             size="large"
             component="a"
-            href={careerAppUrl}
-            target="_blank"
+            href="#"
             endIcon={<ArrowForwardIcon />}
             sx={{
               bgcolor: '#018730',

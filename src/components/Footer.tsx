@@ -158,21 +158,37 @@ export default function Footer({
                   {sectionName}
                 </Typography>
                 <Stack spacing={1.75}>
-                  {sections[sectionName].map((link) => (
-                    <Link
-                      key={link.id}
-                      href={link.url}
-                      style={{
-                        color: '#94A3B8',
-                        textDecoration: 'none',
-                        fontSize: '0.875rem',
-                        fontWeight: 500,
-                        transition: 'color 0.2s',
-                      }}
-                    >
-                      {link.title}
-                    </Link>
-                  ))}
+                  {sections[sectionName].map((link) => {
+                    const isCareer =
+                      link.url === '/careers' ||
+                      link.url?.includes('career') ||
+                      link.title?.trim().toLowerCase() === 'karir' ||
+                      link.title?.trim().toLowerCase() === 'careers';
+                    return (
+                      <Link
+                        key={link.id}
+                        href={isCareer ? '#' : link.url}
+                        onClick={
+                          isCareer
+                            ? (e: React.MouseEvent) => {
+                                e.preventDefault();
+                                // SEMENTARA DINONAKTIFKAN: Bisa diklik tapi tidak ke mana-mana dahulu (tidak terhubung ke web-karir)
+                              }
+                            : undefined
+                        }
+                        style={{
+                          color: '#94A3B8',
+                          textDecoration: 'none',
+                          fontSize: '0.875rem',
+                          fontWeight: 500,
+                          transition: 'color 0.2s',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {link.title}
+                      </Link>
+                    );
+                  })}
                 </Stack>
               </Grid>
             ))
