@@ -28,9 +28,8 @@ jobs:
           if (!(Test-Path D:\itsp-perusahaan\.git)) { throw "D:\itsp-perusahaan belum git clone web-perusahaan. Clone dulu di Server sebagai Administrator: git clone https://github.com/idthaisummitplastech/web-perusahaan.git D:\itsp-perusahaan" }
           Set-Location D:\itsp-perusahaan
           # Anti dubious-ownership (wajib bila runner ganti user)
-          git config --global --add safe.directory D:/itsp-perusahaan 2>$null
-          git config --global --add safe.directory D:\itsp-perusahaan 2>$null
-          git config --global --add safe.directory '*' 2>$null
+          try { Remove-Item -Path "$env:USERPROFILE\.gitconfig.lock" -Force -ErrorAction SilentlyContinue } catch {}
+          try { git config --global --add safe.directory '*' 2>$null } catch {}
 
           Write-Host "--- VERSIONS ---"
           node -v
