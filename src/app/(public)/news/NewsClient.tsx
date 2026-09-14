@@ -465,41 +465,134 @@ return (<>
           </Box>
         </Container>
       </Box>
-      <Dialog open={Boolean(preview)} onClose={() => setPreview(null)} maxWidth="lg" fullWidth>
-        <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', bgcolor: '#0B1320', color: '#fff', py: 2 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            <PictureAsPdfIcon sx={{ color: '#f87171' }} />
-            <Box>
-              <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
+      <Dialog
+        open={Boolean(preview)}
+        onClose={() => setPreview(null)}
+        maxWidth="lg"
+        fullWidth
+        slotProps={{
+          paper: {
+            sx: {
+              borderRadius: { xs: 3, sm: 4 },
+              overflow: 'hidden',
+              m: { xs: 1.5, sm: 3 },
+              bgcolor: '#0B1320',
+              boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)',
+            },
+          },
+        }}
+      >
+        <DialogTitle
+          sx={{
+            m: 0,
+            p: { xs: 2, sm: 2.5 },
+            pr: { xs: 7, sm: 8 },
+            bgcolor: '#0B1320',
+            color: '#fff',
+            position: 'relative',
+            display: 'flex',
+            flexDirection: { xs: 'column', sm: 'row' },
+            alignItems: { xs: 'flex-start', sm: 'center' },
+            justifyContent: 'space-between',
+            gap: { xs: 1.5, sm: 2 },
+            borderBottom: '1px solid rgba(255,255,255,0.08)',
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, minWidth: 0, flex: 1 }}>
+            <Box
+              sx={{
+                width: { xs: 38, sm: 44 },
+                height: { xs: 38, sm: 44 },
+                borderRadius: 2.5,
+                bgcolor: 'rgba(239,68,68,0.12)',
+                border: '1px solid rgba(239,68,68,0.25)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}
+            >
+              <PictureAsPdfIcon sx={{ color: '#f87171', fontSize: { xs: 22, sm: 26 } }} />
+            </Box>
+            <Box sx={{ minWidth: 0 }}>
+              <Typography
+                variant="subtitle1"
+                sx={{
+                  fontWeight: 800,
+                  fontSize: { xs: '0.95rem', sm: '1.05rem' },
+                  lineHeight: 1.3,
+                  color: '#fff',
+                  wordBreak: 'break-word',
+                }}
+              >
                 {preview?.label}
               </Typography>
-              <Typography variant="caption" sx={{ color: '#94A3B8' }}>
+              <Typography variant="caption" sx={{ color: '#94A3B8', display: 'block', mt: 0.3, fontWeight: 500 }}>
                 {preview?.size} • PDF Preview
               </Typography>
             </Box>
           </Box>
-          <Box sx={{ display: 'flex', gap: 1 }}>
+
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexShrink: 0 }}>
             {preview && (
               <Button
                 component="a"
                 href={preview.file}
                 download
                 size="small"
-                startIcon={<DownloadIcon />}
+                startIcon={<DownloadIcon sx={{ fontSize: 18 }} />}
                 variant="contained"
-                sx={{ bgcolor: '#018730', '&:hover': { bgcolor: '#016f27' } }}
+                sx={{
+                  bgcolor: '#018730',
+                  color: '#fff',
+                  fontWeight: 700,
+                  borderRadius: 2,
+                  px: 2.2,
+                  py: 0.75,
+                  fontSize: '0.85rem',
+                  textTransform: 'none',
+                  boxShadow: '0 4px 12px rgba(1,135,48,0.3)',
+                  '&:hover': { bgcolor: '#016f27' },
+                }}
               >
                 Download
               </Button>
             )}
-            <IconButton onClick={() => setPreview(null)} sx={{ color: '#94A3B8', '&:hover': { color: '#fff' } }}>
-              <CloseIcon />
-            </IconButton>
           </Box>
+
+          <IconButton
+            onClick={() => setPreview(null)}
+            aria-label="Tutup preview"
+            sx={{
+              position: 'absolute',
+              top: { xs: 12, sm: 16 },
+              right: { xs: 12, sm: 16 },
+              width: 36,
+              height: 36,
+              borderRadius: '50%',
+              bgcolor: 'rgba(255,255,255,0.08)',
+              color: '#94A3B8',
+              border: '1px solid rgba(255,255,255,0.12)',
+              transition: 'all 0.2s ease',
+              '&:hover': {
+                bgcolor: 'rgba(239,68,68,0.2)',
+                color: '#f87171',
+                borderColor: 'rgba(239,68,68,0.4)',
+                transform: 'scale(1.05)',
+              },
+            }}
+          >
+            <CloseIcon sx={{ fontSize: 20 }} />
+          </IconButton>
         </DialogTitle>
-        <DialogContent sx={{ p: 0, bgcolor: '#334155', height: { xs: '70vh', md: '78vh' } }}>
+        <DialogContent sx={{ p: 0, bgcolor: '#1E293B', height: { xs: '70vh', md: '78vh' } }}>
           {preview && (
-            <Box component="iframe" src={preview.file} title={preview.label} sx={{ width: '100%', height: '100%', border: 'none', bgcolor: '#fff' }} />
+            <Box
+              component="iframe"
+              src={preview.file}
+              title={preview.label}
+              sx={{ width: '100%', height: '100%', border: 'none', bgcolor: '#fff' }}
+            />
           )}
         </DialogContent>
       </Dialog>
