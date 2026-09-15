@@ -27,6 +27,9 @@ export default async function PublicLayout({
     if (!ensuredMenus.some((m: any) => m.url === '/news' && m.location === 'navbar')) {
       ensuredMenus.push({ id: 9001, title: 'News', url: '/news', location: 'navbar', sort_order: 6, sortOrder: 6, is_active: true, isActive: true, parent_id: null, parentId: null });
     }
+    if (!ensuredMenus.some((m: any) => (m.url === '/blog' || m.url?.startsWith('/blog')) && m.location === 'navbar')) {
+      ensuredMenus.push({ id: 9002, title: 'Blog', url: '/blog', location: 'navbar', sort_order: 7, sortOrder: 7, is_active: true, isActive: true, parent_id: null, parentId: null });
+    }
     navMenus = ensuredMenus
       .filter((m: any) => m.location === 'navbar' && !m.parent_id && !m.parentId)
       .sort((a: any, b: any) => (a.sort_order ?? a.sortOrder ?? 0) - (b.sort_order ?? b.sortOrder ?? 0))
@@ -40,8 +43,11 @@ export default async function PublicLayout({
   }
 
   // 3. Fetch Footer Menus
-  const footerMenus = activeMenus
-    .filter((m: any) => m.location === 'footer')
+  let ensuredFooter = [...activeMenus.filter((m: any) => m.location === 'footer')];
+  if (!ensuredFooter.some((m: any) => m.url === '/blog' || m.url?.startsWith('/blog'))) {
+    ensuredFooter.push({ id: 9003, title: 'Blog & Artikel', url: '/blog', location: 'footer', sort_order: 15, sortOrder: 15, is_active: true, isActive: true, section: 'Informasi' });
+  }
+  const footerMenus = ensuredFooter
     .sort((a: any, b: any) => (a.sort_order ?? a.sortOrder ?? 0) - (b.sort_order ?? b.sortOrder ?? 0));
 
   // 4. Fetch Site Settings via Python Backend

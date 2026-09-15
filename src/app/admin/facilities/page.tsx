@@ -31,8 +31,10 @@ import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import PrecisionManufacturingIcon from '@mui/icons-material/PrecisionManufacturing';
+import CollectionsIcon from '@mui/icons-material/Collections';
 import ImageUpload from '@/components/admin/ImageUpload';
 import { CmsTableToolbar, CmsTablePagination } from '@/components/admin/CmsTablePagination';
+import { parseFacilityImages, serializeFacilityImages } from '@/lib/facilities';
 
 interface Facility {
   id: number;
@@ -63,6 +65,7 @@ export default function AdminFacilitiesPage() {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Facility | null>(null);
+  const [facilityImages, setFacilityImages] = useState<string[]>([]);
   const [formData, setFormData] = useState({
     title: '',
     category: 'Stamping Press',
@@ -105,6 +108,7 @@ export default function AdminFacilitiesPage() {
         sortOrder: item.sortOrder || 0,
         isActive: item.isActive,
       });
+      setFacilityImages(parseFacilityImages(item.image));
     } else {
       setEditingItem(null);
       setFormData({
@@ -116,6 +120,7 @@ export default function AdminFacilitiesPage() {
         sortOrder: items.length + 1,
         isActive: true,
       });
+      setFacilityImages([]);
     }
     setDialogOpen(true);
   };
@@ -123,6 +128,7 @@ export default function AdminFacilitiesPage() {
   const handleCloseDialog = () => {
     setDialogOpen(false);
     setEditingItem(null);
+    setFacilityImages([]);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -131,8 +137,10 @@ export default function AdminFacilitiesPage() {
     setError('');
 
     try {
+      const finalImage = serializeFacilityImages(facilityImages);
+      const payload = { ...formData, image: finalImage };
       const method = editingItem ? 'PUT' : 'POST';
-      const body = editingItem ? { id: editingItem.id, ...formData } : formData;
+      const body = editingItem ? { id: editingItem.id, ...payload } : payload;
 
       const res = await fetch('/api/cms/facilities', {
         method,
@@ -264,43 +272,69 @@ export default function AdminFacilitiesPage() {
                         paginatedItems.map((item) => (
                           <TableRow key={item.id} hover>
                             <TableCell>
-                              {item.image ? (
-                                <Box
-                                  sx={{
-                                    width: 54,
-                                    height: 54,
-                                    borderRadius: 2,
-                                    overflow: 'hidden',
-                                    border: '1px solid #E2E8F0',
-                                    bgcolor: '#FFFFFF',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                  }}
-                                >
-                                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                                  <img
-                                    src={item.image}
-                                    alt={item.title}
-                                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                                  />
-                                </Box>
-                              ) : (
-                                <Box
-                                  sx={{
-                                    width: 54,
-                                    height: 54,
-                                    borderRadius: 2,
-                                    bgcolor: '#F1F5F9',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    color: '#94A3B8',
-                                  }}
-                                >
-                                  <PrecisionManufacturingIcon />
-                                </Box>
-                              )}
+                              {(() => {
+                                const rowImages = parseFacilityImages(item.image);
+                                const firstImg = rowImages[0];
+                                const hasMultiple = rowImages.length > 1;
+
+                                return firstImg ? (
+                                  <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
+                                    <Box
+                                      sx={{
+                                        width: 54,
+                                        height: 54,
+                                        borderRadius: 2,
+                                        overflow: 'hidden',
+                                        border: '1px solid #E2E8F0',
+                                        bgcolor: '#FFFFFF',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                      }}
+                                    >
+                                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                                      <img
+                                        src={firstImg}
+                                        alt={item.title}
+                                        onError={(e) => {
+                                          e.currentTarget.style.display = 'none';
+                                        }}
+                                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                      />
+                                    </Box>
+                                    {hasMultiple && (
+                                      <Chip
+                                        size="small"
+                                        icon={<CollectionsIcon sx={{ fontSize: '11px !important' }} />}
+                                        label={`${rowImages.length} Foto`}
+                                        sx={{
+                                          height: 18,
+                                          fontSize: '0.625rem',
+                                          fontWeight: 800,
+                                          bgcolor: '#e8f6ed',
+                                          color: '#018730',
+                                          px: 0.3,
+                                        }}
+                                      />
+                                    )}
+                                  </Box>
+                                ) : (
+                                  <Box
+                                    sx={{
+                                      width: 54,
+                                      height: 54,
+                                      borderRadius: 2,
+                                      bgcolor: '#F1F5F9',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      color: '#94A3B8',
+                                    }}
+                                  >
+                                    <PrecisionManufacturingIcon />
+                                  </Box>
+                                );
+                              })()}
                             </TableCell>
                             <TableCell sx={{ fontWeight: 700, color: '#0F172A' }}>
                               <Typography variant="body2" fontWeight={700}>
@@ -411,12 +445,88 @@ export default function AdminFacilitiesPage() {
                 ))}
               </TextField>
 
-              <ImageUpload
-                value={formData.image}
-                onChange={(url) => setFormData((prev) => ({ ...prev, image: url }))}
-                label="Foto Fasilitas / Mesin Pabrik"
-                helperText="Unggah foto area produksi, mesin press, robotic cell, atau lab QC (JPG, PNG, WEBP)"
-              />
+              {/* Multi-Photo Facility Upload Section */}
+              <Box sx={{ p: 2, bgcolor: '#F8FAFC', borderRadius: 2.5, border: '1px solid #E2E8F0' }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#1E293B', mb: 0.5 }}>
+                  Foto Galeri Fasilitas / Mesin Pabrik
+                </Typography>
+                <Typography variant="caption" sx={{ color: '#64748B', display: 'block', mb: 2 }}>
+                  Anda dapat mengunggah beberapa foto sekaligus untuk 1 mesin/fasilitas (contoh: tampak depan mesin, sudut samping, panel kontrol otomatis, atau hasil komponen).
+                </Typography>
+
+                {/* List of uploaded facility photos */}
+                {facilityImages.length > 0 && (
+                  <Stack spacing={1.5} sx={{ mb: 2 }}>
+                    {facilityImages.map((imgUrl, idx) => (
+                      <Box
+                        key={idx}
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          p: 1.2,
+                          bgcolor: '#FFFFFF',
+                          borderRadius: 2,
+                          border: '1px solid #CBD5E1',
+                        }}
+                      >
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, overflow: 'hidden' }}>
+                          <Box
+                            sx={{
+                              width: 52,
+                              height: 52,
+                              borderRadius: 1.5,
+                              overflow: 'hidden',
+                              flexShrink: 0,
+                              border: '1px solid #E2E8F0',
+                              bgcolor: '#F1F5F9',
+                              p: 0.2,
+                            }}
+                          >
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={imgUrl}
+                              alt={`Foto ${idx + 1}`}
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                              }}
+                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                            />
+                          </Box>
+                          <Box sx={{ minWidth: 0 }}>
+                            <Typography variant="body2" sx={{ fontWeight: 700, color: '#0F172A' }}>
+                              {idx === 0 ? 'Foto 1 (Foto Utama / Sampul)' : `Foto ${idx + 1} (Foto Tambahan / Sudut ${idx + 1})`}
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: '#64748B', display: 'block', fontFamily: 'monospace' }} noWrap>
+                              {imgUrl}
+                            </Typography>
+                          </Box>
+                        </Box>
+
+                        <IconButton
+                          size="small"
+                          color="error"
+                          onClick={() => setFacilityImages((prev) => prev.filter((_, i) => i !== idx))}
+                          title="Hapus foto ini"
+                        >
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </Box>
+                    ))}
+                  </Stack>
+                )}
+
+                <ImageUpload
+                  value=""
+                  onChange={(url) => {
+                    if (url) {
+                      setFacilityImages((prev) => [...prev, url]);
+                    }
+                  }}
+                  label={facilityImages.length === 0 ? 'Unggah Foto Fasilitas / Mesin' : '+ Tambah Foto Tambahan'}
+                  helperText="Unggah foto area produksi, mesin press, robotic cell, atau lab QC (JPG, PNG, WEBP). Bisa lebih dari 1 foto."
+                />
+              </Box>
 
               <TextField
                 label="Spesifikasi Teknis Fasilitas"

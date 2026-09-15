@@ -78,7 +78,8 @@ export default function Navbar({
       'berita': 'News & Media',
       'berita & artikel': 'News & Articles',
       'artikel': 'Articles',
-      'blog': 'News & Media',
+      'blog': 'Blog',
+      'blog & artikel': 'Blog & Articles',
       'kontak': 'Contact Us',
       'karir': 'Careers',
     };
