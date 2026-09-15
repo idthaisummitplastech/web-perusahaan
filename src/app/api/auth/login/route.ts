@@ -26,7 +26,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const { user, requires_mfa } = authResult;
+    const { user, requires_mfa, has_mfa_secret } = authResult;
     const isMfaEnabled = requires_mfa ?? user.mfa_enabled ?? user.mfaEnabled;
 
     if (!isMfaEnabled) {
@@ -58,7 +58,37 @@ export async function POST(req: Request) {
       return response;
     }
 
-    // MFA is enabled -> Verify step
+    const hasSecret = Boolean(has_mfa_secret ?? user.has_mfa_secret ?? user.mfa_secret);
+
+    if (!hasSecret) {
+      // User has MFA enabled but hasn't scanned QR barcode / configured MFA yet -> Setup step
+      const tempToken = await signTempToken({
+        id: user.id,
+        email: user.email,
+        purpose: 'mfa_setup',
+      });
+
+      const response = NextResponse.json({
+        success: true,
+        requiresMfa: true,
+        requireMfaSetup: true,
+        redirect: '/admin/mfa-setup',
+      });
+
+      response.cookies.set({
+        name: TEMP_COOKIE_NAME,
+        value: tempToken,
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+        maxAge: 15 * 60,
+      });
+
+      return response;
+    }
+
+    // MFA is enabled and user already has MFA configured -> Verify OTP step
     const tempToken = await signTempToken({
       id: user.id,
       email: user.email,

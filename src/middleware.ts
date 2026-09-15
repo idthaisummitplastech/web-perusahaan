@@ -29,12 +29,25 @@ export async function middleware(request: NextRequest) {
     }
   }
 
+  let tempPurpose = '';
+  if (tempCookie) {
+    try {
+      const { payload } = await jwtVerify(tempCookie, getSecretKey());
+      tempPurpose = (payload as any)?.purpose || '';
+    } catch {
+      tempPurpose = '';
+    }
+  }
+
   // Admin routes protection
   if (path.startsWith('/admin')) {
     if (path === '/admin/mfa-setup') {
       // Must have either temp token or session
       if (!tempCookie && !isAuthenticated) {
         return NextResponse.redirect(new URL('/login', request.url));
+      }
+      if (tempPurpose === 'mfa_verify' && !isAuthenticated) {
+        return NextResponse.redirect(new URL('/login/verify-mfa', request.url));
       }
       return NextResponse.next();
     }
@@ -64,6 +77,9 @@ export async function middleware(request: NextRequest) {
     }
     if (!tempCookie) {
       return NextResponse.redirect(new URL('/login', request.url));
+    }
+    if (tempPurpose === 'mfa_setup') {
+      return NextResponse.redirect(new URL('/admin/mfa-setup', request.url));
     }
   }
 

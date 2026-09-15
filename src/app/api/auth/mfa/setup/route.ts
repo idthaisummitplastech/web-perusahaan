@@ -25,15 +25,11 @@ export async function GET() {
 
     const user = await fetchFromBackend(`/auth/cms-mfa/${targetUser.id}`);
 
-    // Reuse existing secret so QR code remains 100% stable across re-renders
+    // Generate secret for QR code setup without saving to DB until user verifies OTP code
     let secret = user?.mfaSecret || user?.mfa_secret;
     if (!secret) {
       const setup = await generateMfaSetup(targetUser.email);
       secret = setup.secret;
-      await fetchFromBackend(`/auth/cms-mfa/${targetUser.id}/save-secret`, {
-        method: 'PUT',
-        body: JSON.stringify({ secret }),
-      });
     }
 
     const mfaData = await generateMfaSetup(targetUser.email, secret);
