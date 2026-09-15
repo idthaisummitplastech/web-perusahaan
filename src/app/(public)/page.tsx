@@ -69,7 +69,7 @@ export default async function HomePage() {
   const stats = rawStats.filter((st: any) => (st.isActive ?? st.is_active) !== false);
   const testimonials = rawTestimonials.filter((t: any) => (t.isActive ?? t.is_active) !== false).slice(0, 3);
   const faqs = rawFaqs.filter((fq: any) => (fq.isActive ?? fq.is_active) !== false);
-  const certifications = rawCertifications.filter((c: any) => (c.isActive ?? c.is_active) !== false).slice(0, 4);
+  const certifications = rawCertifications.filter((c: any) => (c.isActive ?? c.is_active) !== false).slice(0, 8);
   const facilities = rawFacilities.filter((fc: any) => (fc.isActive ?? fc.is_active) !== false).slice(0, 4);
 
 
@@ -688,7 +688,7 @@ export default async function HomePage() {
 
             <Grid container spacing={3}>
               {certifications.map((cert) => (
-                <Grid size={{ xs: 12, sm: 6, md: 3 }} key={cert.id}>
+                <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={cert.id}>
                   <Card
                     sx={{
                       height: '100%',

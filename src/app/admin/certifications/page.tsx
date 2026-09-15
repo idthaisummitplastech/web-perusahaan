@@ -31,8 +31,10 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
 import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
+import CollectionsIcon from '@mui/icons-material/Collections';
 import ImageUpload from '@/components/admin/ImageUpload';
 import { CmsTablePagination, CmsTableToolbar } from '@/components/admin/CmsTablePagination';
+import { parseCertificateImages, serializeCertificateImages } from '@/lib/certifications';
 
 interface Certification {
   id: number;
@@ -66,6 +68,7 @@ export default function AdminCertificationsPage() {
     sortOrder: 0,
     isActive: true,
   });
+  const [certImages, setCertImages] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
@@ -90,6 +93,8 @@ export default function AdminCertificationsPage() {
   const handleOpenDialog = (item?: Certification) => {
     if (item) {
       setEditingItem(item);
+      const parsedImages = parseCertificateImages(item.image);
+      setCertImages(parsedImages);
       setFormData({
         title: item.title,
         issuer: item.issuer,
@@ -103,6 +108,7 @@ export default function AdminCertificationsPage() {
       });
     } else {
       setEditingItem(null);
+      setCertImages([]);
       setFormData({
         title: '',
         issuer: '',
@@ -121,6 +127,7 @@ export default function AdminCertificationsPage() {
   const handleCloseDialog = () => {
     setDialogOpen(false);
     setEditingItem(null);
+    setCertImages([]);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -129,8 +136,10 @@ export default function AdminCertificationsPage() {
     setError('');
 
     try {
+      const finalImage = serializeCertificateImages(certImages);
       const cleanFormData = {
         ...formData,
+        image: finalImage,
         issuedDate: formData.issuedDate && formData.issuedDate.trim() ? formData.issuedDate.trim() : null,
         expiryDate: formData.expiryDate && formData.expiryDate.trim() ? formData.expiryDate.trim() : null,
       };
@@ -263,39 +272,63 @@ export default function AdminCertificationsPage() {
                         paginatedItems.map((item) => (
                           <TableRow key={item.id} hover>
                             <TableCell>
-                              {item.image ? (
-                                <Box
-                                  sx={{
-                                    width: 48,
-                                    height: 48,
-                                    borderRadius: 2,
-                                    overflow: 'hidden',
-                                    border: '1px solid #E2E8F0',
-                                    bgcolor: '#FFFFFF',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                  }}
-                                >
-                                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                                  <img src={item.image} alt={item.title} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-                                </Box>
-                              ) : (
-                                <Box
-                                  sx={{
-                                    width: 48,
-                                    height: 48,
-                                    borderRadius: 2,
-                                    bgcolor: '#e8f6ed',
-                                    color: '#018730',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                  }}
-                                >
-                                  <VerifiedUserIcon fontSize="small" />
-                                </Box>
-                              )}
+                              {(() => {
+                                const rowImages = parseCertificateImages(item.image);
+                                const firstImg = rowImages[0];
+                                const hasMultiple = rowImages.length > 1;
+
+                                return firstImg ? (
+                                  <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
+                                    <Box
+                                      sx={{
+                                        width: 48,
+                                        height: 48,
+                                        borderRadius: 2,
+                                        overflow: 'hidden',
+                                        border: '1px solid #E2E8F0',
+                                        bgcolor: '#FFFFFF',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        p: 0.3,
+                                      }}
+                                    >
+                                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                                      <img src={firstImg} alt={item.title} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                                    </Box>
+                                    {hasMultiple && (
+                                      <Chip
+                                        size="small"
+                                        icon={<CollectionsIcon sx={{ fontSize: '11px !important' }} />}
+                                        label={`${rowImages.length} Berkas`}
+                                        sx={{
+                                          height: 18,
+                                          fontSize: '0.625rem',
+                                          fontWeight: 800,
+                                          bgcolor: '#e8f6ed',
+                                          color: '#018730',
+                                          px: 0.3,
+                                        }}
+                                      />
+                                    )}
+                                  </Box>
+                                ) : (
+                                  <Box
+                                    sx={{
+                                      width: 48,
+                                      height: 48,
+                                      borderRadius: 2,
+                                      bgcolor: '#e8f6ed',
+                                      color: '#018730',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                    }}
+                                  >
+                                    <VerifiedUserIcon fontSize="small" />
+                                  </Box>
+                                );
+                              })()}
                             </TableCell>
                             <TableCell sx={{ fontWeight: 700, color: '#0F172A' }}>
                               <Typography variant="body2" fontWeight={700}>{item.title}</Typography>
@@ -390,12 +423,81 @@ export default function AdminCertificationsPage() {
                 />
               </Stack>
 
-              <ImageUpload
-                value={formData.image}
-                onChange={(url) => setFormData((prev) => ({ ...prev, image: url }))}
-                label="Unggah Scan / Logo Sertifikat ISO"
-                helperText="Unggah scan dokumen sertifikat atau badge resmi ISO (JPG, PNG, WEBP)"
-              />
+              {/* Multi-Document Certificate Upload Section */}
+              <Box sx={{ p: 2, bgcolor: '#F8FAFC', borderRadius: 2.5, border: '1px solid #E2E8F0' }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#1E293B', mb: 0.5 }}>
+                  Berkas Dokumen / Scan Sertifikat ISO
+                </Typography>
+                <Typography variant="caption" sx={{ color: '#64748B', display: 'block', mb: 2 }}>
+                  Jika standar ini memiliki lebih dari 1 sertifikat (misal ISO 9001 memiliki 2 berkas/halaman berbeda, atau sertifikat untuk 2 fasilitas/plant), Anda dapat menambahkan beberapa dokumen sekaligus.
+                </Typography>
+
+                {/* List of uploaded certificate documents */}
+                {certImages.length > 0 && (
+                  <Stack spacing={1.5} sx={{ mb: 2 }}>
+                    {certImages.map((imgUrl, idx) => (
+                      <Box
+                        key={idx}
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          p: 1.2,
+                          bgcolor: '#FFFFFF',
+                          borderRadius: 2,
+                          border: '1px solid #CBD5E1',
+                        }}
+                      >
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, overflow: 'hidden' }}>
+                          <Box
+                            sx={{
+                              width: 48,
+                              height: 48,
+                              borderRadius: 1.5,
+                              overflow: 'hidden',
+                              flexShrink: 0,
+                              border: '1px solid #E2E8F0',
+                              bgcolor: '#F1F5F9',
+                              p: 0.4,
+                            }}
+                          >
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={imgUrl} alt={`Berkas ${idx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                          </Box>
+                          <Box sx={{ minWidth: 0 }}>
+                            <Typography variant="body2" sx={{ fontWeight: 700, color: '#0F172A' }}>
+                              {idx === 0 ? 'Berkas 1 (Utama / Halaman 1)' : `Berkas ${idx + 1} (Tambahan / Halaman ${idx + 1})`}
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: '#64748B', display: 'block', fontFamily: 'monospace' }} noWrap>
+                              {imgUrl}
+                            </Typography>
+                          </Box>
+                        </Box>
+
+                        <IconButton
+                          size="small"
+                          color="error"
+                          onClick={() => setCertImages((prev) => prev.filter((_, i) => i !== idx))}
+                          title="Hapus berkas ini"
+                        >
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </Box>
+                    ))}
+                  </Stack>
+                )}
+
+                <ImageUpload
+                  value=""
+                  onChange={(url) => {
+                    if (url) {
+                      setCertImages((prev) => [...prev, url]);
+                    }
+                  }}
+                  label={certImages.length === 0 ? 'Unggah Scan / Logo Sertifikat ISO' : '+ Tambah Dokumen / Scan Sertifikat Tambahan'}
+                  helperText="Unggah scan dokumen sertifikat (JPG, PNG, WEBP, SVG). Bisa diunggah lebih dari 1 berkas."
+                />
+              </Box>
 
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
                 <TextField

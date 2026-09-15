@@ -348,7 +348,7 @@ export default async function AboutPage() {
 
             <Grid container spacing={3}>
               {certifications.map((cert) => (
-                <Grid size={{ xs: 12, sm: 6, md: 3 }} key={cert.id}>
+                <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={cert.id}>
                   <Card
                     sx={{
                       height: '100%',
