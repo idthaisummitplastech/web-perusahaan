@@ -27,6 +27,8 @@ import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import FilterAltIcon from '@mui/icons-material/FilterAlt';
+import BrokenImageIcon from '@mui/icons-material/BrokenImage';
+import RefreshIcon from '@mui/icons-material/Refresh';
 import { useLanguage } from '@/lib/LanguageContext';
 import { parseCertificateImages } from '@/lib/certifications';
 
@@ -51,6 +53,7 @@ export default function CertificateGridClient({ certifications }: Props) {
   const [selectedCert, setSelectedCert] = useState<CertificationItem | null>(null);
   const [activeImgIdx, setActiveImgIdx] = useState(0);
   const [activeCategory, setActiveCategory] = useState<string>('all');
+  const [imgErrorMap, setImgErrorMap] = useState<Record<string, boolean>>({});
   const { language, t } = useLanguage();
 
   // Extract unique categories for filter tabs (e.g., ISO 9001, IATF 16949, ISO 14001, ISO 45001)
@@ -262,17 +265,27 @@ export default function CertificateGridClient({ certifications }: Props) {
                       },
                     }}
                   >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={primaryImage}
-                      alt={cert.title}
-                      style={{
-                        maxWidth: '100%',
-                        maxHeight: '100%',
-                        objectFit: 'contain',
-                        transition: 'transform 0.3s ease',
-                      }}
-                    />
+                    {imgErrorMap[primaryImage] ? (
+                      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1, color: '#94A3B8' }}>
+                        <WorkspacePremiumIcon sx={{ fontSize: 44, color: '#CBD5E1' }} />
+                        <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 600 }}>
+                          {language === 'en' ? 'Certificate Document' : 'Dokumen Sertifikat'}
+                        </Typography>
+                      </Box>
+                    ) : (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img
+                        src={primaryImage}
+                        alt={cert.title}
+                        onError={() => setImgErrorMap((prev) => ({ ...prev, [primaryImage]: true }))}
+                        style={{
+                          maxWidth: '100%',
+                          maxHeight: '100%',
+                          objectFit: 'contain',
+                          transition: 'transform 0.3s ease',
+                        }}
+                      />
+                    )}
 
                     {/* Multi-Certificate Badge if this standard has 2 or more documents */}
                     {hasMultiple && (
@@ -527,16 +540,47 @@ export default function CertificateGridClient({ certifications }: Props) {
                   border: '1px solid #E2E8F0',
                 }}
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={currentModalImage}
-                  alt={`${selectedCert?.title} - Dokumen ${activeImgIdx + 1}`}
-                  style={{
-                    maxWidth: '100%',
-                    maxHeight: '64vh',
-                    objectFit: 'contain',
-                  }}
-                />
+                {imgErrorMap[currentModalImage] ? (
+                  <Box sx={{ p: 4, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1.5 }}>
+                    <BrokenImageIcon sx={{ fontSize: 52, color: '#94A3B8' }} />
+                    <Typography variant="body2" sx={{ fontWeight: 700, color: '#334155' }}>
+                      {language === 'en' ? 'Document image could not be loaded' : 'Berkas gambar belum dapat ditampilkan'}
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: '#64748B', maxWidth: 360 }}>
+                      {language === 'en'
+                        ? 'The image might still be processing or the file is temporarily unavailable.'
+                        : 'Gambar sedang diproses atau URL berkas tidak dapat diakses saat ini.'}
+                    </Typography>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      onClick={() => setImgErrorMap((prev) => ({ ...prev, [currentModalImage]: false }))}
+                      startIcon={<RefreshIcon />}
+                      sx={{
+                        mt: 1,
+                        color: '#018730',
+                        borderColor: '#A3DFB7',
+                        fontWeight: 700,
+                        textTransform: 'none',
+                        '&:hover': { borderColor: '#018730', bgcolor: '#E8F6ED' },
+                      }}
+                    >
+                      {language === 'en' ? 'Try Reloading' : 'Coba Muat Ulang'}
+                    </Button>
+                  </Box>
+                ) : (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    src={currentModalImage}
+                    alt={`${selectedCert?.title} - Dokumen ${activeImgIdx + 1}`}
+                    onError={() => setImgErrorMap((prev) => ({ ...prev, [currentModalImage]: true }))}
+                    style={{
+                      maxWidth: '100%',
+                      maxHeight: '64vh',
+                      objectFit: 'contain',
+                    }}
+                  />
+                )}
               </Box>
 
               {/* Prev / Next Arrows for Multi-Certificate */}
@@ -606,8 +650,19 @@ export default function CertificateGridClient({ certifications }: Props) {
                     '&:hover': { borderColor: '#018730' },
                   }}
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={imgUrl} alt={`Thumbnail ${i + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 4 }} />
+                  {imgErrorMap[imgUrl] ? (
+                    <Box sx={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: '#F1F5F9', color: '#94A3B8' }}>
+                      <BrokenImageIcon sx={{ fontSize: 22 }} />
+                    </Box>
+                  ) : (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img
+                      src={imgUrl}
+                      alt={`Thumbnail ${i + 1}`}
+                      onError={() => setImgErrorMap((prev) => ({ ...prev, [imgUrl]: true }))}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 4 }}
+                    />
+                  )}
                   <Box
                     sx={{
                       position: 'absolute',

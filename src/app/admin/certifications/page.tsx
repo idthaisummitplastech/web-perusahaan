@@ -294,7 +294,14 @@ export default function AdminCertificationsPage() {
                                       }}
                                     >
                                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                                      <img src={firstImg} alt={item.title} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                                      <img
+                                        src={firstImg}
+                                        alt={item.title}
+                                        onError={(e) => {
+                                          e.currentTarget.style.display = 'none';
+                                        }}
+                                        style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                                      />
                                     </Box>
                                     {hasMultiple && (
                                       <Chip
@@ -462,7 +469,14 @@ export default function AdminCertificationsPage() {
                             }}
                           >
                             {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={imgUrl} alt={`Berkas ${idx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                            <img
+                              src={imgUrl}
+                              alt={`Berkas ${idx + 1}`}
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                              }}
+                              style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                            />
                           </Box>
                           <Box sx={{ minWidth: 0 }}>
                             <Typography variant="body2" sx={{ fontWeight: 700, color: '#0F172A' }}>

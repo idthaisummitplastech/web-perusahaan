@@ -19,6 +19,8 @@ import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import CollectionsIcon from '@mui/icons-material/Collections';
+import BrokenImageIcon from '@mui/icons-material/BrokenImage';
+import RefreshIcon from '@mui/icons-material/Refresh';
 import { parseCertificateImages } from '@/lib/certifications';
 
 interface ZoomableCertImageProps {
@@ -46,6 +48,7 @@ export default function ZoomableCertImage({
 }: ZoomableCertImageProps) {
   const [open, setOpen] = useState(false);
   const [activeIdx, setActiveIdx] = useState(0);
+  const [imgErrorMap, setImgErrorMap] = useState<Record<string, boolean>>({});
 
   // Parse all certificate image URLs
   const certImages = React.useMemo(() => {
@@ -102,9 +105,14 @@ export default function ZoomableCertImage({
           '&:hover .zoom-overlay': { opacity: 1 },
         }}
       >
-        {primaryImage ? (
+        {primaryImage && !imgErrorMap[primaryImage] ? (
           /* eslint-disable-next-line @next/next/no-img-element */
-          <img src={primaryImage} alt={title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          <img
+            src={primaryImage}
+            alt={title}
+            onError={() => setImgErrorMap((prev) => ({ ...prev, [primaryImage]: true }))}
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          />
         ) : (
           <Box sx={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#018730' }}>
             <WorkspacePremiumIcon fontSize="small" />
@@ -218,12 +226,41 @@ export default function ZoomableCertImage({
                   border: '1px solid #E2E8F0',
                 }}
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={currentImage}
-                  alt={`${title} - Berkas ${activeIdx + 1}`}
-                  style={{ maxWidth: '100%', maxHeight: '64vh', objectFit: 'contain' }}
-                />
+                {imgErrorMap[currentImage] ? (
+                  <Box sx={{ p: 4, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1.5 }}>
+                    <BrokenImageIcon sx={{ fontSize: 52, color: '#94A3B8' }} />
+                    <Typography variant="body2" sx={{ fontWeight: 700, color: '#334155' }}>
+                      Berkas gambar belum dapat ditampilkan
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: '#64748B', maxWidth: 360 }}>
+                      Gambar sedang diproses atau URL berkas tidak dapat diakses saat ini.
+                    </Typography>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      onClick={() => setImgErrorMap((prev) => ({ ...prev, [currentImage]: false }))}
+                      startIcon={<RefreshIcon />}
+                      sx={{
+                        mt: 1,
+                        color: '#018730',
+                        borderColor: '#A3DFB7',
+                        fontWeight: 700,
+                        textTransform: 'none',
+                        '&:hover': { borderColor: '#018730', bgcolor: '#E8F6ED' },
+                      }}
+                    >
+                      Coba Muat Ulang
+                    </Button>
+                  </Box>
+                ) : (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    src={currentImage}
+                    alt={`${title} - Berkas ${activeIdx + 1}`}
+                    onError={() => setImgErrorMap((prev) => ({ ...prev, [currentImage]: true }))}
+                    style={{ maxWidth: '100%', maxHeight: '64vh', objectFit: 'contain' }}
+                  />
+                )}
               </Box>
 
               {/* Navigation Arrows for Multiple Documents */}
@@ -293,8 +330,19 @@ export default function ZoomableCertImage({
                     '&:hover': { borderColor: '#018730' },
                   }}
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={imgUrl} alt={`Thumbnail ${i + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 4 }} />
+                  {imgErrorMap[imgUrl] ? (
+                    <Box sx={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: '#F1F5F9', color: '#94A3B8' }}>
+                      <BrokenImageIcon sx={{ fontSize: 20 }} />
+                    </Box>
+                  ) : (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img
+                      src={imgUrl}
+                      alt={`Thumbnail ${i + 1}`}
+                      onError={() => setImgErrorMap((prev) => ({ ...prev, [imgUrl]: true }))}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 4 }}
+                    />
+                  )}
                   <Box
                     sx={{
                       position: 'absolute',
