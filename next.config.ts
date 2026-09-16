@@ -15,8 +15,8 @@ const nextConfig: NextConfig = {
       // Teknologi lama di bawah /products/technology -> pindah ke /services
       { source: "/products/technology", destination: "/services", permanent: true },
       { source: "/products/technology/", destination: "/services", permanent: true },
-      // Postingan sampah Elementor /2026/07/... -> arsip /news
-      { source: "/:year/:month/:day/:slug", destination: "/news", permanent: true },
+      // Postingan sampah Elementor /2026/07/... -> arsip /news (hanya match angka tanggal)
+      { source: "/:year(\\d{4})/:month(\\d{1,2})/:day(\\d{1,2})/:slug*", destination: "/news", permanent: true },
       // Normalisasi trailing-slash produk lama sudah di-handle Next, tegaskan slug customer
       { source: "/products/hmmi/", destination: "/products/hmmi", permanent: true },
       { source: "/products/mmki/", destination: "/products/mmki", permanent: true },
