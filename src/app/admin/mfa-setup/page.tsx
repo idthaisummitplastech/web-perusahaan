@@ -269,30 +269,32 @@ export default function MfaSetupPage() {
                   fullWidth
                   required
                   value={verificationCode}
-                  onChange={(e) => setVerificationCode(e.target.value)}
+                  error={!!error}
+                  onChange={(e) => {
+                    setVerificationCode(e.target.value.replace(/\D/g, ''));
+                    if (error) setError('');
+                  }}
                   slotProps={{
                     htmlInput: {
                       maxLength: 6,
+                      inputMode: 'numeric',
                       style: { textAlign: 'center', fontSize: '1.4rem', letterSpacing: '4px', fontWeight: 700 },
                     },
                   }}
                   sx={{ mb: 2 }}
                 />
 
-                <Box sx={{ mb: 2.5, p: 1.5, bgcolor: '#FFFBEB', borderRadius: 2, border: '1px dashed #FDE68A', textAlign: 'center' }}>
-                  <Typography variant="caption" sx={{ color: '#92400E', display: 'block', mb: 0.5 }}>
-                    Jika jam di ponsel belum tersinkronisasi, Anda juga dapat menggunakan kode darurat:
+                <Box sx={{ mb: 2.5, p: 1.5, bgcolor: '#F8FAFC', borderRadius: 2, border: '1px solid #E2E8F0', textAlign: 'center' }}>
+                  <Typography variant="caption" sx={{ color: '#475569', display: 'block' }}>
+                    💡 Masukkan 6-digit angka terbaru dari aplikasi Authenticator di HP Anda. Kode berganti otomatis setiap 30 detik.
                   </Typography>
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    color="warning"
-                    onClick={() => setVerificationCode('000000')}
-                    sx={{ textTransform: 'none', fontWeight: 700, fontSize: '0.8rem', py: 0.25 }}
-                  >
-                    Gunakan Kode Darurat: 000000
-                  </Button>
                 </Box>
+
+                {error && (
+                  <Alert severity="error" sx={{ mb: 2.5, borderRadius: 2, fontSize: '0.875rem', lineHeight: 1.5 }}>
+                    {error}
+                  </Alert>
+                )}
 
                 <Button
                   type="submit"
@@ -300,6 +302,8 @@ export default function MfaSetupPage() {
                   size="large"
                   fullWidth
                   disabled={submitting || verificationCode.length < 6}
+                  className="notranslate"
+                  translate="no"
                   sx={{
                     py: 1.5,
                     bgcolor: '#F59E0B',
@@ -308,7 +312,9 @@ export default function MfaSetupPage() {
                     '&:hover': { bgcolor: '#D97706', color: '#FFFFFF' },
                   }}
                 >
-                  {submitting ? <CircularProgress size={24} color="inherit" /> : 'Verifikasi & Aktifkan MFA'}
+                  <span className="notranslate" translate="no" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {submitting ? <CircularProgress size={24} color="inherit" /> : 'Verifikasi & Aktifkan MFA'}
+                  </span>
                 </Button>
               </Box>
             </Box>
