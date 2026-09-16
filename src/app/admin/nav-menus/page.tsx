@@ -51,6 +51,8 @@ interface NavMenu {
   section: string | null;
   sortOrder: number;
   isActive: boolean;
+  isMaintenance?: boolean;
+  is_maintenance?: boolean;
   parentId: number | null;
 }
 
@@ -70,10 +72,12 @@ export default function AdminNavMenusPage() {
     parentId: '' as string | number,
     sortOrder: 0,
     isActive: true,
+    isMaintenance: false,
   });
 
   const [saving, setSaving] = useState(false);
   const [reordering, setReordering] = useState(false);
+  const [togglingId, setTogglingId] = useState<number | null>(null);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
@@ -129,6 +133,7 @@ export default function AdminNavMenusPage() {
         parentId: item.parentId || '',
         sortOrder: item.sortOrder,
         isActive: item.isActive,
+        isMaintenance: Boolean(item.isMaintenance ?? item.is_maintenance),
       });
     } else {
       setEditingItem(null);
@@ -141,6 +146,7 @@ export default function AdminNavMenusPage() {
         parentId: presetParentId || '',
         sortOrder: items.length + 1,
         isActive: true,
+        isMaintenance: false,
       });
     }
     setDialogOpen(true);
@@ -149,6 +155,51 @@ export default function AdminNavMenusPage() {
   const handleCloseDialog = () => {
     setDialogOpen(false);
     setEditingItem(null);
+  };
+
+  const handleToggleMaintenance = async (item: NavMenu) => {
+    const currentVal = Boolean(item.isMaintenance ?? item.is_maintenance);
+    const nextVal = !currentVal;
+    setTogglingId(item.id);
+
+    // Optimistic UI update
+    setItems((prev) =>
+      prev.map((i) => (i.id === item.id ? { ...i, isMaintenance: nextVal, is_maintenance: nextVal } : i))
+    );
+
+    try {
+      const res = await fetch('/api/cms/nav-menus', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: item.id,
+          title: item.title,
+          url: item.url,
+          location: item.location,
+          section: item.section,
+          sort_order: item.sortOrder,
+          is_active: item.isActive,
+          is_maintenance: nextVal,
+          parent_id: item.parentId,
+        }),
+      });
+
+      if (!res.ok) throw new Error('Gagal memperbarui status.');
+
+      setMessage(
+        `Mode maintenance "${item.title}" diubah: ${
+          nextVal ? '🚧 AKTIF (Pengunjung dialihkan ke /maintenance)' : '🟢 NORMAL (Kembali ke halaman asli)'
+        }`
+      );
+    } catch {
+      // Revert if failed
+      setItems((prev) =>
+        prev.map((i) => (i.id === item.id ? { ...i, isMaintenance: currentVal, is_maintenance: currentVal } : i))
+      );
+      setError(`Gagal mengubah status maintenance untuk "${item.title}".`);
+    } finally {
+      setTogglingId(null);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -167,6 +218,7 @@ export default function AdminNavMenusPage() {
         parentId: formData.location === 'navbar' && formData.parentId ? parseInt(String(formData.parentId)) : null,
         sortOrder: formData.sortOrder,
         isActive: formData.isActive,
+        is_maintenance: formData.isMaintenance,
       };
 
       const res = await fetch('/api/cms/nav-menus', {
@@ -445,6 +497,7 @@ export default function AdminNavMenusPage() {
                     <TableCell sx={{ fontWeight: 700, width: 80 }}>Urutan</TableCell>
                     <TableCell sx={{ fontWeight: 700 }}>Judul Menu Navigasi</TableCell>
                     <TableCell sx={{ fontWeight: 700 }}>URL Target</TableCell>
+                    <TableCell sx={{ fontWeight: 700, width: 190 }}>Mode Maintenance</TableCell>
                     <TableCell sx={{ fontWeight: 700 }}>Tipe Menu</TableCell>
                     <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
                     <TableCell align="right" sx={{ fontWeight: 700 }}>Aksi</TableCell>
@@ -454,6 +507,7 @@ export default function AdminNavMenusPage() {
                   {topLevelNavbarItems.map((parent, pIndex) => {
                     const subItems = getSubItems(parent.id);
                     const hasChildren = subItems.length > 0;
+                    const isParentMaint = Boolean(parent.isMaintenance ?? parent.is_maintenance);
 
                     return (
                       <React.Fragment key={parent.id}>
@@ -465,7 +519,7 @@ export default function AdminNavMenusPage() {
                           onDragOver={handleDragOver}
                           onDrop={() => handleDropOnItem(topLevelNavbarItems, parent.id)}
                           sx={{
-                            bgcolor: hasChildren ? '#fafbfd' : 'inherit',
+                            bgcolor: isParentMaint ? '#fffdf7' : hasChildren ? '#fafbfd' : 'inherit',
                             cursor: 'grab',
                             transition: 'background-color 0.15s ease',
                           }}
@@ -525,7 +579,68 @@ export default function AdminNavMenusPage() {
 
                           {/* URL */}
                           <TableCell sx={{ fontFamily: 'monospace', color: '#475569', fontSize: '0.85rem' }}>
-                            {parent.url}
+                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
+                              <span>{parent.url}</span>
+                              {isParentMaint && (
+                                <Typography variant="caption" sx={{ color: '#D97706', fontWeight: 700, fontSize: '0.7rem' }}>
+                                  ↳ Dialihkan ke /maintenance
+                                </Typography>
+                              )}
+                            </Box>
+                          </TableCell>
+
+                          {/* Mode Maintenance 1-Click Toggle */}
+                          <TableCell>
+                            <Tooltip title={isParentMaint ? 'Mode Maintenance AKTIF (Pengunjung dialihkan ke halaman maintenance). Klik untuk kembalikan ke Normal.' : 'Mode Normal. Klik untuk mengaktifkan status Under Maintenance tanpa mengubah URL asli.'}>
+                              <Box
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleToggleMaintenance(parent);
+                                }}
+                                sx={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: 0.75,
+                                  cursor: 'pointer',
+                                  px: 1.25,
+                                  py: 0.4,
+                                  borderRadius: 2,
+                                  border: isParentMaint ? '1px solid #F59E0B' : '1px solid #E2E8F0',
+                                  bgcolor: isParentMaint ? '#FFFBEB' : '#FFFFFF',
+                                  boxShadow: isParentMaint ? '0 1px 3px rgba(245,158,11,0.2)' : 'none',
+                                  transition: 'all 0.15s ease',
+                                  '&:hover': {
+                                    bgcolor: isParentMaint ? '#FEF3C7' : '#F8FAFC',
+                                    borderColor: isParentMaint ? '#D97706' : '#CBD5E1',
+                                  },
+                                }}
+                              >
+                                <Switch
+                                  size="small"
+                                  checked={isParentMaint}
+                                  disabled={togglingId === parent.id}
+                                  sx={{
+                                    '& .MuiSwitch-switchBase.Mui-checked': {
+                                      color: '#D97706',
+                                    },
+                                    '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
+                                      backgroundColor: '#F59E0B',
+                                    },
+                                  }}
+                                />
+                                <Typography
+                                  variant="caption"
+                                  sx={{
+                                    fontWeight: 800,
+                                    fontSize: '0.72rem',
+                                    color: isParentMaint ? '#B45309' : '#64748B',
+                                    userSelect: 'none',
+                                  }}
+                                >
+                                  {isParentMaint ? '🚧 Maintenance' : '🟢 Normal'}
+                                </Typography>
+                              </Box>
+                            </Tooltip>
                           </TableCell>
 
                           {/* Menu Type */}
@@ -585,108 +700,172 @@ export default function AdminNavMenusPage() {
                         </TableRow>
 
                         {/* Nested Sub-Menu Rows */}
-                        {subItems.map((child, cIndex) => (
-                          <TableRow
-                            key={child.id}
-                            draggable
-                            onDragStart={(e) => handleDragStart(e, child.id)}
-                            onDragOver={handleDragOver}
-                            onDrop={() => handleDropOnItem(subItems, child.id)}
-                            sx={{
-                              bgcolor: '#F8FAFC',
-                              cursor: 'grab',
-                              '&:hover': { bgcolor: '#F1F5F9' },
-                            }}
-                          >
-                            {/* Sub-item reorder arrows */}
-                            <TableCell sx={{ pl: 3.5 }}>
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                <Tooltip title="Geser urutan sub-menu">
-                                  <Box sx={{ color: '#CBD5E1', display: 'flex', alignItems: 'center', '&:hover': { color: '#018730' } }}>
-                                    <DragIndicatorIcon sx={{ fontSize: 16 }} />
+                        {subItems.map((child, cIndex) => {
+                          const isChildMaint = Boolean(child.isMaintenance ?? child.is_maintenance);
+                          return (
+                            <TableRow
+                              key={child.id}
+                              draggable
+                              onDragStart={(e) => handleDragStart(e, child.id)}
+                              onDragOver={handleDragOver}
+                              onDrop={() => handleDropOnItem(subItems, child.id)}
+                              sx={{
+                                bgcolor: isChildMaint ? '#fffdf7' : '#F8FAFC',
+                                cursor: 'grab',
+                                '&:hover': { bgcolor: isChildMaint ? '#fefae8' : '#F1F5F9' },
+                              }}
+                            >
+                              {/* Sub-item reorder arrows */}
+                              <TableCell sx={{ pl: 3.5 }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                  <Tooltip title="Geser urutan sub-menu">
+                                    <Box sx={{ color: '#CBD5E1', display: 'flex', alignItems: 'center', '&:hover': { color: '#018730' } }}>
+                                      <DragIndicatorIcon sx={{ fontSize: 16 }} />
+                                    </Box>
+                                  </Tooltip>
+                                  <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                                    <IconButton
+                                      size="small"
+                                      disabled={cIndex === 0}
+                                      onClick={() => handleMove(subItems, cIndex, 'up')}
+                                      sx={{ p: 0.1, color: '#94A3B8' }}
+                                    >
+                                      <ArrowUpwardIcon sx={{ fontSize: 11 }} />
+                                    </IconButton>
+                                    <IconButton
+                                      size="small"
+                                      disabled={cIndex === subItems.length - 1}
+                                      onClick={() => handleMove(subItems, cIndex, 'down')}
+                                      sx={{ p: 0.1, color: '#94A3B8' }}
+                                    >
+                                      <ArrowDownwardIcon sx={{ fontSize: 11 }} />
+                                    </IconButton>
+                                  </Box>
+                                </Box>
+                              </TableCell>
+
+                              {/* Indented Sub-item title */}
+                              <TableCell sx={{ pl: 4 }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                  <SubdirectoryArrowRightIcon sx={{ color: '#fc4509', fontSize: 18 }} />
+                                  <Typography variant="body2" fontWeight={600} color="#1E293B">
+                                    {child.title}
+                                  </Typography>
+                                  <Chip
+                                    label={`Sub-menu dari: ${parent.title}`}
+                                    size="small"
+                                    sx={{
+                                      bgcolor: '#FFF7ED',
+                                      color: '#C2410C',
+                                      fontWeight: 600,
+                                      fontSize: '0.68rem',
+                                      height: 18,
+                                    }}
+                                  />
+                                </Box>
+                              </TableCell>
+
+                              {/* Sub-item URL */}
+                              <TableCell sx={{ fontFamily: 'monospace', color: '#64748B', fontSize: '0.8rem' }}>
+                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
+                                  <span>{child.url}</span>
+                                  {isChildMaint && (
+                                    <Typography variant="caption" sx={{ color: '#D97706', fontWeight: 700, fontSize: '0.7rem' }}>
+                                      ↳ Dialihkan ke /maintenance
+                                    </Typography>
+                                  )}
+                                </Box>
+                              </TableCell>
+
+                              {/* Sub-item Mode Maintenance Toggle */}
+                              <TableCell>
+                                <Tooltip title={isChildMaint ? 'Mode Maintenance AKTIF (Pengunjung dialihkan ke halaman maintenance). Klik untuk kembalikan ke Normal.' : 'Mode Normal. Klik untuk mengaktifkan status Under Maintenance tanpa mengubah URL asli.'}>
+                                  <Box
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleToggleMaintenance(child);
+                                    }}
+                                    sx={{
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: 0.75,
+                                      cursor: 'pointer',
+                                      px: 1.25,
+                                      py: 0.4,
+                                      borderRadius: 2,
+                                      border: isChildMaint ? '1px solid #F59E0B' : '1px solid #E2E8F0',
+                                      bgcolor: isChildMaint ? '#FFFBEB' : '#FFFFFF',
+                                      boxShadow: isChildMaint ? '0 1px 3px rgba(245,158,11,0.2)' : 'none',
+                                      transition: 'all 0.15s ease',
+                                      '&:hover': {
+                                        bgcolor: isChildMaint ? '#FEF3C7' : '#F8FAFC',
+                                        borderColor: isChildMaint ? '#D97706' : '#CBD5E1',
+                                      },
+                                    }}
+                                  >
+                                    <Switch
+                                      size="small"
+                                      checked={isChildMaint}
+                                      disabled={togglingId === child.id}
+                                      sx={{
+                                        '& .MuiSwitch-switchBase.Mui-checked': {
+                                          color: '#D97706',
+                                        },
+                                        '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
+                                          backgroundColor: '#F59E0B',
+                                        },
+                                      }}
+                                    />
+                                    <Typography
+                                      variant="caption"
+                                      sx={{
+                                        fontWeight: 800,
+                                        fontSize: '0.72rem',
+                                        color: isChildMaint ? '#B45309' : '#64748B',
+                                        userSelect: 'none',
+                                      }}
+                                    >
+                                      {isChildMaint ? '🚧 Maintenance' : '🟢 Normal'}
+                                    </Typography>
                                   </Box>
                                 </Tooltip>
-                                <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                                  <IconButton
-                                    size="small"
-                                    disabled={cIndex === 0}
-                                    onClick={() => handleMove(subItems, cIndex, 'up')}
-                                    sx={{ p: 0.1, color: '#94A3B8' }}
-                                  >
-                                    <ArrowUpwardIcon sx={{ fontSize: 11 }} />
-                                  </IconButton>
-                                  <IconButton
-                                    size="small"
-                                    disabled={cIndex === subItems.length - 1}
-                                    onClick={() => handleMove(subItems, cIndex, 'down')}
-                                    sx={{ p: 0.1, color: '#94A3B8' }}
-                                  >
-                                    <ArrowDownwardIcon sx={{ fontSize: 11 }} />
-                                  </IconButton>
-                                </Box>
-                              </Box>
-                            </TableCell>
+                              </TableCell>
 
-                            {/* Indented Sub-item title */}
-                            <TableCell sx={{ pl: 4 }}>
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                <SubdirectoryArrowRightIcon sx={{ color: '#fc4509', fontSize: 18 }} />
-                                <Typography variant="body2" fontWeight={600} color="#1E293B">
-                                  {child.title}
-                                </Typography>
+                              {/* Sub-item Type */}
+                              <TableCell>
                                 <Chip
-                                  label={`Sub-menu dari: ${parent.title}`}
+                                  label="Dropdown Item"
+                                  size="small"
+                                  sx={{ bgcolor: '#FEF3C7', color: '#B45309', fontWeight: 700, fontSize: '0.72rem' }}
+                                />
+                              </TableCell>
+
+                              {/* Sub-item Status */}
+                              <TableCell>
+                                <Chip
+                                  label={child.isActive ? 'Aktif' : 'Nonaktif'}
                                   size="small"
                                   sx={{
-                                    bgcolor: '#FFF7ED',
-                                    color: '#C2410C',
-                                    fontWeight: 600,
-                                    fontSize: '0.68rem',
-                                    height: 18,
+                                    bgcolor: child.isActive ? '#ECFDF5' : '#F1F5F9',
+                                    color: child.isActive ? '#047857' : '#64748B',
+                                    fontWeight: 700,
+                                    fontSize: '0.72rem',
                                   }}
                                 />
-                              </Box>
-                            </TableCell>
+                              </TableCell>
 
-                            {/* Sub-item URL */}
-                            <TableCell sx={{ fontFamily: 'monospace', color: '#64748B', fontSize: '0.8rem' }}>
-                              {child.url}
-                            </TableCell>
-
-                            {/* Sub-item Type */}
-                            <TableCell>
-                              <Chip
-                                label="Dropdown Item"
-                                size="small"
-                                sx={{ bgcolor: '#FEF3C7', color: '#B45309', fontWeight: 700, fontSize: '0.72rem' }}
-                              />
-                            </TableCell>
-
-                            {/* Sub-item Status */}
-                            <TableCell>
-                              <Chip
-                                label={child.isActive ? 'Aktif' : 'Nonaktif'}
-                                size="small"
-                                sx={{
-                                  bgcolor: child.isActive ? '#ECFDF5' : '#F1F5F9',
-                                  color: child.isActive ? '#047857' : '#64748B',
-                                  fontWeight: 700,
-                                  fontSize: '0.72rem',
-                                }}
-                              />
-                            </TableCell>
-
-                            {/* Sub-item Actions */}
-                            <TableCell align="right">
-                              <IconButton size="small" sx={{ color: '#018730' }} onClick={() => handleOpenDialog(child)} title="Ubah sub-menu">
-                                <EditIcon fontSize="small" />
-                              </IconButton>
-                              <IconButton size="small" color="error" onClick={() => handleDelete(child.id, child.title)} title="Hapus sub-menu">
-                                <DeleteIcon fontSize="small" />
-                              </IconButton>
-                            </TableCell>
-                          </TableRow>
-                        ))}
+                              {/* Sub-item Actions */}
+                              <TableCell align="right">
+                                <IconButton size="small" sx={{ color: '#018730' }} onClick={() => handleOpenDialog(child)} title="Ubah sub-menu">
+                                  <EditIcon fontSize="small" />
+                                </IconButton>
+                                <IconButton size="small" color="error" onClick={() => handleDelete(child.id, child.title)} title="Hapus sub-menu">
+                                  <DeleteIcon fontSize="small" />
+                                </IconButton>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
                       </React.Fragment>
                     );
                   })}
@@ -787,71 +966,139 @@ export default function AdminNavMenusPage() {
                           <TableCell sx={{ fontWeight: 700, width: 70 }}>Urutan</TableCell>
                           <TableCell sx={{ fontWeight: 700 }}>Judul Tautan Footer</TableCell>
                           <TableCell sx={{ fontWeight: 700 }}>URL Tujuan</TableCell>
+                          <TableCell sx={{ fontWeight: 700, width: 180 }}>Mode Maintenance</TableCell>
                           <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
                           <TableCell align="right" sx={{ fontWeight: 700 }}>Aksi</TableCell>
                         </TableRow>
                       </TableHead>
                       <TableBody>
-                        {sectionItems.map((item, idx) => (
-                          <TableRow
-                            key={item.id}
-                            hover
-                            draggable
-                            onDragStart={(e) => handleDragStart(e, item.id)}
-                            onDragOver={handleDragOver}
-                            onDrop={() => handleDropOnItem(sectionItems, item.id)}
-                            sx={{ cursor: 'grab' }}
-                          >
-                            <TableCell>
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                <Tooltip title="Geser urutan tautan">
-                                  <Box sx={{ color: '#94A3B8', display: 'flex', alignItems: 'center', '&:hover': { color: '#018730' } }}>
-                                    <DragIndicatorIcon fontSize="small" />
+                        {sectionItems.map((item, idx) => {
+                          const isItemMaint = Boolean(item.isMaintenance ?? item.is_maintenance);
+                          return (
+                            <TableRow
+                              key={item.id}
+                              hover
+                              draggable
+                              onDragStart={(e) => handleDragStart(e, item.id)}
+                              onDragOver={handleDragOver}
+                              onDrop={() => handleDropOnItem(sectionItems, item.id)}
+                              sx={{
+                                bgcolor: isItemMaint ? '#fffdf7' : 'inherit',
+                                cursor: 'grab',
+                              }}
+                            >
+                              <TableCell>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                  <Tooltip title="Geser urutan tautan">
+                                    <Box sx={{ color: '#94A3B8', display: 'flex', alignItems: 'center', '&:hover': { color: '#018730' } }}>
+                                      <DragIndicatorIcon fontSize="small" />
+                                    </Box>
+                                  </Tooltip>
+                                  <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                                    <IconButton
+                                      size="small"
+                                      disabled={idx === 0}
+                                      onClick={() => handleMove(sectionItems, idx, 'up')}
+                                      sx={{ p: 0.1, color: '#64748B' }}
+                                    >
+                                      <ArrowUpwardIcon sx={{ fontSize: 12 }} />
+                                    </IconButton>
+                                    <IconButton
+                                      size="small"
+                                      disabled={idx === sectionItems.length - 1}
+                                      onClick={() => handleMove(sectionItems, idx, 'down')}
+                                      sx={{ p: 0.1, color: '#64748B' }}
+                                    >
+                                      <ArrowDownwardIcon sx={{ fontSize: 12 }} />
+                                    </IconButton>
+                                  </Box>
+                                </Box>
+                              </TableCell>
+                              <TableCell sx={{ fontWeight: 700, color: '#0F172A' }}>{item.title}</TableCell>
+                              <TableCell sx={{ fontFamily: 'monospace', color: '#64748B' }}>
+                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
+                                  <span>{item.url}</span>
+                                  {isItemMaint && (
+                                    <Typography variant="caption" sx={{ color: '#D97706', fontWeight: 700, fontSize: '0.7rem' }}>
+                                      ↳ Dialihkan ke /maintenance
+                                    </Typography>
+                                  )}
+                                </Box>
+                              </TableCell>
+                              <TableCell>
+                                <Tooltip title={isItemMaint ? 'Mode Maintenance AKTIF (Pengunjung dialihkan ke halaman maintenance). Klik untuk kembalikan ke Normal.' : 'Mode Normal. Klik untuk mengaktifkan status Under Maintenance tanpa mengubah URL asli.'}>
+                                  <Box
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleToggleMaintenance(item);
+                                    }}
+                                    sx={{
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: 0.75,
+                                      cursor: 'pointer',
+                                      px: 1.25,
+                                      py: 0.4,
+                                      borderRadius: 2,
+                                      border: isItemMaint ? '1px solid #F59E0B' : '1px solid #E2E8F0',
+                                      bgcolor: isItemMaint ? '#FFFBEB' : '#FFFFFF',
+                                      boxShadow: isItemMaint ? '0 1px 3px rgba(245,158,11,0.2)' : 'none',
+                                      transition: 'all 0.15s ease',
+                                      '&:hover': {
+                                        bgcolor: isItemMaint ? '#FEF3C7' : '#F8FAFC',
+                                        borderColor: isItemMaint ? '#D97706' : '#CBD5E1',
+                                      },
+                                    }}
+                                  >
+                                    <Switch
+                                      size="small"
+                                      checked={isItemMaint}
+                                      disabled={togglingId === item.id}
+                                      sx={{
+                                        '& .MuiSwitch-switchBase.Mui-checked': {
+                                          color: '#D97706',
+                                        },
+                                        '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
+                                          backgroundColor: '#F59E0B',
+                                        },
+                                      }}
+                                    />
+                                    <Typography
+                                      variant="caption"
+                                      sx={{
+                                        fontWeight: 800,
+                                        fontSize: '0.72rem',
+                                        color: isItemMaint ? '#B45309' : '#64748B',
+                                        userSelect: 'none',
+                                      }}
+                                    >
+                                      {isItemMaint ? '🚧 Maintenance' : '🟢 Normal'}
+                                    </Typography>
                                   </Box>
                                 </Tooltip>
-                                <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                                  <IconButton
-                                    size="small"
-                                    disabled={idx === 0}
-                                    onClick={() => handleMove(sectionItems, idx, 'up')}
-                                    sx={{ p: 0.1, color: '#64748B' }}
-                                  >
-                                    <ArrowUpwardIcon sx={{ fontSize: 12 }} />
-                                  </IconButton>
-                                  <IconButton
-                                    size="small"
-                                    disabled={idx === sectionItems.length - 1}
-                                    onClick={() => handleMove(sectionItems, idx, 'down')}
-                                    sx={{ p: 0.1, color: '#64748B' }}
-                                  >
-                                    <ArrowDownwardIcon sx={{ fontSize: 12 }} />
-                                  </IconButton>
-                                </Box>
-                              </Box>
-                            </TableCell>
-                            <TableCell sx={{ fontWeight: 700, color: '#0F172A' }}>{item.title}</TableCell>
-                            <TableCell sx={{ fontFamily: 'monospace', color: '#64748B' }}>{item.url}</TableCell>
-                            <TableCell>
-                              <Chip
-                                label={item.isActive ? 'Aktif' : 'Nonaktif'}
-                                size="small"
-                                sx={{
-                                  bgcolor: item.isActive ? '#ECFDF5' : '#F1F5F9',
-                                  color: item.isActive ? '#047857' : '#64748B',
-                                  fontWeight: 700,
-                                }}
-                              />
-                            </TableCell>
-                            <TableCell align="right">
-                              <IconButton size="small" sx={{ color: '#018730' }} onClick={() => handleOpenDialog(item)} title="Ubah">
-                                <EditIcon fontSize="small" />
-                              </IconButton>
-                              <IconButton size="small" color="error" onClick={() => handleDelete(item.id, item.title)} title="Hapus">
-                                <DeleteIcon fontSize="small" />
-                              </IconButton>
-                            </TableCell>
-                          </TableRow>
-                        ))}
+                              </TableCell>
+                              <TableCell>
+                                <Chip
+                                  label={item.isActive ? 'Aktif' : 'Nonaktif'}
+                                  size="small"
+                                  sx={{
+                                    bgcolor: item.isActive ? '#ECFDF5' : '#F1F5F9',
+                                    color: item.isActive ? '#047857' : '#64748B',
+                                    fontWeight: 700,
+                                  }}
+                                />
+                              </TableCell>
+                              <TableCell align="right">
+                                <IconButton size="small" sx={{ color: '#018730' }} onClick={() => handleOpenDialog(item)} title="Ubah">
+                                  <EditIcon fontSize="small" />
+                                </IconButton>
+                                <IconButton size="small" color="error" onClick={() => handleDelete(item.id, item.title)} title="Hapus">
+                                  <DeleteIcon fontSize="small" />
+                                </IconButton>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
                       </TableBody>
                     </Table>
                   </TableContainer>
@@ -939,6 +1186,51 @@ export default function AdminNavMenusPage() {
                   helperText="Tautan footer akan dikelompokkan berdasarkan nama seksi ini."
                 />
               )}
+
+              <Paper
+                variant="outlined"
+                sx={{
+                  p: 2,
+                  borderRadius: 2.5,
+                  bgcolor: formData.isMaintenance ? '#FFFBEB' : '#F8FAFC',
+                  borderColor: formData.isMaintenance ? '#FDE68A' : '#E2E8F0',
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={formData.isMaintenance}
+                      onChange={(e) => setFormData({ ...formData, isMaintenance: e.target.checked })}
+                      sx={{
+                        '& .MuiSwitch-switchBase.Mui-checked': {
+                          color: '#D97706',
+                        },
+                        '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
+                          backgroundColor: '#F59E0B',
+                        },
+                      }}
+                    />
+                  }
+                  label={
+                    <Box>
+                      <Typography
+                        variant="body2"
+                        fontWeight={800}
+                        color={formData.isMaintenance ? '#B45309' : '#1E293B'}
+                      >
+                        {formData.isMaintenance
+                          ? '🚧 Mode Under Maintenance: AKTIF'
+                          : '🟢 Mode Normal: Aktif'}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        Bila aktif, pengunjung yang mengklik menu ini otomatis diarahkan ke halaman <strong>/maintenance</strong> tanpa perlu menghapus URL asli.
+                      </Typography>
+                    </Box>
+                  }
+                  sx={{ m: 0, alignItems: 'flex-start' }}
+                />
+              </Paper>
 
               <FormControlLabel
                 control={

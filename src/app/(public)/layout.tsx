@@ -33,13 +33,24 @@ export default async function PublicLayout({
     navMenus = ensuredMenus
       .filter((m: any) => m.location === 'navbar' && !m.parent_id && !m.parentId)
       .sort((a: any, b: any) => (a.sort_order ?? a.sortOrder ?? 0) - (b.sort_order ?? b.sortOrder ?? 0))
-      .map((parent: any) => ({
-        ...parent,
-        sortOrder: parent.sort_order ?? parent.sortOrder ?? 0,
-        children: ensuredMenus
-          .filter((c: any) => (c.parent_id ?? c.parentId) === parent.id)
-          .sort((a: any, b: any) => (a.sort_order ?? a.sortOrder ?? 0) - (b.sort_order ?? b.sortOrder ?? 0)),
-      }));
+      .map((parent: any) => {
+        const isMaint = Boolean(parent.is_maintenance ?? parent.isMaintenance);
+        return {
+          ...parent,
+          url: isMaint ? '/maintenance' : parent.url,
+          sortOrder: parent.sort_order ?? parent.sortOrder ?? 0,
+          children: ensuredMenus
+            .filter((c: any) => (c.parent_id ?? c.parentId) === parent.id)
+            .sort((a: any, b: any) => (a.sort_order ?? a.sortOrder ?? 0) - (b.sort_order ?? b.sortOrder ?? 0))
+            .map((c: any) => {
+              const childMaint = Boolean(c.is_maintenance ?? c.isMaintenance);
+              return {
+                ...c,
+                url: childMaint ? '/maintenance' : c.url,
+              };
+            }),
+        };
+      });
   }
 
   // 3. Fetch Footer Menus
@@ -48,7 +59,14 @@ export default async function PublicLayout({
     ensuredFooter.push({ id: 9003, title: 'Blog & Artikel', url: '/blog', location: 'footer', sort_order: 15, sortOrder: 15, is_active: true, isActive: true, section: 'Informasi' });
   }
   const footerMenus = ensuredFooter
-    .sort((a: any, b: any) => (a.sort_order ?? a.sortOrder ?? 0) - (b.sort_order ?? b.sortOrder ?? 0));
+    .sort((a: any, b: any) => (a.sort_order ?? a.sortOrder ?? 0) - (b.sort_order ?? b.sortOrder ?? 0))
+    .map((item: any) => {
+      const isMaint = Boolean(item.is_maintenance ?? item.isMaintenance);
+      return {
+        ...item,
+        url: isMaint ? '/maintenance' : item.url,
+      };
+    });
 
   // 4. Fetch Site Settings via Python Backend
   const settingsRows = await cmsApi.getItems('settings').catch(() => []);
