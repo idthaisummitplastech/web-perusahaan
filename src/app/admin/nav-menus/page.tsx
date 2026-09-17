@@ -91,11 +91,18 @@ export default function AdminNavMenusPage() {
   const fetchItems = async () => {
     try {
       setLoading(true);
+      setError('');
       const res = await fetch('/api/cms/nav-menus');
       const data = await res.json();
-      if (Array.isArray(data)) setItems(data);
-    } catch {
-      setError('Gagal memuat menu navigasi.');
+      if (Array.isArray(data)) {
+        setItems(data);
+      } else if (data && data.error) {
+        setError(`Gagal memuat menu navigasi: ${data.error}`);
+      } else if (data && Array.isArray(data.data)) {
+        setItems(data.data);
+      }
+    } catch (err: any) {
+      setError(err?.message || 'Gagal memuat menu navigasi.');
     } finally {
       setLoading(false);
     }
