@@ -13,7 +13,14 @@ export const metadata = {
   description: 'Fasilitas manufaktur mutakhir PT ITSP dengan 18 mesin injeksi plastik hingga 3000 Ton, robotik spray painting, dan jalur perakitan interior otomotif.',
 };
 
-export default async function FacilitiesPage() {
+interface FacilitiesPageProps {
+  searchParams?: Promise<{ category?: string; plant?: string }>;
+}
+
+export default async function FacilitiesPage({ searchParams }: FacilitiesPageProps) {
+  const resolvedParams = searchParams ? await searchParams : {};
+  const initialCategory = resolvedParams.category || resolvedParams.plant || 'all';
+
   const rawFacilities = await cmsApi.getItems<any>('facilities').catch(() => []);
   const facilities = rawFacilities.filter((f: any) => (f.isActive ?? f.is_active) !== false);
 
@@ -49,7 +56,7 @@ export default async function FacilitiesPage() {
           </Typography>
         </Box>
 
-        <FacilityGridClient facilities={facilities} />
+        <FacilityGridClient key={initialCategory} facilities={facilities} initialCategory={initialCategory} />
 
         {/* CTA Contact */}
         <Box sx={{ mt: 10, p: { xs: 4, md: 6 }, borderRadius: 4, bgcolor: '#018730', color: '#FFFFFF', textAlign: 'center' }}>

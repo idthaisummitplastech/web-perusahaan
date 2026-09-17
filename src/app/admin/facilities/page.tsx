@@ -48,11 +48,11 @@ interface Facility {
 }
 
 const FACILITY_CATEGORIES = [
-  'Stamping Press',
-  'Robotic Welding',
-  'Tool & Die Shop',
+  'Injection Molding',
+  'Painting',
+  'Welding & Assembly',
+  'Assembly',
   'Quality & CMM Laboratory',
-  'Assembly & Sub-Assembly',
   'Automated Warehouse & Logistics',
   'Eco Factory & Solar PV',
 ];
@@ -68,7 +68,7 @@ export default function AdminFacilitiesPage() {
   const [facilityImages, setFacilityImages] = useState<string[]>([]);
   const [formData, setFormData] = useState({
     title: '',
-    category: 'Stamping Press',
+    category: 'Injection Molding',
     image: '',
     description: '',
     specifications: '',
@@ -101,7 +101,7 @@ export default function AdminFacilitiesPage() {
       setEditingItem(item);
       setFormData({
         title: item.title,
-        category: item.category || 'Stamping Press',
+        category: item.category || 'Injection Molding',
         image: item.image || '',
         description: item.description || '',
         specifications: item.specifications || '',
@@ -113,7 +113,7 @@ export default function AdminFacilitiesPage() {
       setEditingItem(null);
       setFormData({
         title: '',
-        category: 'Stamping Press',
+        category: 'Injection Molding',
         image: '',
         description: '',
         specifications: '',

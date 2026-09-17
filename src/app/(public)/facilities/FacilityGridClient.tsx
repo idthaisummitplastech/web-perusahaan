@@ -45,18 +45,38 @@ export interface FacilityItem {
 
 interface Props {
   facilities: FacilityItem[];
+  initialCategory?: string;
 }
 
-export default function FacilityGridClient({ facilities }: Props) {
-  const [activeCategory, setActiveCategory] = useState<string>('all');
+export default function FacilityGridClient({ facilities, initialCategory = 'all' }: Props) {
+  const [activeCategory, setActiveCategory] = useState<string>(initialCategory || 'all');
   const [selectedFacility, setSelectedFacility] = useState<FacilityItem | null>(null);
   const [modalImgIdx, setModalImgIdx] = useState<number>(0);
   const [cardImgIndices, setCardImgIndices] = useState<Record<number, number>>({});
   const [imgErrorMap, setImgErrorMap] = useState<Record<string, boolean>>({});
   const { language, t } = useLanguage();
 
-  // Extract unique categories
+  useEffect(() => {
+    if (initialCategory) {
+      setActiveCategory(initialCategory);
+    }
+  }, [initialCategory]);
+
+  const isKiicMatch = useCallback((f: FacilityItem) => {
+    const text = `${f.title} ${f.category} ${f.specifications || ''} ${f.description || ''}`.toLowerCase();
+    return text.includes('kiic');
+  }, []);
+
+  const isGiicMatch = useCallback((f: FacilityItem) => {
+    const text = `${f.title} ${f.category} ${f.specifications || ''} ${f.description || ''}`.toLowerCase();
+    return text.includes('giic') || (!text.includes('kiic') && f.category === 'Assembly');
+  }, []);
+
+  // Extract unique categories & Plant tabs
   const categoryTabs = useMemo(() => {
+    const kiicCount = facilities.filter(isKiicMatch).length;
+    const giicCount = facilities.filter(isGiicMatch).length;
+
     const map = new Map<string, number>();
     facilities.forEach((f) => {
       const cat = f.category || 'Lainnya';
@@ -65,18 +85,39 @@ export default function FacilityGridClient({ facilities }: Props) {
 
     const list: { id: string; label: string; count: number }[] = [
       { id: 'all', label: language === 'en' ? 'All Facilities' : 'Semua Fasilitas', count: facilities.length },
+      { id: 'plan-kiic', label: 'Plant 1 KIIC (Karawang)', count: kiicCount },
+      { id: 'plan-giic', label: 'Plant 2 GIIC (Cikarang)', count: giicCount },
     ];
     map.forEach((count, key) => {
       list.push({ id: key, label: key, count });
     });
     return list;
-  }, [facilities, language]);
+  }, [facilities, language, isKiicMatch, isGiicMatch]);
+
+  const handleSelectTab = (tabId: string) => {
+    setActiveCategory(tabId);
+    if (typeof window !== 'undefined') {
+      const newUrl = tabId === 'all' ? '/facilities' : `/facilities?category=${encodeURIComponent(tabId)}`;
+      window.history.replaceState(null, '', newUrl);
+    }
+  };
 
   // Filter facilities
   const filteredFacilities = useMemo(() => {
-    if (activeCategory === 'all') return facilities;
-    return facilities.filter((f) => f.category === activeCategory);
-  }, [facilities, activeCategory]);
+    const cat = activeCategory.toLowerCase();
+    if (cat === 'all') return facilities;
+    if (cat === 'plan-kiic' || cat === 'plant-kiic' || cat === 'kiic') {
+      return facilities.filter(isKiicMatch);
+    }
+    if (cat === 'plan-giic' || cat === 'plant-giic' || cat === 'giic') {
+      return facilities.filter(isGiicMatch);
+    }
+    return facilities.filter((f) => {
+      if (!f.category) return false;
+      const itemCat = f.category.toLowerCase();
+      return itemCat === cat || itemCat.replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') === cat;
+    });
+  }, [facilities, activeCategory, isKiicMatch, isGiicMatch]);
 
   // Modal images
   const modalImages = useMemo(() => {
@@ -133,13 +174,16 @@ export default function FacilityGridClient({ facilities }: Props) {
     <>
       {/* Category Filter Tabs */}
       {categoryTabs.length > 2 && (
-        <Box sx={{ mb: 5, display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: 1.2 }}>
+        <Box sx={{ mb: 3.5, display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: 1.2 }}>
           {categoryTabs.map((tab) => {
-            const isSelected = activeCategory === tab.id;
+            const isSelected =
+              activeCategory.toLowerCase() === tab.id.toLowerCase() ||
+              (tab.id === 'plan-kiic' && ['plan-kiic', 'plant-kiic', 'kiic'].includes(activeCategory.toLowerCase())) ||
+              (tab.id === 'plan-giic' && ['plan-giic', 'plant-giic', 'giic'].includes(activeCategory.toLowerCase()));
             return (
               <Button
                 key={tab.id}
-                onClick={() => setActiveCategory(tab.id)}
+                onClick={() => handleSelectTab(tab.id)}
                 variant={isSelected ? 'contained' : 'outlined'}
                 size="small"
                 startIcon={tab.id === 'all' ? <FilterAltIcon sx={{ fontSize: 16 }} /> : undefined}
@@ -164,6 +208,33 @@ export default function FacilityGridClient({ facilities }: Props) {
               </Button>
             );
           })}
+        </Box>
+      )}
+
+      {/* Active Filter Info Banner */}
+      {activeCategory !== 'all' && (
+        <Box sx={{ mb: 4, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 1.5 }}>
+          <Chip
+            label={
+              activeCategory.toLowerCase().includes('kiic')
+                ? '📍 Menampilkan Fasilitas: Plant 1 KIIC Karawang'
+                : activeCategory.toLowerCase().includes('giic')
+                ? '📍 Menampilkan Fasilitas: Plant 2 GIIC Deltamas Cikarang'
+                : `Filter Kategori: ${activeCategory}`
+            }
+            onDelete={() => handleSelectTab('all')}
+            deleteIcon={<CloseIcon sx={{ fontSize: '16px !important' }} />}
+            sx={{
+              bgcolor: 'rgba(1, 135, 48, 0.1)',
+              color: '#018730',
+              fontWeight: 700,
+              fontSize: '0.85rem',
+              py: 0.5,
+              px: 1,
+              border: '1px solid rgba(1, 135, 48, 0.25)',
+              borderRadius: '20px',
+            }}
+          />
         </Box>
       )}
 
