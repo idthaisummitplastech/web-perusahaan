@@ -37,11 +37,31 @@ export interface GalleryPhoto {
 interface Props {
   photos: GalleryPhoto[];
   pageTitle: string;
+  initialCategory?: string;
 }
 
-export default function CustomGalleryClient({ photos, pageTitle }: Props) {
-  const [activeCategory, setActiveCategory] = useState<string>('all');
+export default function CustomGalleryClient({ photos, pageTitle, initialCategory = 'all' }: Props) {
+  const [activeCategory, setActiveCategory] = useState<string>(initialCategory);
   const [selectedPhotoIdx, setSelectedPhotoIdx] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (initialCategory) {
+      setActiveCategory(initialCategory);
+    }
+  }, [initialCategory]);
+
+  const isCategoryMatch = useCallback((photoCategory: string | undefined, targetCategory: string) => {
+    if (!photoCategory) return false;
+    const p = photoCategory.trim().toLowerCase();
+    const t = targetCategory.trim().toLowerCase();
+    if (p === t) return true;
+    const slugP = p.replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    const slugT = t.replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    if (slugP === slugT) return true;
+    if ((t === 'kiic' || t === 'plan-kiic' || t === 'plant-kiic') && p.includes('kiic')) return true;
+    if ((t === 'giic' || t === 'plan-giic' || t === 'plant-giic') && p.includes('giic')) return true;
+    return false;
+  }, []);
 
   // Extract categories
   const categories = useMemo(() => {
@@ -52,10 +72,18 @@ export default function CustomGalleryClient({ photos, pageTitle }: Props) {
     return Array.from(set);
   }, [photos]);
 
+  const handleSelectCategory = (cat: string) => {
+    setActiveCategory(cat);
+    if (typeof window !== 'undefined') {
+      const newUrl = cat === 'all' ? window.location.pathname : `${window.location.pathname}?category=${encodeURIComponent(cat)}`;
+      window.history.replaceState(null, '', newUrl);
+    }
+  };
+
   const filteredPhotos = useMemo(() => {
     if (activeCategory === 'all') return photos;
-    return photos.filter((p) => (p.category || '').trim().toLowerCase() === activeCategory.toLowerCase());
-  }, [photos, activeCategory]);
+    return photos.filter((p) => isCategoryMatch(p.category, activeCategory));
+  }, [photos, activeCategory, isCategoryMatch]);
 
   const currentPhoto = selectedPhotoIdx !== null ? filteredPhotos[selectedPhotoIdx] : null;
 
@@ -108,14 +136,14 @@ export default function CustomGalleryClient({ photos, pageTitle }: Props) {
           </Button>
 
           {categories.map((cat) => {
-            const count = photos.filter((p) => (p.category || '').trim().toLowerCase() === cat.toLowerCase()).length;
-            const isSelected = activeCategory.toLowerCase() === cat.toLowerCase();
+            const count = photos.filter((p) => isCategoryMatch(p.category, cat)).length;
+            const isSelected = activeCategory.toLowerCase() === cat.toLowerCase() || isCategoryMatch(cat, activeCategory);
             return (
               <Button
                 key={cat}
                 size="small"
                 variant={isSelected ? 'contained' : 'outlined'}
-                onClick={() => setActiveCategory(cat)}
+                onClick={() => handleSelectCategory(cat)}
                 sx={{
                   borderRadius: '24px',
                   textTransform: 'none',
@@ -134,6 +162,25 @@ export default function CustomGalleryClient({ photos, pageTitle }: Props) {
               </Button>
             );
           })}
+        </Box>
+      )}
+
+      {/* Active Filter Info Banner */}
+      {activeCategory !== 'all' && (
+        <Box sx={{ mb: 4, display: 'flex', justifyContent: 'center' }}>
+          <Chip
+            label={`Filter Album: ${activeCategory}`}
+            onDelete={() => handleSelectCategory('all')}
+            deleteIcon={<CloseIcon sx={{ fontSize: '16px !important' }} />}
+            sx={{
+              bgcolor: 'rgba(1, 135, 48, 0.1)',
+              color: '#018730',
+              fontWeight: 700,
+              fontSize: '0.85rem',
+              borderRadius: '20px',
+              border: '1px solid rgba(1, 135, 48, 0.25)',
+            }}
+          />
         </Box>
       )}
 

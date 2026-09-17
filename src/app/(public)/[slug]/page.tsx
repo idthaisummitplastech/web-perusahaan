@@ -14,6 +14,7 @@ export const dynamic = 'force-dynamic';
 
 interface PageProps {
   params: Promise<{ slug: string }>;
+  searchParams?: Promise<{ category?: string }>;
 }
 
 async function getPageBySlug(slug: string) {
@@ -48,8 +49,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-export default async function DynamicCustomPage({ params }: PageProps) {
+export default async function DynamicCustomPage({ params, searchParams }: PageProps) {
   const { slug } = await params;
+  const resolvedQuery = searchParams ? await searchParams : {};
+  const initialCategory = resolvedQuery.category || 'all';
   const page = await getPageBySlug(slug);
 
   if (!page) {
@@ -138,7 +141,7 @@ export default async function DynamicCustomPage({ params }: PageProps) {
 
         {/* Content by Template Type */}
         {templateType === 'gallery' ? (
-          <CustomGalleryClient photos={galleryPhotos} pageTitle={page.title} />
+          <CustomGalleryClient key={initialCategory} photos={galleryPhotos} pageTitle={page.title} initialCategory={initialCategory} />
         ) : (
           <Paper
             elevation={0}
