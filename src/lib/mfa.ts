@@ -68,11 +68,11 @@ export function verifyMfaToken(token: string, secret: string): boolean {
     // offset manual ±7 jam / ±1 tahun seperti sebelumnya. Offset besar itu
     // justru membuka jendela replay (kode tahun lalu bisa dipakai lagi)
     // dan melemahkan keamanan tanpa memperbaiki clock-drift.
-    const rawWindow = Number(process.env.MFA_WINDOW_STEPS ?? 12);
+    const rawWindow = Number(process.env.MFA_WINDOW_STEPS ?? 30);
     const windowSteps =
-      Number.isFinite(rawWindow) && rawWindow >= 1 && rawWindow <= 20
+      Number.isFinite(rawWindow) && rawWindow >= 1 && rawWindow <= 60
         ? Math.floor(rawWindow)
-        : 12;
+        : 30;
 
     const delta = totp.validate({
       token: cleanToken,

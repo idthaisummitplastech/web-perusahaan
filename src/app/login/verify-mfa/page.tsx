@@ -120,11 +120,15 @@ export default function VerifyMfaPage() {
                 fullWidth
                 required
                 value={code}
-                onChange={(e) => setCode(e.target.value)}
+                onChange={(e) => {
+                  setCode(e.target.value.replace(isBackupMode ? /[^a-zA-Z0-9-]/g : /\D/g, ''));
+                  if (error) setError('');
+                }}
                 autoFocus
                 placeholder={isBackupMode ? 'XXXX-XXXX' : '123456'}
                 inputProps={{
                   maxLength: isBackupMode ? 12 : 6,
+                  inputMode: isBackupMode ? 'text' : 'numeric',
                   style: {
                     textAlign: 'center',
                     fontSize: '1.5rem',
@@ -140,6 +144,8 @@ export default function VerifyMfaPage() {
                 size="large"
                 fullWidth
                 disabled={loading || !code.trim()}
+                className="notranslate"
+                translate="no"
                 sx={{
                   py: 1.5,
                   bgcolor: '#018730',
@@ -152,7 +158,9 @@ export default function VerifyMfaPage() {
                   },
                 }}
               >
-                {loading ? <CircularProgress size={24} color="inherit" /> : 'Verifikasi & Masuk'}
+                <span className="notranslate" translate="no" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {loading ? <CircularProgress size={24} color="inherit" /> : 'Verifikasi & Masuk'}
+                </span>
               </Button>
             </Stack>
           </Box>
