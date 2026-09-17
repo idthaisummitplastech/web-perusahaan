@@ -48,6 +48,7 @@ import PersonIcon from '@mui/icons-material/Person';
 import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
 import PrecisionManufacturingIcon from '@mui/icons-material/PrecisionManufacturing';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
+import WebAssetIcon from '@mui/icons-material/WebAsset';
 import BrandLogo from '@/components/BrandLogo';
 import LanguageToggle from '@/components/LanguageToggle';
 import { useLanguage } from '@/lib/LanguageContext';
@@ -82,6 +83,7 @@ const MENU_ITEMS: MenuItemConfig[] = [
   { key: 'menu_users', defaultText: 'User Management', href: '/admin/users', icon: <AdminPanelSettingsIcon />, adminOnly: true },
   { key: 'menu_settings', defaultText: 'Site Settings', href: '/admin/settings', icon: <SettingsIcon />, adminOnly: true },
   { key: 'menu_nav', defaultText: 'Navigation Menus', href: '/admin/nav-menus', icon: <NavigationIcon />, adminOnly: true },
+  { key: 'menu_pages' as any, defaultText: 'Kelola Halaman (Pages)', href: '/admin/pages', icon: <WebAssetIcon /> },
   { key: 'menu_security', defaultText: 'Security & MFA', href: '/admin/profile', icon: <ShieldIcon /> },
 ];
 
