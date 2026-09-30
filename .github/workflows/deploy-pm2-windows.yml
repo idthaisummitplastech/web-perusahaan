@@ -92,7 +92,12 @@ jobs:
           Write-Host "--- BUILD (hapus .next dulu, tanpa sentuh server) ---"
           if (Test-Path .next) { Remove-Item -Recurse -Force .next -ErrorAction SilentlyContinue; Start-Sleep -Seconds 2; if (Test-Path .next) { Remove-Item -Recurse -Force .next } }
           npm.cmd ci --legacy-peer-deps
+          if ($LASTEXITCODE -ne 0) { throw "npm ci gagal dengan exit code $LASTEXITCODE" }
           npm.cmd run build
+          if ($LASTEXITCODE -ne 0) { throw "npm run build gagal! Periksa error kompilasi Next.js di atas." }
+          if (-not (Test-Path ".next\prerender-manifest.json")) {
+            throw ".next\prerender-manifest.json tidak ditemukan setelah build selesai. Kemungkinan proses build belum tuntas."
+          }
           & $pm2Cmd restart itsp-perusahaan
           if ($LASTEXITCODE -ne 0) {
             Write-Host "pm2 restart gagal, coba pm2 start pertama kali..."

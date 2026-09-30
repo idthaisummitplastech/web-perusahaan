@@ -158,20 +158,22 @@ export default function Footer({
                   {sectionName}
                 </Typography>
                 <Stack spacing={1.75}>
-                      <Link
-                        key={link.id}
-                        href={link.url}
-                        style={{
-                          color: '#94A3B8',
-                          textDecoration: 'none',
-                          fontSize: '0.875rem',
-                          fontWeight: 500,
-                          transition: 'color 0.2s',
-                          cursor: 'pointer',
-                        }}
-                      >
-                        {link.title}
-                      </Link>
+                  {sections[sectionName]?.map((link) => (
+                    <Link
+                      key={link.id}
+                      href={link.url}
+                      style={{
+                        color: '#94A3B8',
+                        textDecoration: 'none',
+                        fontSize: '0.875rem',
+                        fontWeight: 500,
+                        transition: 'color 0.2s',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {link.title}
+                    </Link>
+                  ))}
                 </Stack>
               </Grid>
             ))
