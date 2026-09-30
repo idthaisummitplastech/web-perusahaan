@@ -91,8 +91,13 @@ jobs:
 
           Write-Host "--- BUILD (hapus .next dulu, tanpa sentuh server) ---"
           if (Test-Path .next) { Remove-Item -Recurse -Force .next -ErrorAction SilentlyContinue; Start-Sleep -Seconds 2; if (Test-Path .next) { Remove-Item -Recurse -Force .next } }
-          npm.cmd ci --legacy-peer-deps
-          if ($LASTEXITCODE -ne 0) { throw "npm ci gagal dengan exit code $LASTEXITCODE" }
+          Write-Host "--- INSTALL DEPENDENCIES ---"
+          npm.cmd install --legacy-peer-deps --no-audit
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "npm install gagal, mencoba alternatif npm ci..."
+            npm.cmd ci --legacy-peer-deps
+            if ($LASTEXITCODE -ne 0) { throw "Gagal menginstall dependencies dengan exit code $LASTEXITCODE" }
+          }
           npm.cmd run build
           if ($LASTEXITCODE -ne 0) { throw "npm run build gagal! Periksa error kompilasi Next.js di atas." }
           if (-not (Test-Path ".next\prerender-manifest.json")) {
