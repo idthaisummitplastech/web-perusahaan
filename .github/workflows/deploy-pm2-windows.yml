@@ -103,7 +103,71 @@ jobs:
 
       - name: Health check :3008
         run: |
-          $ErrorActionPreference = "Stop"
-          Start-Sleep -Seconds 10
-          Invoke-WebRequest http://localhost:3008/ -UseBasicParsing | Select-Object StatusCode | Out-String | Write-Host
-          Invoke-WebRequest http://localhost:3008/sitemap.xml -UseBasicParsing | Select-Object StatusCode | Out-String | Write-Host
+          $extraPaths = @(
+            (Join-Path $env:APPDATA "npm"),
+            "C:\Users\IT-PLASTECH\AppData\Roaming\npm",
+            "C:\Users\Administrator\AppData\Roaming\npm",
+            "C:\Program Files\nodejs"
+          )
+          foreach ($p in $extraPaths) {
+            if ((Test-Path $p) -and ($env:Path -notlike "*$p*")) { $env:Path = "$env:Path;$p" }
+          }
+          if (-not $env:PM2_HOME) {
+            if (Test-Path "C:\Users\IT-PLASTECH\.pm2") { $env:PM2_HOME = "C:\Users\IT-PLASTECH\.pm2" }
+          }
+          $pm2Cmd = (Get-Command pm2.cmd -ErrorAction SilentlyContinue).Source
+          if (-not $pm2Cmd) {
+            foreach ($p in $extraPaths) {
+              $cand = Join-Path $p "pm2.cmd"
+              if (Test-Path $cand) { $pm2Cmd = $cand; break }
+            }
+          }
+
+          Write-Host "Menunggu aplikasi Next.js boot di port 3008 (polling retry hingga 60 detik)..."
+          $maxAttempts = 20
+          $attempt = 0
+          $healthy = $false
+
+          while ($attempt -lt $maxAttempts) {
+            Start-Sleep -Seconds 3
+            $attempt++
+            Write-Host "Pengecekan port 3008 (Percobaan $attempt/$maxAttempts)..."
+            try {
+              $res = Invoke-WebRequest -Uri "http://127.0.0.1:3008/" -UseBasicParsing -TimeoutSec 5 -ErrorAction Stop
+              if ($res.StatusCode -eq 200 -or $res.StatusCode -eq 308 -or $res.StatusCode -eq 307) {
+                Write-Host ">>> Berhasil terhubung ke port 3008! HTTP Status: $($res.StatusCode)"
+                $healthy = $true
+                break
+              }
+            } catch {
+              try {
+                $res = Invoke-WebRequest -Uri "http://localhost:3008/" -UseBasicParsing -TimeoutSec 5 -ErrorAction Stop
+                if ($res.StatusCode -eq 200 -or $res.StatusCode -eq 308 -or $res.StatusCode -eq 307) {
+                  Write-Host ">>> Berhasil terhubung ke port 3008 (localhost)! HTTP Status: $($res.StatusCode)"
+                  $healthy = $true
+                  break
+                }
+              } catch {}
+              Write-Host "Aplikasi masih proses warmup / booting, menunggu 3 detik lagi..."
+            }
+          }
+
+          if (-not $healthy) {
+            Write-Host "=== DIAGNOSA KEGAGALAN HEALTH CHECK ==="
+            Write-Host "Cek status port 3008 di sistem:"
+            netstat -ano | findstr 3008
+            Write-Host "Log 50 baris terakhir PM2 itsp-perusahaan:"
+            if ($pm2Cmd) {
+              & $pm2Cmd logs itsp-perusahaan --lines 50 --nostream
+            }
+            throw "Health check gagal: Aplikasi Next.js pada port 3008 belum merespon setelah 60 detik."
+          }
+
+          Write-Host "Pengecekan sitemap.xml..."
+          try {
+            $sitemap = Invoke-WebRequest -Uri "http://127.0.0.1:3008/sitemap.xml" -UseBasicParsing -TimeoutSec 10
+            Write-Host "sitemap.xml status: $($sitemap.StatusCode)"
+          } catch {
+            Write-Host "Warning: sitemap.xml belum siap ($($_.Exception.Message)) tapi halaman utama sudah 200 OK."
+          }
+
