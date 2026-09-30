@@ -34,6 +34,7 @@ import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
 import CollectionsIcon from '@mui/icons-material/Collections';
 import ImageUpload from '@/components/admin/ImageUpload';
 import { CmsTablePagination, CmsTableToolbar } from '@/components/admin/CmsTablePagination';
+import ConfirmDeleteDialog from '@/components/admin/ConfirmDeleteDialog';
 import { parseCertificateImages, serializeCertificateImages } from '@/lib/certifications';
 
 interface Certification {
@@ -51,6 +52,8 @@ interface Certification {
 
 export default function AdminCertificationsPage() {
   const [items, setItems] = useState<Certification[]>([]);
+  const [deleteTarget, setDeleteTarget] = useState<Certification | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(0);
@@ -168,16 +171,22 @@ export default function AdminCertificationsPage() {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!window.confirm('Apakah Anda yakin ingin menghapus sertifikat ini?')) return;
-
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
     try {
-      const res = await fetch(`/api/cms/certifications?id=${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Gagal menghapus sertifikasi.');
-      setMessage('Sertifikasi berhasil dihapus.');
+      const res = await fetch(`/api/cms/certifications?id=${deleteTarget.id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.detail || data?.message || 'Gagal menghapus.');
+      }
+      setMessage('Data berhasil dihapus!');
+      setDeleteTarget(null);
       fetchItems();
     } catch (err: any) {
-      setError(err.message || 'Gagal menghapus sertifikasi.');
+      setError(err.message || 'Gagal menghapus.');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -369,7 +378,7 @@ export default function AdminCertificationsPage() {
                               <IconButton size="small" sx={{ color: '#018730' }} onClick={() => handleOpenDialog(item)}>
                                 <EditIcon fontSize="small" />
                               </IconButton>
-                              <IconButton size="small" color="error" onClick={() => handleDelete(item.id)}>
+                              <IconButton size="small" color="error" onClick={() => setDeleteTarget(item)}>
                                 <DeleteIcon fontSize="small" />
                               </IconButton>
                             </TableCell>
@@ -587,6 +596,19 @@ export default function AdminCertificationsPage() {
           </DialogActions>
         </Box>
       </Dialog>
+    
+      {/* Dialog Konfirmasi Hapus In-App */}
+      <ConfirmDeleteDialog
+        open={Boolean(deleteTarget)}
+        title="Konfirmasi Hapus Sertifikat Mutu"
+        itemName={deleteTarget?.title}
+        itemSubtitle={`Penerbit: ${deleteTarget?.issuer || "-"} • Tahun: ${deleteTarget?.year || "-"}`}
+        description="Apakah Anda yakin ingin menghapus sertifikat ISO/mutu ini?"
+        warningText="Tindakan ini permanen. Dokumen sertifikat tidak akan tampil lagi di halaman sertifikasi."
+        loading={deleting}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleConfirmDelete}
+      />
     </Box>
   );
 }

@@ -34,56 +34,143 @@ export interface GalleryPhoto {
   description?: string;
 }
 
+export interface SubMenuItem {
+  id: number;
+  title: string;
+  url: string;
+}
+
 interface Props {
   photos: GalleryPhoto[];
   pageTitle: string;
   initialCategory?: string;
+  subMenus?: SubMenuItem[];
 }
 
-export default function CustomGalleryClient({ photos, pageTitle, initialCategory = 'all' }: Props) {
-  const [activeCategory, setActiveCategory] = useState<string>(initialCategory);
+function normalizeText(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function extractCategoryFromUrl(url: string): string | null {
+  try {
+    const urlObj = new URL(url, 'http://localhost');
+    return urlObj.searchParams.get('category');
+  } catch {
+    const match = url.match(/[?&]category=([^&#]+)/i);
+    return match ? decodeURIComponent(match[1]) : null;
+  }
+}
+
+export function isPhotoMatchingFilter(
+  photoCategory: string | undefined | null,
+  filterCategory: string | undefined | null,
+  filterUrl?: string | null
+): boolean {
+  if (!filterCategory || filterCategory === 'all' || filterCategory === 'semua') return true;
+  if (!photoCategory) return false;
+
+  const pRaw = photoCategory.trim().toLowerCase();
+  const fRaw = filterCategory.trim().toLowerCase();
+  if (pRaw === fRaw) return true;
+
+  const pNorm = normalizeText(photoCategory);
+  const fNorm = normalizeText(filterCategory);
+
+  if (pNorm === fNorm) return true;
+
+  // Also match query param inside filterUrl if provided (e.g. /galery?category=Plan%20KIIC)
+  if (filterUrl) {
+    const urlParam = extractCategoryFromUrl(filterUrl);
+    if (urlParam) {
+      const uNorm = normalizeText(urlParam);
+      if (pNorm === uNorm) return true;
+      if (uNorm.includes('kiic') && pNorm.includes('kiic')) return true;
+      if (uNorm.includes('giic') && pNorm.includes('giic')) return true;
+    }
+  }
+
+  // Enterprise plant location matching (handles 'Plan KIIC', 'Plant 1 KIIC', 'plan-kiic', 'KIIC')
+  if (fNorm.includes('kiic') && pNorm.includes('kiic')) return true;
+  if (fNorm.includes('giic') && pNorm.includes('giic')) return true;
+
+  // General word match
+  const fWords = fNorm.split(' ').filter((w) => w.length > 2 && w !== 'plan' && w !== 'plant');
+  if (fWords.length > 0 && fWords.some((w) => pNorm.includes(w))) {
+    return true;
+  }
+
+  return false;
+}
+
+export default function CustomGalleryClient({
+  photos,
+  pageTitle,
+  initialCategory = 'all',
+  subMenus = [],
+}: Props) {
+  // Derive filter tabs directly from CMS Sub-menus
+  const filterTabs = useMemo(() => {
+    if (!subMenus || subMenus.length === 0) return [];
+    return [
+      {
+        id: 'all',
+        label: 'Semua Foto',
+        count: photos.length,
+        url: '',
+      },
+      ...subMenus.map((sm) => {
+        const count = photos.filter((p) => isPhotoMatchingFilter(p.category, sm.title, sm.url)).length;
+        return {
+          id: sm.title,
+          label: sm.title,
+          count,
+          url: sm.url,
+        };
+      }),
+    ];
+  }, [subMenus, photos]);
+
+  // Determine active category matching initialCategory
+  const resolvedInitial = useMemo(() => {
+    if (!initialCategory || initialCategory === 'all') return 'all';
+    if (filterTabs.length > 0) {
+      const matched = filterTabs.find(
+        (t) =>
+          t.id !== 'all' &&
+          (isPhotoMatchingFilter(t.id, initialCategory, t.url) ||
+            isPhotoMatchingFilter(initialCategory, t.id, t.url))
+      );
+      if (matched) return matched.id;
+    }
+    return initialCategory;
+  }, [initialCategory, filterTabs]);
+
+  const [activeCategory, setActiveCategory] = useState<string>(resolvedInitial);
   const [selectedPhotoIdx, setSelectedPhotoIdx] = useState<number | null>(null);
 
   useEffect(() => {
-    if (initialCategory) {
-      setActiveCategory(initialCategory);
-    }
-  }, [initialCategory]);
+    setActiveCategory(resolvedInitial);
+  }, [resolvedInitial]);
 
-  const isCategoryMatch = useCallback((photoCategory: string | undefined, targetCategory: string) => {
-    if (!photoCategory) return false;
-    const p = photoCategory.trim().toLowerCase();
-    const t = targetCategory.trim().toLowerCase();
-    if (p === t) return true;
-    const slugP = p.replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-    const slugT = t.replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-    if (slugP === slugT) return true;
-    if ((t === 'kiic' || t === 'plan-kiic' || t === 'plant-kiic') && p.includes('kiic')) return true;
-    if ((t === 'giic' || t === 'plan-giic' || t === 'plant-giic') && p.includes('giic')) return true;
-    return false;
-  }, []);
-
-  // Extract categories
-  const categories = useMemo(() => {
-    const set = new Set<string>();
-    photos.forEach((p) => {
-      if (p.category) set.add(p.category.trim());
-    });
-    return Array.from(set);
-  }, [photos]);
-
-  const handleSelectCategory = (cat: string) => {
-    setActiveCategory(cat);
+  const handleSelectCategory = (catId: string) => {
+    setActiveCategory(catId);
     if (typeof window !== 'undefined') {
-      const newUrl = cat === 'all' ? window.location.pathname : `${window.location.pathname}?category=${encodeURIComponent(cat)}`;
+      const newUrl =
+        catId === 'all'
+          ? window.location.pathname
+          : `${window.location.pathname}?category=${encodeURIComponent(catId)}`;
       window.history.replaceState(null, '', newUrl);
     }
   };
 
   const filteredPhotos = useMemo(() => {
-    if (activeCategory === 'all') return photos;
-    return photos.filter((p) => isCategoryMatch(p.category, activeCategory));
-  }, [photos, activeCategory, isCategoryMatch]);
+    if (activeCategory === 'all' || filterTabs.length === 0) return photos;
+    return photos.filter((p) => isPhotoMatchingFilter(p.category, activeCategory));
+  }, [photos, activeCategory, filterTabs]);
 
   const currentPhoto = selectedPhotoIdx !== null ? filteredPhotos[selectedPhotoIdx] : null;
 
@@ -109,74 +196,67 @@ export default function CustomGalleryClient({ photos, pageTitle, initialCategory
   }, [selectedPhotoIdx, handleNext, handlePrev]);
 
   return (
-    <Box sx={{ py: 2 }}>
-      {/* Category Filter Pills */}
-      {categories.length > 0 && (
-        <Box sx={{ mb: 5, display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: 1.2 }}>
-          <Button
-            size="small"
-            variant={activeCategory === 'all' ? 'contained' : 'outlined'}
-            onClick={() => setActiveCategory('all')}
-            startIcon={<FilterAltIcon sx={{ fontSize: 16 }} />}
-            sx={{
-              borderRadius: '24px',
-              textTransform: 'none',
-              fontWeight: activeCategory === 'all' ? 800 : 600,
-              fontSize: '0.85rem',
-              px: 2,
-              py: 0.6,
-              bgcolor: activeCategory === 'all' ? '#018730' : '#FFFFFF',
-              color: activeCategory === 'all' ? '#FFFFFF' : '#475569',
-              borderColor: activeCategory === 'all' ? '#018730' : '#CBD5E1',
-              boxShadow: activeCategory === 'all' ? '0 4px 14px rgba(1, 135, 48, 0.25)' : 'none',
-              '&:hover': { bgcolor: activeCategory === 'all' ? '#016c27' : '#F1F5F9' },
-            }}
-          >
-            Semua Foto ({photos.length})
-          </Button>
-
-          {categories.map((cat) => {
-            const count = photos.filter((p) => isCategoryMatch(p.category, cat)).length;
-            const isSelected = activeCategory.toLowerCase() === cat.toLowerCase() || isCategoryMatch(cat, activeCategory);
+    <Box>
+      {/* Category Filter Tabs: Only displayed when sub-menus have been created */}
+      {filterTabs.length > 0 && (
+        <Box
+          sx={{
+            mb: { xs: 4, md: 5 },
+            display: 'flex',
+            justifyContent: 'center',
+            flexWrap: 'wrap',
+            gap: 1.2,
+          }}
+        >
+          {filterTabs.map((tab) => {
+            const isSelected =
+              activeCategory === tab.id ||
+              (tab.id !== 'all' && isPhotoMatchingFilter(tab.id, activeCategory, tab.url));
             return (
               <Button
-                key={cat}
-                size="small"
+                key={tab.id}
+                size="medium"
                 variant={isSelected ? 'contained' : 'outlined'}
-                onClick={() => handleSelectCategory(cat)}
+                onClick={() => handleSelectCategory(tab.id)}
+                startIcon={tab.id === 'all' ? <FilterAltIcon sx={{ fontSize: 16 }} /> : undefined}
                 sx={{
                   borderRadius: '24px',
                   textTransform: 'none',
                   fontWeight: isSelected ? 800 : 600,
-                  fontSize: '0.85rem',
-                  px: 2,
-                  py: 0.6,
+                  fontSize: '0.9rem',
+                  px: 2.5,
+                  py: 0.8,
                   bgcolor: isSelected ? '#018730' : '#FFFFFF',
                   color: isSelected ? '#FFFFFF' : '#475569',
                   borderColor: isSelected ? '#018730' : '#CBD5E1',
                   boxShadow: isSelected ? '0 4px 14px rgba(1, 135, 48, 0.25)' : 'none',
-                  '&:hover': { bgcolor: isSelected ? '#016c27' : '#F1F5F9' },
+                  '&:hover': {
+                    bgcolor: isSelected ? '#016c27' : '#F1F5F9',
+                    borderColor: '#018730',
+                  },
                 }}
               >
-                {cat} ({count})
+                {tab.label} ({tab.count})
               </Button>
             );
           })}
         </Box>
       )}
 
-      {/* Active Filter Info Banner */}
-      {activeCategory !== 'all' && (
+      {/* Active Filter Info Chip */}
+      {activeCategory !== 'all' && filterTabs.length > 0 && (
         <Box sx={{ mb: 4, display: 'flex', justifyContent: 'center' }}>
           <Chip
-            label={`Filter Album: ${activeCategory}`}
+            label={`Filter Sub-Menu: ${activeCategory}`}
             onDelete={() => handleSelectCategory('all')}
             deleteIcon={<CloseIcon sx={{ fontSize: '16px !important' }} />}
             sx={{
               bgcolor: 'rgba(1, 135, 48, 0.1)',
               color: '#018730',
               fontWeight: 700,
-              fontSize: '0.85rem',
+              fontSize: '0.875rem',
+              py: 0.5,
+              px: 0.5,
               borderRadius: '20px',
               border: '1px solid rgba(1, 135, 48, 0.25)',
             }}
@@ -184,11 +264,47 @@ export default function CustomGalleryClient({ photos, pageTitle, initialCategory
         </Box>
       )}
 
-      {/* Photos Grid */}
+      {/* Photos Grid or Empty State */}
       {filteredPhotos.length === 0 ? (
-        <Box sx={{ textAlign: 'center', py: 8, color: '#94A3B8' }}>
-          <CollectionsIcon sx={{ fontSize: 48, mb: 1, opacity: 0.5 }} />
-          <Typography variant="body1">Belum ada foto dalam kategori ini.</Typography>
+        <Box
+          sx={{
+            textAlign: 'center',
+            py: 10,
+            px: 3,
+            minHeight: 320,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            bgcolor: '#FFFFFF',
+            borderRadius: 3.5,
+            border: '1px solid #E2E8F0',
+          }}
+        >
+          <Box sx={{ p: 2, borderRadius: '50%', bgcolor: '#F1F5F9', mb: 2 }}>
+            <CollectionsIcon sx={{ fontSize: 44, color: '#94A3B8' }} />
+          </Box>
+          <Typography variant="h6" fontWeight={700} color="#334155" sx={{ mb: 1 }}>
+            Belum Ada Foto dalam Kategori &quot;{activeCategory}&quot;
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 460, mb: 3 }}>
+            Dokumentasi foto untuk sub-menu ini belum diunggah atau belum dikelompokkan ke dalam kategori ini.
+          </Typography>
+          <Button
+            variant="outlined"
+            onClick={() => handleSelectCategory('all')}
+            sx={{
+              color: '#018730',
+              borderColor: '#018730',
+              borderRadius: '24px',
+              fontWeight: 700,
+              textTransform: 'none',
+              px: 3,
+              '&:hover': { bgcolor: '#E8F6ED', borderColor: '#018730' },
+            }}
+          >
+            Tampilkan Semua Foto
+          </Button>
         </Box>
       ) : (
         <Grid container spacing={3}>

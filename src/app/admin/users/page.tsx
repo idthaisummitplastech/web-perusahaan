@@ -46,6 +46,7 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 import PeopleIcon from '@mui/icons-material/People';
 import EngineeringIcon from '@mui/icons-material/Engineering';
 import { CmsTablePagination, CmsTableToolbar } from '@/components/admin/CmsTablePagination';
+import ConfirmDeleteDialog from '@/components/admin/ConfirmDeleteDialog';
 
 interface UserItem {
   id: number;
@@ -102,6 +103,9 @@ const ROLES = [
 
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<UserItem[]>([]);
+  const [deleteTarget, setDeleteTarget] = useState<UserItem | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [confirmRegenerateOpen, setConfirmRegenerateOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(0);
@@ -261,18 +265,21 @@ export default function AdminUsersPage() {
     }
   };
 
-  const handleDelete = async (id: number, name: string) => {
-    if (!window.confirm(`Apakah Anda yakin ingin menghapus akun ${name}?`)) return;
-
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
     try {
-      const res = await fetch(`/api/cms/users?id=${id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/cms/users?id=${deleteTarget.id}`, { method: 'DELETE' });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Gagal menghapus pengguna.');
 
-      setMessage(`Pengguna ${name} berhasil dihapus.`);
+      setMessage(`Pengguna ${deleteTarget.name} berhasil dihapus.`);
+      setDeleteTarget(null);
       fetchUsers();
     } catch (err: any) {
       setError(err.message || 'Gagal menghapus pengguna.');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -312,7 +319,7 @@ export default function AdminUsersPage() {
 
   const handleRegenerateCodes = async () => {
     if (!activeBackupUser) return;
-    if (!window.confirm('Apakah Anda yakin ingin membuat ulang 8 kode cadangan baru? Kode cadangan lama tidak akan berlaku lagi.')) return;
+    // confirmed via dialog
 
     setRegeneratingCodes(true);
     try {
@@ -737,7 +744,7 @@ export default function AdminUsersPage() {
                     variant="contained"
                     size="small"
                     startIcon={<RefreshIcon />}
-                    onClick={handleRegenerateCodes}
+                    onClick={() => setConfirmRegenerateOpen(true)}
                     disabled={regeneratingCodes}
                     sx={{ bgcolor: '#018730', '&:hover': { bgcolor: '#016f27' } }}
                   >
@@ -822,6 +829,35 @@ export default function AdminUsersPage() {
           </Button>
         </DialogActions>
       </Dialog>
+    
+      {/* Dialog Konfirmasi Hapus Pengguna In-App */}
+      <ConfirmDeleteDialog
+        open={Boolean(deleteTarget)}
+        title="Konfirmasi Hapus Pengguna"
+        itemName={deleteTarget ? `${deleteTarget.name} (@${deleteTarget.username})` : undefined}
+        itemSubtitle={deleteTarget ? `Peran: ${deleteTarget.role.toUpperCase()} • Email: ${deleteTarget.email}` : undefined}
+        description="Apakah Anda yakin ingin menghapus akun pengguna CMS ini secara permanen?"
+        warningText="Tindakan ini permanen. Pengguna tidak akan dapat mengakses panel admin lagi."
+        loading={deleting}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleConfirmDelete}
+      />
+
+      {/* Dialog Konfirmasi Regenerasi Kode Cadangan MFA */}
+      <ConfirmDeleteDialog
+        open={confirmRegenerateOpen}
+        title="Buat Ulang Kode Cadangan MFA"
+        itemName={activeBackupUser ? `Akun: ${activeBackupUser.name} (${activeBackupUser.email})` : undefined}
+        description="Apakah Anda yakin ingin membuat ulang 8 kode cadangan baru?"
+        warningText="Semua kode cadangan lama akan hangus seketika dan tidak dapat digunakan kembali."
+        confirmButtonText="Ya, Buat Kode Baru"
+        loading={regeneratingCodes}
+        onClose={() => setConfirmRegenerateOpen(false)}
+        onConfirm={async () => {
+          setConfirmRegenerateOpen(false);
+          await handleRegenerateCodes();
+        }}
+      />
     </Box>
   );
 }

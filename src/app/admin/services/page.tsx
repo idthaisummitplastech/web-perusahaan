@@ -30,6 +30,7 @@ import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { CmsTablePagination, CmsTableToolbar } from '@/components/admin/CmsTablePagination';
+import ConfirmDeleteDialog from '@/components/admin/ConfirmDeleteDialog';
 
 interface Service {
   id: number;
@@ -43,6 +44,8 @@ interface Service {
 
 export default function AdminServicesPage() {
   const [items, setItems] = useState<Service[]>([]);
+  const [deleteTarget, setDeleteTarget] = useState<Service | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(0);
@@ -146,15 +149,22 @@ export default function AdminServicesPage() {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm('Apakah Anda yakin ingin menghapus layanan ini?')) return;
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
     try {
-      const res = await fetch(`/api/cms/services?id=${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Gagal menghapus.');
-      setMessage('Layanan berhasil dihapus!');
+      const res = await fetch(`/api/cms/services?id=${deleteTarget.id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.detail || data?.message || 'Gagal menghapus.');
+      }
+      setMessage('Data berhasil dihapus!');
+      setDeleteTarget(null);
       fetchItems();
     } catch (err: any) {
       setError(err.message || 'Gagal menghapus.');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -255,7 +265,7 @@ export default function AdminServicesPage() {
                               <IconButton size="small" color="primary" onClick={() => handleOpenDialog(item)}>
                                 <EditIcon fontSize="small" />
                               </IconButton>
-                              <IconButton size="small" color="error" onClick={() => handleDelete(item.id)}>
+                              <IconButton size="small" color="error" onClick={() => setDeleteTarget(item)}>
                                 <DeleteIcon fontSize="small" />
                               </IconButton>
                             </TableCell>
@@ -358,6 +368,19 @@ export default function AdminServicesPage() {
           </DialogActions>
         </Box>
       </Dialog>
+    
+      {/* Dialog Konfirmasi Hapus In-App */}
+      <ConfirmDeleteDialog
+        open={Boolean(deleteTarget)}
+        title="Konfirmasi Hapus Layanan"
+        itemName={deleteTarget?.title}
+        itemSubtitle={deleteTarget?.slug ? `URL: /services/${deleteTarget.slug}` : undefined}
+        description="Apakah Anda yakin ingin menghapus layanan ini?"
+        warningText="Tindakan ini permanen. Layanan ini tidak akan tampil lagi di website."
+        loading={deleting}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleConfirmDelete}
+      />
     </Box>
   );
 }

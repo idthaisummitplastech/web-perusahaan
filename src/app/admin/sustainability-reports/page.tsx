@@ -9,6 +9,7 @@ import AssessmentIcon from '@mui/icons-material/Assessment';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import TableChartIcon from '@mui/icons-material/TableChart';
 import { CmsTablePagination, CmsTableToolbar } from '@/components/admin/CmsTablePagination';
+import ConfirmDeleteDialog from '@/components/admin/ConfirmDeleteDialog';
 
 interface SustainabilityReport {
   id: number; title: string; category: string;
@@ -29,6 +30,8 @@ const FILE_TYPES = ['PDF', 'XLSX', 'XLS', 'DOCX', 'CSV'];
 
 export default function AdminSustainabilityReportsPage() {
   const [items, setItems] = useState<SustainabilityReport[]>([]);
+  const [deleteTarget, setDeleteTarget] = useState<SustainabilityReport | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(0);
@@ -91,13 +94,23 @@ export default function AdminSustainabilityReportsPage() {
     } catch (e: any) { setError(e.message || 'Gagal menyimpan.'); }
     finally { setSaving(false); }
   };
-  const handleDelete = async (id: number) => {
-    if (!window.confirm('Hapus dokumen ini dari /news?')) return;
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
     try {
-      const res = await fetch(`/api/cms/sustainability-reports?id=${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Gagal menghapus.');
-      setMessage('Dokumen dihapus.'); fetchItems();
-    } catch (e: any) { setError(e.message || 'Gagal menghapus.'); }
+      const res = await fetch(`/api/cms/sustainability-reports?id=${deleteTarget.id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.detail || data?.message || 'Gagal menghapus.');
+      }
+      setMessage('Data berhasil dihapus!');
+      setDeleteTarget(null);
+      fetchItems();
+    } catch (err: any) {
+      setError(err.message || 'Gagal menghapus.');
+    } finally {
+      setDeleting(false);
+    }
   };
   const catLabel = (id: string) => REPORT_CATEGORIES.find((c) => c.id === id)?.label || id;
   return (
@@ -138,7 +151,7 @@ export default function AdminSustainabilityReportsPage() {
                       <TableCell><Chip label={catLabel(it.category)} size="small" sx={{ bgcolor: '#e8f6ed', color: '#018730', fontWeight: 700 }} /></TableCell>
                       <TableCell sx={{ fontSize: '0.75rem', color: '#475569', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{it.fileUrl}</TableCell>
                       <TableCell><Chip label={it.isActive ? 'Aktif' : 'Nonaktif'} size="small" sx={{ bgcolor: it.isActive ? '#e8f6ed' : '#F1F5F9', color: it.isActive ? '#018730' : '#64748B', fontWeight: 700 }} /></TableCell>
-                      <TableCell align="right"><IconButton size="small" sx={{ color: '#018730' }} onClick={() => handleOpenDialog(it)}><EditIcon fontSize="small" /></IconButton><IconButton size="small" color="error" onClick={() => handleDelete(it.id)}><DeleteIcon fontSize="small" /></IconButton></TableCell>
+                      <TableCell align="right"><IconButton size="small" sx={{ color: '#018730' }} onClick={() => handleOpenDialog(it)}><EditIcon fontSize="small" /></IconButton><IconButton size="small" color="error" onClick={() => setDeleteTarget(item)}><DeleteIcon fontSize="small" /></IconButton></TableCell>
                     </TableRow>
                   )))}
                 </TableBody></Table></TableContainer>
@@ -181,6 +194,19 @@ export default function AdminSustainabilityReportsPage() {
           <DialogActions sx={{ p: 2.5 }}><Button onClick={handleCloseDialog} color="inherit">Batal</Button><Button type="submit" variant="contained" disabled={saving || uploading} sx={{ bgcolor: '#018730', fontWeight: 700 }}>Simpan</Button></DialogActions>
         </Box>
       </Dialog>
+    
+      {/* Dialog Konfirmasi Hapus In-App */}
+      <ConfirmDeleteDialog
+        open={Boolean(deleteTarget)}
+        title="Konfirmasi Hapus Sustainability Report"
+        itemName={deleteTarget?.title}
+        itemSubtitle={`Tahun Laporan: ${deleteTarget?.year || "-"}`}
+        description="Apakah Anda yakin ingin menghapus laporan keberlanjutan ini?"
+        warningText="Tindakan ini permanen. File PDF laporan akan dihapus dari sistem."
+        loading={deleting}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleConfirmDelete}
+      />
     </Box>
   );
 }

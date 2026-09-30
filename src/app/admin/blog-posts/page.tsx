@@ -30,6 +30,7 @@ import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { CmsTablePagination, CmsTableToolbar } from '@/components/admin/CmsTablePagination';
+import ConfirmDeleteDialog from '@/components/admin/ConfirmDeleteDialog';
 
 interface BlogPost {
   id: number;
@@ -44,6 +45,8 @@ interface BlogPost {
 
 export default function AdminBlogPostsPage() {
   const [items, setItems] = useState<BlogPost[]>([]);
+  const [deleteTarget, setDeleteTarget] = useState<BlogPost | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(0);
@@ -149,15 +152,22 @@ export default function AdminBlogPostsPage() {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm('Hapus artikel ini?')) return;
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
     try {
-      const res = await fetch(`/api/cms/blog-posts?id=${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Gagal menghapus.');
-      setMessage('Artikel berhasil dihapus!');
+      const res = await fetch(`/api/cms/blog-posts?id=${deleteTarget.id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.detail || data?.message || 'Gagal menghapus.');
+      }
+      setMessage('Data berhasil dihapus!');
+      setDeleteTarget(null);
       fetchItems();
     } catch (err: any) {
       setError(err.message || 'Gagal menghapus.');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -263,7 +273,7 @@ export default function AdminBlogPostsPage() {
                               <IconButton size="small" color="primary" onClick={() => handleOpenDialog(item)}>
                                 <EditIcon fontSize="small" />
                               </IconButton>
-                              <IconButton size="small" color="error" onClick={() => handleDelete(item.id)}>
+                              <IconButton size="small" color="error" onClick={() => setDeleteTarget(item)}>
                                 <DeleteIcon fontSize="small" />
                               </IconButton>
                             </TableCell>
@@ -368,6 +378,19 @@ export default function AdminBlogPostsPage() {
           </DialogActions>
         </Box>
       </Dialog>
+    
+      {/* Dialog Konfirmasi Hapus In-App */}
+      <ConfirmDeleteDialog
+        open={Boolean(deleteTarget)}
+        title="Konfirmasi Hapus Artikel Blog"
+        itemName={deleteTarget?.title}
+        itemSubtitle={deleteTarget?.slug ? `URL: /blog/${deleteTarget.slug}` : undefined}
+        description="Apakah Anda yakin ingin menghapus artikel blog ini?"
+        warningText="Tindakan ini permanen. Seluruh konten artikel akan dihapus dari sistem."
+        loading={deleting}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleConfirmDelete}
+      />
     </Box>
   );
 }

@@ -246,15 +246,19 @@ export default function AdminNavMenusPage() {
     }
   };
 
-  const handleDelete = async (id: number, title: string) => {
-    if (!confirm(`Apakah Anda yakin ingin menghapus tautan "${title}"?`)) return;
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
     try {
-      const res = await fetch(`/api/cms/nav-menus?id=${id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/cms/nav-menus?id=${deleteTarget.id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Gagal menghapus menu.');
-      setMessage(`Menu "${title}" berhasil dihapus.`);
+      setMessage(`Menu "${deleteTarget.title}" berhasil dihapus.`);
+      setDeleteTarget(null);
       fetchItems();
     } catch (err: any) {
       setError(err.message || 'Gagal menghapus.');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -1099,7 +1103,7 @@ export default function AdminNavMenusPage() {
                                 <IconButton size="small" sx={{ color: '#018730' }} onClick={() => handleOpenDialog(item)} title="Ubah">
                                   <EditIcon fontSize="small" />
                                 </IconButton>
-                                <IconButton size="small" color="error" onClick={() => handleDelete(item.id, item.title)} title="Hapus">
+                                <IconButton size="small" color="error" onClick={() => setDeleteTarget({ id: item.id, title: item.title, subtitle: `Menu Utama • Tautan: ${item.path}` })} title="Hapus">
                                   <DeleteIcon fontSize="small" />
                                 </IconButton>
                               </TableCell>
@@ -1273,6 +1277,19 @@ export default function AdminNavMenusPage() {
           </DialogActions>
         </Box>
       </Dialog>
+    
+      {/* Dialog Konfirmasi Hapus Menu In-App */}
+      <ConfirmDeleteDialog
+        open={Boolean(deleteTarget)}
+        title="Konfirmasi Hapus Menu"
+        itemName={deleteTarget?.title}
+        itemSubtitle={deleteTarget?.subtitle}
+        description="Apakah Anda yakin ingin menghapus tautan menu navigasi ini?"
+        warningText="Tindakan ini permanen. Menu (dan sub-menunya jika ada) tidak akan tampil lagi di bilah navigasi website."
+        loading={deleting}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleConfirmDelete}
+      />
     </Box>
   );
 }

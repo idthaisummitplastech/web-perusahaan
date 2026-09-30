@@ -31,6 +31,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 
 import { CmsTableToolbar, CmsTablePagination } from '@/components/admin/CmsTablePagination';
+import ConfirmDeleteDialog from '@/components/admin/ConfirmDeleteDialog';
 
 interface HeroSection {
   id: number;
@@ -46,6 +47,8 @@ interface HeroSection {
 
 export default function AdminHeroSectionsPage() {
   const [items, setItems] = useState<HeroSection[]>([]);
+  const [deleteTarget, setDeleteTarget] = useState<HeroSection | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(0);
@@ -144,15 +147,22 @@ export default function AdminHeroSectionsPage() {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm('Apakah Anda yakin ingin menghapus hero section ini?')) return;
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
     try {
-      const res = await fetch(`/api/cms/hero-sections?id=${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Gagal menghapus.');
-      setMessage('Hero section berhasil dihapus!');
+      const res = await fetch(`/api/cms/hero-sections?id=${deleteTarget.id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.detail || data?.message || 'Gagal menghapus.');
+      }
+      setMessage('Data berhasil dihapus!');
+      setDeleteTarget(null);
       fetchItems();
     } catch (err: any) {
       setError(err.message || 'Gagal menghapus.');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -322,7 +332,7 @@ export default function AdminHeroSectionsPage() {
                               <IconButton size="small" color="primary" onClick={() => handleOpenDialog(item)}>
                                 <EditIcon fontSize="small" />
                               </IconButton>
-                              <IconButton size="small" color="error" onClick={() => handleDelete(item.id)}>
+                              <IconButton size="small" color="error" onClick={() => setDeleteTarget(item)}>
                                 <DeleteIcon fontSize="small" />
                               </IconButton>
                             </TableCell>
@@ -450,6 +460,19 @@ export default function AdminHeroSectionsPage() {
           </DialogActions>
         </Box>
       </Dialog>
+    
+      {/* Dialog Konfirmasi Hapus In-App */}
+      <ConfirmDeleteDialog
+        open={Boolean(deleteTarget)}
+        title="Konfirmasi Hapus Hero Banner"
+        itemName={deleteTarget?.title}
+        itemSubtitle={`Halaman: ${deleteTarget?.page || "Beranda"}`}
+        description="Apakah Anda yakin ingin menghapus banner hero ini?"
+        warningText="Tindakan ini permanen. Banner tidak akan tampil lagi di bagian atas halaman website."
+        loading={deleting}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleConfirmDelete}
+      />
     </Box>
   );
 }

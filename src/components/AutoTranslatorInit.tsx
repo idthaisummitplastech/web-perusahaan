@@ -2,7 +2,6 @@
 
 import * as React from 'react';
 import { useEffect } from 'react';
-import Script from 'next/script';
 import { useLanguage } from '@/lib/LanguageContext';
 
 declare global {
@@ -28,6 +27,14 @@ export default function AutoTranslatorInit() {
         );
       }
     };
+
+    if (!document.getElementById('google-translate-script')) {
+      const script = document.createElement('script');
+      script.id = 'google-translate-script';
+      script.src = '//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
+      script.async = true;
+      document.head.appendChild(script);
+    }
   }, []);
 
   // Sync Google Translate dropdown whenever language changes
@@ -97,12 +104,6 @@ export default function AutoTranslatorInit() {
           box-shadow: none !important;
         }
       `}</style>
-
-      {/* Load Google Translate Script asynchronously */}
-      <Script
-        src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"
-        strategy="afterInteractive"
-      />
     </>
   );
 }

@@ -145,11 +145,6 @@ export default function Navbar({
                     (item.url !== '/' && pathname.startsWith(item.url)) ||
                     (hasChildren && item.children?.some((child) => pathname === child.url || pathname.startsWith(child.url)));
                   const isOpen = activeDropdownId === item.id;
-                  const isCareerItem =
-                    item.url === '/careers' ||
-                    item.url?.includes('career') ||
-                    item.title?.trim().toLowerCase() === 'karir' ||
-                    item.title?.trim().toLowerCase() === 'careers';
 
                   if (hasChildren) {
                     return (
@@ -161,15 +156,7 @@ export default function Navbar({
                       >
                         <Button
                           component={Link}
-                          href={isCareerItem ? '#' : item.url}
-                          onClick={
-                            isCareerItem
-                              ? (e: React.MouseEvent) => {
-                                  e.preventDefault();
-                                  // SEMENTARA DINONAKTIFKAN: Bisa diklik tapi tidak ke mana-mana dahulu (tidak terhubung ke web-karir)
-                                }
-                              : undefined
-                          }
+                          href={item.url}
                           endIcon={
                             <KeyboardArrowDownIcon
                               sx={{
@@ -245,13 +232,8 @@ export default function Navbar({
                           {item.url && item.url !== '#' && (
                             <Box
                               component={Link}
-                              href={isCareerItem ? '#' : item.url}
-                              onClick={(e: React.MouseEvent) => {
-                                if (isCareerItem) {
-                                  e.preventDefault();
-                                }
-                                setActiveDropdownId(null);
-                              }}
+                              href={item.url}
+                              onClick={() => setActiveDropdownId(null)}
                               sx={{
                                 display: 'block',
                                 px: 1.8,
@@ -274,22 +256,12 @@ export default function Navbar({
                           {/* Sub-menu items */}
                           {item.children?.map((child) => {
                             const isChildActive = pathname === child.url;
-                            const isChildCareer =
-                              child.url === '/careers' ||
-                              child.url?.includes('career') ||
-                              child.title?.trim().toLowerCase() === 'karir' ||
-                              child.title?.trim().toLowerCase() === 'careers';
                             return (
                               <Box
                                 key={child.id}
                                 component={Link}
-                                href={isChildCareer ? '#' : child.url}
-                                onClick={(e: React.MouseEvent) => {
-                                  if (isChildCareer) {
-                                    e.preventDefault();
-                                  }
-                                  setActiveDropdownId(null);
-                                }}
+                                href={child.url}
+                                onClick={() => setActiveDropdownId(null)}
                                 sx={{
                                   display: 'flex',
                                   alignItems: 'center',
@@ -325,16 +297,7 @@ export default function Navbar({
                     <Button
                       key={item.id}
                       component={Link}
-                      href={isCareerItem ? '#' : item.url}
-                      onClick={
-                        isCareerItem
-                          ? (e: React.MouseEvent) => {
-                              e.preventDefault();
-                              // SEMENTARA DINONAKTIFKAN: Bisa diklik tapi tidak ke mana-mana dahulu (tidak terhubung ke web-karir)
-                              // KODE ASLI: Hapus onClick ini dan kembalikan href={item.url}
-                            }
-                          : undefined
-                      }
+                      href={item.url}
                       sx={{
                         color: isParentActive ? '#018730' : '#334155',
                         fontWeight: isParentActive ? 700 : 500,
@@ -543,12 +506,6 @@ export default function Navbar({
               (item.url !== '/' && pathname.startsWith(item.url)) ||
               (hasChildren && item.children?.some((child) => pathname === child.url || pathname.startsWith(child.url)));
             const isExpanded = Boolean(mobileExpanded[item.id]);
-            const isCareerItem =
-              item.url === '/careers' ||
-              item.url?.includes('career') ||
-              item.title?.trim().toLowerCase() === 'karir' ||
-              item.title?.trim().toLowerCase() === 'careers';
-
             if (hasChildren) {
               return (
                 <Box key={item.id} sx={{ mb: 0.5 }}>
@@ -579,13 +536,8 @@ export default function Navbar({
                       {item.url && item.url !== '#' && (
                         <ListItemButton
                           component={Link}
-                          href={isCareerItem ? '#' : item.url}
-                          onClick={(e: React.MouseEvent) => {
-                            if (isCareerItem) {
-                              e.preventDefault();
-                            }
-                            toggleDrawer(false)(e);
-                          }}
+                          href={item.url}
+                          onClick={toggleDrawer(false)}
                           sx={{
                             borderRadius: 1.5,
                             py: 0.8,
@@ -601,22 +553,12 @@ export default function Navbar({
 
                       {item.children?.map((child) => {
                         const isChildActive = pathname === child.url;
-                        const isChildCareer =
-                          child.url === '/careers' ||
-                          child.url?.includes('career') ||
-                          child.title?.trim().toLowerCase() === 'karir' ||
-                          child.title?.trim().toLowerCase() === 'careers';
                         return (
                           <ListItemButton
                             key={child.id}
                             component={Link}
-                            href={isChildCareer ? '#' : child.url}
-                            onClick={(e: React.MouseEvent) => {
-                              if (isChildCareer) {
-                                e.preventDefault();
-                              }
-                              toggleDrawer(false)(e);
-                            }}
+                            href={child.url}
+                            onClick={toggleDrawer(false)}
                             sx={{
                               borderRadius: 1.5,
                               py: 0.8,
@@ -643,15 +585,8 @@ export default function Navbar({
               <ListItem key={item.id} disablePadding sx={{ mb: 0.5 }}>
                 <ListItemButton
                   component={Link}
-                  href={isCareerItem ? '#' : item.url}
-                  onClick={(e: React.MouseEvent) => {
-                    if (isCareerItem) {
-                      e.preventDefault();
-                      // SEMENTARA DINONAKTIFKAN: Bisa diklik tapi tidak ke mana-mana dahulu (tidak terhubung ke web-karir)
-                      // KODE ASLI: Cukup toggleDrawer(false)(e) dan biarkan href={item.url}
-                    }
-                    toggleDrawer(false)(e);
-                  }}
+                  href={item.url}
+                  onClick={toggleDrawer(false)}
                   sx={{
                     borderRadius: 2,
                     color: isParentActive ? '#018730' : '#334155',

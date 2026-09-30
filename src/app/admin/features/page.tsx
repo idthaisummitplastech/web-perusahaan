@@ -31,6 +31,7 @@ import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { CmsTablePagination, CmsTableToolbar } from '@/components/admin/CmsTablePagination';
+import ConfirmDeleteDialog from '@/components/admin/ConfirmDeleteDialog';
 
 interface Feature {
   id: number;
@@ -43,6 +44,8 @@ interface Feature {
 
 export default function AdminFeaturesPage() {
   const [items, setItems] = useState<Feature[]>([]);
+  const [deleteTarget, setDeleteTarget] = useState<Feature | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(0);
@@ -132,15 +135,22 @@ export default function AdminFeaturesPage() {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm('Hapus fitur ini?')) return;
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
     try {
-      const res = await fetch(`/api/cms/features?id=${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Gagal menghapus.');
-      setMessage('Fitur berhasil dihapus!');
+      const res = await fetch(`/api/cms/features?id=${deleteTarget.id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.detail || data?.message || 'Gagal menghapus.');
+      }
+      setMessage('Data berhasil dihapus!');
+      setDeleteTarget(null);
       fetchItems();
     } catch (err: any) {
       setError(err.message || 'Gagal menghapus.');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -242,7 +252,7 @@ export default function AdminFeaturesPage() {
                               <IconButton size="small" color="primary" onClick={() => handleOpenDialog(item)}>
                                 <EditIcon fontSize="small" />
                               </IconButton>
-                              <IconButton size="small" color="error" onClick={() => handleDelete(item.id)}>
+                              <IconButton size="small" color="error" onClick={() => setDeleteTarget(item)}>
                                 <DeleteIcon fontSize="small" />
                               </IconButton>
                             </TableCell>
@@ -342,6 +352,19 @@ export default function AdminFeaturesPage() {
           </DialogActions>
         </Box>
       </Dialog>
+    
+      {/* Dialog Konfirmasi Hapus In-App */}
+      <ConfirmDeleteDialog
+        open={Boolean(deleteTarget)}
+        title="Konfirmasi Hapus Fitur Utama"
+        itemName={deleteTarget?.title}
+        itemSubtitle={deleteTarget?.description ? `Deskripsi: ${deleteTarget.description}` : undefined}
+        description="Apakah Anda yakin ingin menghapus fitur unggulan ini?"
+        warningText="Tindakan ini permanen. Fitur tidak akan tampil lagi di halaman depan."
+        loading={deleting}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleConfirmDelete}
+      />
     </Box>
   );
 }

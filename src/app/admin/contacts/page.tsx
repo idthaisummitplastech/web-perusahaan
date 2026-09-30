@@ -28,6 +28,7 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import DeleteIcon from '@mui/icons-material/Delete';
 import MarkEmailReadIcon from '@mui/icons-material/MarkEmailRead';
 import { CmsTablePagination, CmsTableToolbar } from '@/components/admin/CmsTablePagination';
+import ConfirmDeleteDialog from '@/components/admin/ConfirmDeleteDialog';
 
 interface Contact {
   id: number;
@@ -41,6 +42,8 @@ interface Contact {
 
 export default function AdminContactsPage() {
   const [items, setItems] = useState<Contact[]>([]);
+  const [deleteTarget, setDeleteTarget] = useState<Contact | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -82,16 +85,22 @@ export default function AdminContactsPage() {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm('Apakah Anda yakin ingin menghapus pesan ini?')) return;
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
     try {
-      const res = await fetch(`/api/cms/contacts?id=${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Gagal menghapus pesan.');
-      setMessage('Pesan berhasil dihapus!');
-      if (selectedContact?.id === id) setSelectedContact(null);
+      const res = await fetch(`/api/cms/contacts?id=${deleteTarget.id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.detail || data?.message || 'Gagal menghapus.');
+      }
+      setMessage('Data berhasil dihapus!');
+      setDeleteTarget(null);
       fetchItems();
     } catch (err: any) {
       setError(err.message || 'Gagal menghapus.');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -190,7 +199,7 @@ export default function AdminContactsPage() {
                               <IconButton size="small" color="primary" onClick={() => handleOpenDetail(item)}>
                                 <VisibilityIcon fontSize="small" />
                               </IconButton>
-                              <IconButton size="small" color="error" onClick={() => handleDelete(item.id)}>
+                              <IconButton size="small" color="error" onClick={() => setDeleteTarget(item)}>
                                 <DeleteIcon fontSize="small" />
                               </IconButton>
                             </TableCell>
@@ -264,6 +273,19 @@ export default function AdminContactsPage() {
           </>
         )}
       </Dialog>
+    
+      {/* Dialog Konfirmasi Hapus In-App */}
+      <ConfirmDeleteDialog
+        open={Boolean(deleteTarget)}
+        title="Konfirmasi Hapus Pesan"
+        itemName={`Pengirim: ${deleteTarget?.name} (${deleteTarget?.email})`}
+        itemSubtitle={deleteTarget?.subject ? `Subjek: ${deleteTarget.subject}` : undefined}
+        description="Apakah Anda yakin ingin menghapus pesan masuk ini?"
+        warningText="Tindakan ini permanen. Pesan dari klien ini akan dihapus dari sistem."
+        loading={deleting}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleConfirmDelete}
+      />
     </Box>
   );
 }

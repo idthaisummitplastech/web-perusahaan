@@ -74,14 +74,42 @@ export default async function DynamicCustomPage({ params, searchParams }: PagePr
     }
   }
 
+  // Fetch nav-menus to retrieve child sub-menus for this dynamic slug
+  const allNavMenus = await cmsApi.getItems<any>('nav-menus').catch(() => []);
+  const cleanSlug = slug.toLowerCase().trim();
+  const matchingNav = Array.isArray(allNavMenus)
+    ? allNavMenus.find(
+        (m: any) =>
+          (m.url || '').toLowerCase().trim() === `/${cleanSlug}` &&
+          (m.is_active ?? m.isActive) !== false &&
+          m.location === 'navbar'
+      )
+    : null;
+
+  const subMenus =
+    matchingNav && Array.isArray(allNavMenus)
+      ? allNavMenus
+          .filter(
+            (m: any) =>
+              (m.parent_id === matchingNav.id || m.parentId === matchingNav.id) &&
+              (m.is_active ?? m.isActive) !== false
+          )
+          .sort((a: any, b: any) => (a.sort_order ?? a.sortOrder ?? 0) - (b.sort_order ?? b.sortOrder ?? 0))
+          .map((m: any) => ({
+            id: m.id,
+            title: m.title,
+            url: m.url,
+          }))
+      : [];
+
   return (
-    <Box sx={{ bgcolor: '#F8FAFC', minHeight: '80vh', py: { xs: 6, md: 9 } }}>
+    <Box sx={{ bgcolor: '#F8FAFC', minHeight: '85vh', pt: { xs: 8, md: 10 }, pb: { xs: 10, md: 14 } }}>
       <Container maxWidth="lg">
         {/* Breadcrumb Navigation */}
         <Breadcrumbs
           separator={<NavigateNextIcon fontSize="small" sx={{ color: '#94A3B8' }} />}
           aria-label="breadcrumb"
-          sx={{ mb: 4 }}
+          sx={{ mb: { xs: 4, md: 6 } }}
         >
           <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#64748B', textDecoration: 'none', fontSize: '0.875rem' }}>
             <HomeIcon sx={{ fontSize: 18 }} />
@@ -141,7 +169,13 @@ export default async function DynamicCustomPage({ params, searchParams }: PagePr
 
         {/* Content by Template Type */}
         {templateType === 'gallery' ? (
-          <CustomGalleryClient key={initialCategory} photos={galleryPhotos} pageTitle={page.title} initialCategory={initialCategory} />
+          <CustomGalleryClient
+            key={`${slug}-${initialCategory}`}
+            photos={galleryPhotos}
+            pageTitle={page.title}
+            initialCategory={initialCategory}
+            subMenus={subMenus}
+          />
         ) : (
           <Paper
             elevation={0}

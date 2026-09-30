@@ -30,6 +30,7 @@ import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { CmsTablePagination, CmsTableToolbar } from '@/components/admin/CmsTablePagination';
+import ConfirmDeleteDialog from '@/components/admin/ConfirmDeleteDialog';
 
 interface Faq {
   id: number;
@@ -41,6 +42,8 @@ interface Faq {
 
 export default function AdminFaqsPage() {
   const [items, setItems] = useState<Faq[]>([]);
+  const [deleteTarget, setDeleteTarget] = useState<Faq | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(0);
@@ -127,15 +130,22 @@ export default function AdminFaqsPage() {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm('Hapus pertanyaan FAQ ini?')) return;
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
     try {
-      const res = await fetch(`/api/cms/faqs?id=${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Gagal menghapus.');
-      setMessage('FAQ berhasil dihapus!');
+      const res = await fetch(`/api/cms/faqs?id=${deleteTarget.id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.detail || data?.message || 'Gagal menghapus.');
+      }
+      setMessage('Data berhasil dihapus!');
+      setDeleteTarget(null);
       fetchItems();
     } catch (err: any) {
       setError(err.message || 'Gagal menghapus.');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -234,7 +244,7 @@ export default function AdminFaqsPage() {
                               <IconButton size="small" color="primary" onClick={() => handleOpenDialog(item)}>
                                 <EditIcon fontSize="small" />
                               </IconButton>
-                              <IconButton size="small" color="error" onClick={() => handleDelete(item.id)}>
+                              <IconButton size="small" color="error" onClick={() => setDeleteTarget(item)}>
                                 <DeleteIcon fontSize="small" />
                               </IconButton>
                             </TableCell>
@@ -321,6 +331,19 @@ export default function AdminFaqsPage() {
           </DialogActions>
         </Box>
       </Dialog>
+    
+      {/* Dialog Konfirmasi Hapus In-App */}
+      <ConfirmDeleteDialog
+        open={Boolean(deleteTarget)}
+        title="Konfirmasi Hapus Tanya Jawab (FAQ)"
+        itemName={deleteTarget?.question}
+        itemSubtitle={deleteTarget?.category ? `Kategori: ${deleteTarget.category}` : undefined}
+        description="Apakah Anda yakin ingin menghapus butir FAQ ini?"
+        warningText="Tindakan ini permanen. Pertanyaan ini tidak akan tampil lagi di halaman bantuan FAQ."
+        loading={deleting}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleConfirmDelete}
+      />
     </Box>
   );
 }

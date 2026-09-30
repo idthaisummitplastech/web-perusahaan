@@ -34,6 +34,7 @@ import PrecisionManufacturingIcon from '@mui/icons-material/PrecisionManufacturi
 import CollectionsIcon from '@mui/icons-material/Collections';
 import ImageUpload from '@/components/admin/ImageUpload';
 import { CmsTableToolbar, CmsTablePagination } from '@/components/admin/CmsTablePagination';
+import ConfirmDeleteDialog from '@/components/admin/ConfirmDeleteDialog';
 import { parseFacilityImages, serializeFacilityImages } from '@/lib/facilities';
 
 interface Facility {
@@ -59,6 +60,8 @@ const FACILITY_CATEGORIES = [
 
 export default function AdminFacilitiesPage() {
   const [items, setItems] = useState<Facility[]>([]);
+  const [deleteTarget, setDeleteTarget] = useState<Facility | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(0);
@@ -163,16 +166,22 @@ export default function AdminFacilitiesPage() {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!window.confirm('Apakah Anda yakin ingin menghapus data fasilitas ini?')) return;
-
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
     try {
-      const res = await fetch(`/api/cms/facilities?id=${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Gagal menghapus fasilitas.');
-      setMessage('Data fasilitas berhasil dihapus.');
+      const res = await fetch(`/api/cms/facilities?id=${deleteTarget.id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.detail || data?.message || 'Gagal menghapus.');
+      }
+      setMessage('Data berhasil dihapus!');
+      setDeleteTarget(null);
       fetchItems();
     } catch (err: any) {
-      setError(err.message || 'Gagal menghapus fasilitas.');
+      setError(err.message || 'Gagal menghapus.');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -388,7 +397,7 @@ export default function AdminFacilitiesPage() {
                               <IconButton size="small" sx={{ color: '#018730' }} onClick={() => handleOpenDialog(item)}>
                                 <EditIcon fontSize="small" />
                               </IconButton>
-                              <IconButton size="small" color="error" onClick={() => handleDelete(item.id)}>
+                              <IconButton size="small" color="error" onClick={() => setDeleteTarget(item)}>
                                 <DeleteIcon fontSize="small" />
                               </IconButton>
                             </TableCell>
@@ -587,6 +596,19 @@ export default function AdminFacilitiesPage() {
           </DialogActions>
         </Box>
       </Dialog>
+    
+      {/* Dialog Konfirmasi Hapus In-App */}
+      <ConfirmDeleteDialog
+        open={Boolean(deleteTarget)}
+        title="Konfirmasi Hapus Fasilitas Pabrik"
+        itemName={deleteTarget?.title}
+        itemSubtitle={`Lokasi Plant: ${deleteTarget?.plant || "KIIC / GIIC"}`}
+        description="Apakah Anda yakin ingin menghapus data fasilitas/mesin pabrik ini?"
+        warningText="Tindakan ini permanen. Data fasilitas tidak akan tampil lagi di halaman fasilitas."
+        loading={deleting}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleConfirmDelete}
+      />
     </Box>
   );
 }

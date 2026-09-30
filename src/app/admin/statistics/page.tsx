@@ -30,6 +30,7 @@ import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { CmsTablePagination, CmsTableToolbar } from '@/components/admin/CmsTablePagination';
+import ConfirmDeleteDialog from '@/components/admin/ConfirmDeleteDialog';
 
 interface Statistic {
   id: number;
@@ -42,6 +43,8 @@ interface Statistic {
 
 export default function AdminStatisticsPage() {
   const [items, setItems] = useState<Statistic[]>([]);
+  const [deleteTarget, setDeleteTarget] = useState<Statistic | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(0);
@@ -131,15 +134,22 @@ export default function AdminStatisticsPage() {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm('Hapus statistik ini?')) return;
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
     try {
-      const res = await fetch(`/api/cms/statistics?id=${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Gagal menghapus.');
-      setMessage('Statistik berhasil dihapus!');
+      const res = await fetch(`/api/cms/statistics?id=${deleteTarget.id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.detail || data?.message || 'Gagal menghapus.');
+      }
+      setMessage('Data berhasil dihapus!');
+      setDeleteTarget(null);
       fetchItems();
     } catch (err: any) {
       setError(err.message || 'Gagal menghapus.');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -239,7 +249,7 @@ export default function AdminStatisticsPage() {
                               <IconButton size="small" color="primary" onClick={() => handleOpenDialog(item)}>
                                 <EditIcon fontSize="small" />
                               </IconButton>
-                              <IconButton size="small" color="error" onClick={() => handleDelete(item.id)}>
+                              <IconButton size="small" color="error" onClick={() => setDeleteTarget(item)}>
                                 <DeleteIcon fontSize="small" />
                               </IconButton>
                             </TableCell>
@@ -332,6 +342,19 @@ export default function AdminStatisticsPage() {
           </DialogActions>
         </Box>
       </Dialog>
+    
+      {/* Dialog Konfirmasi Hapus In-App */}
+      <ConfirmDeleteDialog
+        open={Boolean(deleteTarget)}
+        title="Konfirmasi Hapus Angka Statistik"
+        itemName={`${deleteTarget?.label}: ${deleteTarget?.value}`}
+        itemSubtitle={`Urutan: ${deleteTarget?.order || 0}`}
+        description="Apakah Anda yakin ingin menghapus angka statistik pencapaian ini?"
+        warningText="Tindakan ini permanen. Angka statistik tidak akan tampil lagi di profil perusahaan."
+        loading={deleting}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleConfirmDelete}
+      />
     </Box>
   );
 }

@@ -32,6 +32,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import BusinessIcon from '@mui/icons-material/Business';
 import ImageUpload from '@/components/admin/ImageUpload';
 import { CmsTablePagination, CmsTableToolbar } from '@/components/admin/CmsTablePagination';
+import ConfirmDeleteDialog from '@/components/admin/ConfirmDeleteDialog';
 
 interface Partner {
   id: number;
@@ -45,6 +46,8 @@ interface Partner {
 
 export default function AdminPartnersPage() {
   const [items, setItems] = useState<Partner[]>([]);
+  const [deleteTarget, setDeleteTarget] = useState<Partner | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(0);
@@ -137,15 +140,22 @@ export default function AdminPartnersPage() {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm('Hapus mitra ini?')) return;
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
     try {
-      const res = await fetch(`/api/cms/partners?id=${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Gagal menghapus.');
-      setMessage('Mitra berhasil dihapus!');
+      const res = await fetch(`/api/cms/partners?id=${deleteTarget.id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.detail || data?.message || 'Gagal menghapus.');
+      }
+      setMessage('Data berhasil dihapus!');
+      setDeleteTarget(null);
       fetchItems();
     } catch (err: any) {
       setError(err.message || 'Gagal menghapus.');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -302,7 +312,7 @@ export default function AdminPartnersPage() {
                               <IconButton size="small" sx={{ color: '#018730' }} onClick={() => handleOpenDialog(item)}>
                                 <EditIcon fontSize="small" />
                               </IconButton>
-                              <IconButton size="small" color="error" onClick={() => handleDelete(item.id)}>
+                              <IconButton size="small" color="error" onClick={() => setDeleteTarget(item)}>
                                 <DeleteIcon fontSize="small" />
                               </IconButton>
                             </TableCell>
@@ -404,6 +414,19 @@ export default function AdminPartnersPage() {
           </DialogActions>
         </Box>
       </Dialog>
+    
+      {/* Dialog Konfirmasi Hapus In-App */}
+      <ConfirmDeleteDialog
+        open={Boolean(deleteTarget)}
+        title="Konfirmasi Hapus Mitra & Klien"
+        itemName={deleteTarget?.name}
+        itemSubtitle={deleteTarget?.url ? `Website: ${deleteTarget.url}` : undefined}
+        description="Apakah Anda yakin ingin menghapus mitra ini?"
+        warningText="Tindakan ini permanen. Logo dan nama perusahaan akan dihapus dari etalase mitra website."
+        loading={deleting}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleConfirmDelete}
+      />
     </Box>
   );
 }

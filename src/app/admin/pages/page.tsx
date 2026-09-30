@@ -44,6 +44,7 @@ import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
 import ImageUpload from '@/components/admin/ImageUpload';
 import { CmsTablePagination, CmsTableToolbar } from '@/components/admin/CmsTablePagination';
+import ConfirmDeleteDialog from '@/components/admin/ConfirmDeleteDialog';
 
 export interface GalleryImageItem {
   url: string;
@@ -95,7 +96,9 @@ const TEMPLATE_OPTIONS = [
 ];
 
 export default function AdminCustomPagesPage() {
-  const [items, setItems] = useState<CustomPageItem[]>([]);
+  const [items, setItems] = useState<CustomPageItem[]>([]); 
+  const [deleteTarget, setDeleteTarget] = useState<DynamicPage | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(0);
@@ -279,16 +282,22 @@ export default function AdminCustomPagesPage() {
     }
   };
 
-  const handleDelete = async (id: number, slug: string) => {
-    if (!window.confirm(`Apakah Anda yakin ingin menghapus halaman '/${slug}' ini?`)) return;
-
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
     try {
-      const res = await fetch(`/api/cms/pages?id=${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Gagal menghapus halaman.');
-      setMessage('Halaman berhasil dihapus.');
+      const res = await fetch(`/api/cms/pages?id=${deleteTarget.id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.detail || data?.message || 'Gagal menghapus.');
+      }
+      setMessage('Data berhasil dihapus!');
+      setDeleteTarget(null);
       fetchItems();
     } catch (err: any) {
-      setError(err.message || 'Gagal menghapus data.');
+      setError(err.message || 'Gagal menghapus.');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -686,6 +695,19 @@ export default function AdminCustomPagesPage() {
           </DialogActions>
         </Box>
       </Dialog>
+    
+      {/* Dialog Konfirmasi Hapus In-App */}
+      <ConfirmDeleteDialog
+        open={Boolean(deleteTarget)}
+        title="Konfirmasi Hapus Halaman Dinamis"
+        itemName={deleteTarget?.title}
+        itemSubtitle={`URL: /${deleteTarget?.slug}`}
+        description="Apakah Anda yakin ingin menghapus halaman kustom ini?"
+        warningText="Tindakan ini permanen. Halaman beserta seluruh konten di dalamnya akan dihapus dari web."
+        loading={deleting}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleConfirmDelete}
+      />
     </Box>
   );
 }

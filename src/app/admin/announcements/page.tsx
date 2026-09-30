@@ -30,6 +30,7 @@ import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { CmsTablePagination, CmsTableToolbar } from '@/components/admin/CmsTablePagination';
+import ConfirmDeleteDialog from '@/components/admin/ConfirmDeleteDialog';
 
 interface Announcement {
   id: number;
@@ -41,6 +42,8 @@ interface Announcement {
 
 export default function AdminAnnouncementsPage() {
   const [items, setItems] = useState<Announcement[]>([]);
+  const [deleteTarget, setDeleteTarget] = useState<Announcement | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(0);
@@ -127,15 +130,22 @@ export default function AdminAnnouncementsPage() {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm('Hapus pengumuman ini?')) return;
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
     try {
-      const res = await fetch(`/api/cms/announcements?id=${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Gagal menghapus.');
-      setMessage('Pengumuman berhasil dihapus!');
+      const res = await fetch(`/api/cms/announcements?id=${deleteTarget.id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.detail || data?.message || 'Gagal menghapus.');
+      }
+      setMessage('Data berhasil dihapus!');
+      setDeleteTarget(null);
       fetchItems();
     } catch (err: any) {
       setError(err.message || 'Gagal menghapus.');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -231,7 +241,7 @@ export default function AdminAnnouncementsPage() {
                               <IconButton size="small" color="primary" onClick={() => handleOpenDialog(item)}>
                                 <EditIcon fontSize="small" />
                               </IconButton>
-                              <IconButton size="small" color="error" onClick={() => handleDelete(item.id)}>
+                              <IconButton size="small" color="error" onClick={() => setDeleteTarget(item)}>
                                 <DeleteIcon fontSize="small" />
                               </IconButton>
                             </TableCell>
@@ -317,6 +327,19 @@ export default function AdminAnnouncementsPage() {
           </DialogActions>
         </Box>
       </Dialog>
+    
+      {/* Dialog Konfirmasi Hapus In-App */}
+      <ConfirmDeleteDialog
+        open={Boolean(deleteTarget)}
+        title="Konfirmasi Hapus Pengumuman"
+        itemName={deleteTarget?.title}
+        itemSubtitle={deleteTarget?.badge ? `Kategori: ${deleteTarget.badge}` : undefined}
+        description="Apakah Anda yakin ingin menghapus pengumuman ini?"
+        warningText="Tindakan ini permanen. Bar notifikasi pengumuman tidak akan tampil lagi."
+        loading={deleting}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleConfirmDelete}
+      />
     </Box>
   );
 }
