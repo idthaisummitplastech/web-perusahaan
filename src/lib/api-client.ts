@@ -86,7 +86,7 @@ export async function fetchFromBackend<T = any>(
 
     if (!res.ok) {
       const errorJson = await res.json().catch(() => ({}));
-      throw new Error(errorJson.detail || errorJson.message || `Backend API error (HTTP ${res.status})`);
+      throw new Error(errorJson.detail || errorJson.error || errorJson.message || `Backend API error (HTTP ${res.status})`);
     }
 
     const json = await res.json();
