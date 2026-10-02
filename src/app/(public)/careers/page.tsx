@@ -98,7 +98,7 @@ export default function CareersGatewayPage() {
               variant="contained"
               size="large"
               component="a"
-              href={`${careerAppUrl}/#lowongan`}
+              href={`${careerAppUrl}/#job-vacancies`}
               target="_blank"
               endIcon={<LaunchIcon />}
               sx={{
