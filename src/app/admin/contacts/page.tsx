@@ -63,7 +63,7 @@ export default function AdminContactsPage() {
       const data = await res.json();
       if (Array.isArray(data)) setItems(data);
     } catch {
-      setError('Gagal memuat pesan kontak.');
+      setError('Failed to load contact messages.');
     } finally {
       setLoading(false);
     }
@@ -92,13 +92,13 @@ export default function AdminContactsPage() {
       const res = await fetch(`/api/cms/contacts?id=${deleteTarget.id}`, { method: 'DELETE' });
       if (!res.ok) {
         const data = await res.json().catch(() => null);
-        throw new Error(data?.detail || data?.message || 'Gagal menghapus.');
+        throw new Error(data?.detail || data?.message || 'Failed to delete.');
       }
       setMessage('Data berhasil dihapus!');
       setDeleteTarget(null);
       fetchItems();
     } catch (err: any) {
-      setError(err.message || 'Gagal menghapus.');
+      setError(err.message || 'Failed to delete.');
     } finally {
       setDeleting(false);
     }
@@ -235,7 +235,7 @@ export default function AdminContactsPage() {
             <DialogContent dividers>
               <Stack spacing={2}>
                 <Box>
-                  <Typography variant="caption" color="text.secondary">Alamat Email:</Typography>
+                  <Typography variant="caption" color="text.secondary">Email Address:</Typography>
                   <Typography variant="body1" fontWeight={600} color="#0F172A">{selectedContact.email}</Typography>
                 </Box>
                 <Box>

@@ -50,13 +50,13 @@ interface NavbarProps {
 export default function Navbar({
   siteTitle = 'PT Indonesia Thai Summit Plastech',
   navItems = [
-    { id: 1, title: 'Beranda', url: '/' },
-    { id: 2, title: 'Produk', url: '/products' },
-    { id: 3, title: 'Layanan', url: '/services' },
+    { id: 1, title: 'Home', url: '/' },
+    { id: 2, title: 'Products', url: '/products' },
+    { id: 3, title: 'Services', url: '/services' },
     { id: 4, title: 'News', url: '/news' },
     { id: 5, title: 'Blog', url: '/blog' },
-    { id: 6, title: 'Kontak', url: '/contact' },
-    { id: 7, title: 'Karir', url: '/careers' },
+    { id: 6, title: 'Contact', url: '/contact' },
+    { id: 7, title: 'Careers', url: '/careers' },
   ],
 }: NavbarProps) {
   const [drawerOpen, setDrawerOpen] = useState(false);

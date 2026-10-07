@@ -166,7 +166,7 @@ export default function AdminUsersPage() {
       const arr: any[] = Array.isArray(raw) ? raw : (raw?.data ?? raw?.users ?? []);
       if (Array.isArray(arr)) setUsers(arr.map(normalizeUser));
     } catch {
-      setError('Gagal memuat daftar pengguna.');
+      setError('Failed to load user list.');
     } finally {
       setLoading(false);
     }
@@ -189,7 +189,7 @@ export default function AdminUsersPage() {
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Gagal mengubah status MFA.');
+      if (!res.ok) throw new Error(data.error || 'Failed to change MFA status.');
 
       setUsers((prev) =>
         prev.map((u) =>
@@ -207,7 +207,7 @@ export default function AdminUsersPage() {
         `Autentikasi MFA untuk ${user.name} berhasil ${nextStatus ? 'DIAKTIFKAN' : 'DINONAKTIFKAN'}.`
       );
     } catch (err: any) {
-      setError(err.message || 'Gagal memperbarui status MFA pengguna.');
+      setError(err.message || 'Failed to update user MFA status.');
     } finally {
       setTogglingMfaId(null);
     }
@@ -219,19 +219,19 @@ export default function AdminUsersPage() {
     try {
       const res = await fetch('/api/cms/users', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: user.id, isActive: next }) });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Gagal ubah status aktif.');
+      if (!res.ok) throw new Error(data.error || 'Failed to change active status.');
       setUsers(prev => prev.map(u => u.id === user.id ? { ...u, isActive: next } : u));
       setMessage(`${user.name} sekarang ${next ? 'AKTIF' : 'NON-AKTIF'}.`);
-    } catch (e: any) { setError(e.message || 'Gagal toggle aktif.'); }
+    } catch (e: any) { setError(e.message || 'Failed to toggle active status.'); }
   };
   const handleChangePortal = async (user: UserItem, portalAccess: string) => {
     try {
       const res = await fetch('/api/cms/users', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: user.id, portalAccess }) });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Gagal ubah portal.');
+      if (!res.ok) throw new Error(data.error || 'Failed to change portal access.');
       setUsers(prev => prev.map(u => u.id === user.id ? { ...u, portalAccess } : u));
       setMessage(`Akses portal ${user.name} → ${portalAccess}.`);
-    } catch (e: any) { setError(e.message || 'Gagal ubah portal.'); }
+    } catch (e: any) { setError(e.message || 'Failed to change portal access.'); }
   };
 
   const handleOpenDialog = (user?: UserItem) => {
@@ -294,14 +294,14 @@ export default function AdminUsersPage() {
 
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.error || 'Gagal menyimpan pengguna.');
+        throw new Error(data.error || 'Failed to save user.');
       }
 
       setMessage(editingUser ? 'Data pengguna berhasil diperbarui!' : 'Pengguna baru berhasil dibuat!');
       handleCloseDialog();
       fetchUsers();
     } catch (err: any) {
-      setError(err.message || 'Gagal menyimpan data.');
+      setError(err.message || 'Failed to save data.');
     } finally {
       setSaving(false);
     }
@@ -313,13 +313,13 @@ export default function AdminUsersPage() {
     try {
       const res = await fetch(`/api/cms/users?id=${deleteTarget.id}`, { method: 'DELETE' });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Gagal menghapus pengguna.');
+      if (!res.ok) throw new Error(data.error || 'Failed to delete user.');
 
       setMessage(`Pengguna ${deleteTarget.name} berhasil dihapus.`);
       setDeleteTarget(null);
       fetchUsers();
     } catch (err: any) {
-      setError(err.message || 'Gagal menghapus pengguna.');
+      setError(err.message || 'Failed to delete user.');
     } finally {
       setDeleting(false);
     }
@@ -374,7 +374,7 @@ export default function AdminUsersPage() {
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Gagal memperbarui kode cadangan.');
+      if (!res.ok) throw new Error(data.error || 'Failed to update backup codes.');
 
       let newCodes: string[] = [];
       if (data.user?.backupCodes) {
@@ -387,7 +387,7 @@ export default function AdminUsersPage() {
       setMessage(`8 Kode Cadangan baru berhasil dibuat untuk ${activeBackupUser.name}.`);
       fetchUsers();
     } catch (err: any) {
-      setError(err.message || 'Gagal membuat kode cadangan baru.');
+      setError(err.message || 'Failed to generate new backup codes.');
     } finally {
       setRegeneratingCodes(false);
     }
@@ -405,7 +405,7 @@ export default function AdminUsersPage() {
             </Typography>
           </Box>
           <Typography variant="body2" color="text.secondary">
-            Beri akses peran (RBAC) serta kendalikan status Autentikasi Multi-Faktor (MFA) untuk masing-masing pengguna CMS.
+            Beri akses peran (RBAC) serta kendalikan status Multi-Factor Authentication (MFA) untuk masing-masing pengguna CMS.
           </Typography>
         </Box>
         <Button
@@ -492,7 +492,7 @@ export default function AdminUsersPage() {
                         <TableCell sx={{ fontWeight: 700 }}>Peran</TableCell>
                         <TableCell sx={{ fontWeight: 700 }}>MFA</TableCell>
                         <TableCell sx={{ fontWeight: 700 }}>Aktif</TableCell>
-                        <TableCell sx={{ fontWeight: 700 }}>Akses Portal</TableCell>
+                        <TableCell sx={{ fontWeight: 700 }}>Portal Access</TableCell>
                         <TableCell sx={{ fontWeight: 700 }}>Terdaftar</TableCell>
                         <TableCell align="right" sx={{ fontWeight: 700 }}>Aksi</TableCell>
                       </TableRow>
@@ -560,7 +560,7 @@ export default function AdminUsersPage() {
                                     }
                                     label={
                                       <Typography variant="caption" fontWeight={700} color={u.mfaEnabled ? '#018730' : 'text.secondary'}>
-                                        {isToggling ? 'Menyimpan...' : u.mfaEnabled ? 'Aktif' : 'Nonaktif'}
+                                        {isToggling ? 'Saving...' : u.mfaEnabled ? 'Aktif' : 'Nonaktif'}
                                       </Typography>
                                     }
                                     sx={{ m: 0 }}
@@ -607,7 +607,7 @@ export default function AdminUsersPage() {
                               </TableCell>
                               <TableCell>
                                 <TextField select size="small" value={u.portalAccess} onChange={(e) => handleChangePortal(u, e.target.value)} sx={{ minWidth: 140, '& .MuiInputBase-root': { fontSize: '0.8rem', fontWeight: 700 } }}>
-                                  <MenuItem value="perusahaan">Perusahaan</MenuItem>
+                                  <MenuItem value="perusahaan">Company</MenuItem>
                                   <MenuItem value="karir">Karir</MenuItem>
                                   <MenuItem value="both">Keduanya</MenuItem>
                                 </TextField>
@@ -619,7 +619,7 @@ export default function AdminUsersPage() {
                                 <IconButton size="small" sx={{ color: '#018730' }} onClick={() => handleOpenDialog(u)} title="Ubah data atau reset password">
                                   <EditIcon fontSize="small" />
                                 </IconButton>
-                                <IconButton size="small" color="error" onClick={() => handleDelete(u.id, u.name)} title="Hapus pengguna">
+                                <IconButton size="small" color="error" onClick={() => handleDelete(u.id, u.name)} title="Delete user">
                                   <DeleteIcon fontSize="small" />
                                 </IconButton>
                               </TableCell>
@@ -664,7 +664,7 @@ export default function AdminUsersPage() {
               />
 
               <TextField
-                label="Alamat Email"
+                label="Email Address"
                 required
                 fullWidth
                 type="email"
@@ -697,7 +697,7 @@ export default function AdminUsersPage() {
               </TextField>
 
               <TextField
-                label={editingUser ? 'Reset Kata Sandi Baru (Opsional)' : 'Kata Sandi Awal'}
+                label={editingUser ? 'Reset Password Baru (Opsional)' : 'Password Awal'}
                 required={!editingUser}
                 fullWidth
                 type="text"
@@ -713,8 +713,8 @@ export default function AdminUsersPage() {
               />
 
               <Stack direction="row" spacing={2}>
-                <FormControlLabel control={<Switch checked={formData.isActive} onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })} />} label={<Typography variant="body2" fontWeight={800}>{formData.isActive ? 'Akun Aktif' : 'Akun Non-aktif'}</Typography>} />
-                <TextField select label="Akses Portal" value={formData.portalAccess} onChange={(e) => setFormData({ ...formData, portalAccess: e.target.value })} sx={{ minWidth: 180 }}><MenuItem value="perusahaan">Web Perusahaan</MenuItem><MenuItem value="karir">Web Karir</MenuItem><MenuItem value="both">Keduanya</MenuItem></TextField>
+                <FormControlLabel control={<Switch checked={formData.isActive} onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })} />} label={<Typography variant="body2" fontWeight={800}>{formData.isActive ? 'Active Account' : 'Inactive Account'}</Typography>} />
+                <TextField select label="Portal Access" value={formData.portalAccess} onChange={(e) => setFormData({ ...formData, portalAccess: e.target.value })} sx={{ minWidth: 180 }}><MenuItem value="perusahaan">Web Company</MenuItem><MenuItem value="karir">Web Karir</MenuItem><MenuItem value="both">Keduanya</MenuItem></TextField>
               </Stack>
               <Box sx={{ p: 2, bgcolor: formData.mfaEnabled ? '#e8f6ed' : '#F8FAFC', borderRadius: 2.5, border: `1px solid ${formData.mfaEnabled ? '#01873044' : '#E2E8F0'}` }}>
                 <FormControlLabel
@@ -745,7 +745,7 @@ export default function AdminUsersPage() {
               disabled={saving}
               sx={{ bgcolor: '#018730', fontWeight: 700, px: 3, '&:hover': { bgcolor: '#016f27' } }}
             >
-              {saving ? 'Menyimpan...' : editingUser ? 'Perbarui Pengguna' : 'Buat Pengguna'}
+              {saving ? 'Saving...' : editingUser ? 'Perbarui Pengguna' : 'Buat Pengguna'}
             </Button>
           </DialogActions>
         </Box>
@@ -868,14 +868,14 @@ export default function AdminUsersPage() {
         </DialogActions>
       </Dialog>
     
-      {/* Dialog Konfirmasi Hapus Pengguna In-App */}
+      {/* Dialog Confirm Delete User In-App */}
       <ConfirmDeleteDialog
         open={Boolean(deleteTarget)}
-        title="Konfirmasi Hapus Pengguna"
+        title="Confirm Delete User"
         itemName={deleteTarget ? `${deleteTarget.name} (@${deleteTarget.username})` : undefined}
         itemSubtitle={deleteTarget ? `Peran: ${deleteTarget.role.toUpperCase()} • Email: ${deleteTarget.email}` : undefined}
-        description="Apakah Anda yakin ingin menghapus akun pengguna CMS ini secara permanen?"
-        warningText="Tindakan ini permanen. Pengguna tidak akan dapat mengakses panel admin lagi."
+        description="Are you sure you want to permanently delete this CMS user account?"
+        warningText="This action is permanent. The user will no longer be able to access the admin panel."
         loading={deleting}
         onClose={() => setDeleteTarget(null)}
         onConfirm={handleConfirmDelete}
@@ -884,11 +884,11 @@ export default function AdminUsersPage() {
       {/* Dialog Konfirmasi Regenerasi Kode Cadangan MFA */}
       <ConfirmDeleteDialog
         open={confirmRegenerateOpen}
-        title="Buat Ulang Kode Cadangan MFA"
+        title="Regenerate MFA Backup Codes"
         itemName={activeBackupUser ? `Akun: ${activeBackupUser.name} (${activeBackupUser.email})` : undefined}
-        description="Apakah Anda yakin ingin membuat ulang 8 kode cadangan baru?"
-        warningText="Semua kode cadangan lama akan hangus seketika dan tidak dapat digunakan kembali."
-        confirmButtonText="Ya, Buat Kode Baru"
+        description="Are you sure you want to regenerate 8 new backup codes?"
+        warningText="All previous backup codes will be immediately invalidated and cannot be reused."
+        confirmButtonText="Yes, Generate New Codes"
         loading={regeneratingCodes}
         onClose={() => setConfirmRegenerateOpen(false)}
         onConfirm={async () => {

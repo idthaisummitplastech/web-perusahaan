@@ -87,7 +87,7 @@ export default function AdminCertificationsPage() {
       const data = await res.json();
       if (Array.isArray(data)) setItems(data);
     } catch {
-      setError('Gagal memuat daftar sertifikasi ISO.');
+      setError('Failed to load ISO certifications.');
     } finally {
       setLoading(false);
     }
@@ -158,14 +158,14 @@ export default function AdminCertificationsPage() {
 
       if (!res.ok) {
         const errData = await res.json();
-        throw new Error(errData.error || 'Gagal menyimpan sertifikasi.');
+        throw new Error(errData.error || 'Failed to save certification.');
       }
 
       setMessage(editingItem ? 'Sertifikasi berhasil diperbarui!' : 'Sertifikasi baru berhasil ditambahkan!');
       handleCloseDialog();
       fetchItems();
     } catch (err: any) {
-      setError(err.message || 'Gagal menyimpan data.');
+      setError(err.message || 'Failed to save data.');
     } finally {
       setSaving(false);
     }
@@ -178,13 +178,13 @@ export default function AdminCertificationsPage() {
       const res = await fetch(`/api/cms/certifications?id=${deleteTarget.id}`, { method: 'DELETE' });
       if (!res.ok) {
         const data = await res.json().catch(() => null);
-        throw new Error(data?.detail || data?.message || 'Gagal menghapus.');
+        throw new Error(data?.detail || data?.message || 'Failed to delete.');
       }
       setMessage('Data berhasil dihapus!');
       setDeleteTarget(null);
       fetchItems();
     } catch (err: any) {
-      setError(err.message || 'Gagal menghapus.');
+      setError(err.message || 'Failed to delete.');
     } finally {
       setDeleting(false);
     }
@@ -591,7 +591,7 @@ export default function AdminCertificationsPage() {
               disabled={saving}
               sx={{ bgcolor: '#018730', fontWeight: 700, px: 3, '&:hover': { bgcolor: '#016f27' } }}
             >
-              {saving ? 'Menyimpan...' : 'Simpan Sertifikat'}
+              {saving ? 'Saving...' : 'Simpan Sertifikat'}
             </Button>
           </DialogActions>
         </Box>

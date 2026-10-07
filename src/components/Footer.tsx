@@ -26,7 +26,7 @@ interface FooterProps {
 
 export default function Footer({
   siteTitle = 'PT Indonesia Thai Summit Plastech',
-  siteDescription = 'Pemimpin industri manufaktur komponen plastik otomotif dengan komitmen mutu tinggi, inovasi teknologi berkelanjutan, dan kepuasan mitra global.',
+  siteDescription = 'A leading manufacturer of high-quality automotive plastic components, committed to sustainable technological innovation and global partner satisfaction.',
   contactEmail = 'info@itsp.co.id',
   contactPhone = '+62 267 864 1234',
   contactAddress = 'Jl. Permata Raya Lot FF-5, KIIC Karawang, Jawa Barat 41361, Indonesia',
@@ -34,7 +34,7 @@ export default function Footer({
 }: FooterProps) {
   // Group footer items by section
   const sections = footerItems.reduce((acc, item) => {
-    const sectionName = item.section || 'Tautan';
+    const sectionName = item.section || 'Links';
     if (!acc[sectionName]) acc[sectionName] = [];
     acc[sectionName].push(item);
     return acc;
@@ -192,13 +192,13 @@ export default function Footer({
                     pl: 1,
                   }}
                 >
-                  Perusahaan
+                  Company
                 </Typography>
                 <Stack spacing={1.75}>
-                  <Link href="/services" style={{ color: '#94A3B8', textDecoration: 'none', fontSize: '0.875rem' }}>Layanan</Link>
-                  <Link href="/products" style={{ color: '#94A3B8', textDecoration: 'none', fontSize: '0.875rem' }}>Produk</Link>
+                  <Link href="/services" style={{ color: '#94A3B8', textDecoration: 'none', fontSize: '0.875rem' }}>Services</Link>
+                  <Link href="/products" style={{ color: '#94A3B8', textDecoration: 'none', fontSize: '0.875rem' }}>Products</Link>
                   <Link href="/news" style={{ color: '#94A3B8', textDecoration: 'none', fontSize: '0.875rem' }}>News & Sustainability</Link>
-                  <Link href="/blog" style={{ color: '#94A3B8', textDecoration: 'none', fontSize: '0.875rem' }}>Artikel & Berita</Link>
+                  <Link href="/blog" style={{ color: '#94A3B8', textDecoration: 'none', fontSize: '0.875rem' }}>Articles & News</Link>
                 </Stack>
               </Grid>
               <Grid size={{ xs: 6, sm: 4, md: 2 }}>
@@ -214,12 +214,12 @@ export default function Footer({
                     pl: 1,
                   }}
                 >
-                  Legal & Akses
+                  Legal & Access
                 </Typography>
                 <Stack spacing={1.75}>
-                  <Link href="/privacy" style={{ color: '#94A3B8', textDecoration: 'none', fontSize: '0.875rem' }}>Kebijakan Mutu</Link>
-                  <Link href="/terms" style={{ color: '#94A3B8', textDecoration: 'none', fontSize: '0.875rem' }}>Syarat & Ketentuan</Link>
-                  <Link href="/login" style={{ color: '#94A3B8', textDecoration: 'none', fontSize: '0.875rem' }}>Portal Karyawan</Link>
+                  <Link href="/privacy" style={{ color: '#94A3B8', textDecoration: 'none', fontSize: '0.875rem' }}>Quality Policy</Link>
+                  <Link href="/terms" style={{ color: '#94A3B8', textDecoration: 'none', fontSize: '0.875rem' }}>Terms & Conditions</Link>
+                  <Link href="/login" style={{ color: '#94A3B8', textDecoration: 'none', fontSize: '0.875rem' }}>Employee Portal</Link>
                 </Stack>
               </Grid>
             </>
@@ -230,15 +230,15 @@ export default function Footer({
 
         <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, alignItems: 'center', justifyContent: 'space-between', gap: 2 }}>
           <Typography variant="caption" sx={{ color: '#64748B' }}>
-            &copy; {new Date().getFullYear()} {siteTitle}. Hak Cipta Dilindungi.
+            &copy; {new Date().getFullYear()} {siteTitle}. All Rights Reserved.
           </Typography>
 
           <Box sx={{ display: 'flex', gap: 3 }}>
             <Link href="/privacy" style={{ color: '#64748B', fontSize: '0.75rem', textDecoration: 'none' }}>
-              Privasi
+              Privacy
             </Link>
             <Link href="/terms" style={{ color: '#64748B', fontSize: '0.75rem', textDecoration: 'none' }}>
-              Ketentuan
+              Terms
             </Link>
             <Link href="/login" style={{ color: '#64748B', fontSize: '0.75rem', textDecoration: 'none' }}>
               Admin CMS

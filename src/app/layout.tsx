@@ -21,12 +21,12 @@ export const metadata: Metadata = {
     default: 'PT Indonesia Thai Summit Plastech — Automotive Plastic Injection & Interior Assembly',
     template: '%s | PT ITSP',
   },
-  description: 'PT Indonesia Thai Summit Plastech (ITSP) — Manufaktur komponen plastik otomotif berkualitas tinggi. Plastic Injection Molding, Spray Painting & Interior Assembly untuk Mitsubishi, Hyundai, Toyota, Suzuki, Wuling.',
-  keywords: ['PT ITSP', 'Indonesia Thai Summit Plastech', 'plastic injection molding', 'automotive parts', 'instrument panel', 'dashboard mobil', 'door trim', 'bumper', 'Karawang', 'Cikarang', 'Thai Summit Group'],
+  description: 'PT Indonesia Thai Summit Plastech (ITSP) — High-quality automotive plastic component manufacturing. Plastic Injection Molding, Spray Painting & Interior Assembly for Mitsubishi, Hyundai, Toyota, Suzuki, Wuling.',
+  keywords: ['PT ITSP', 'Indonesia Thai Summit Plastech', 'plastic injection molding', 'automotive parts', 'instrument panel', 'car dashboard', 'door trim', 'bumper', 'Karawang', 'Cikarang', 'Thai Summit Group'],
   alternates: { canonical: '/' },
   openGraph: {
     type: 'website',
-    locale: 'id_ID',
+    locale: 'en_US',
     siteName: 'PT Indonesia Thai Summit Plastech',
   },
   robots: { index: true, follow: true },
@@ -46,7 +46,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="id" className={jakarta.variable}>
+    <html lang="en" className={jakarta.variable}>
       <body className={jakarta.className}>
         <ThemeRegistry>{children}</ThemeRegistry>
       </body>

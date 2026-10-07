@@ -70,13 +70,13 @@ export default function AdminSustainabilityReportsPage() {
       const fd = new FormData(); fd.append('file', file);
       const res = await fetch('/api/upload', { method: 'POST', body: fd });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Gagal mengunggah.');
+      if (!res.ok) throw new Error(data.error || 'Failed to upload.');
       const kb = file.size / 1024;
       const label = kb > 1024 ? `${(kb / 1024).toFixed(2)} MB` : `${Math.round(kb)} KB`;
       const ext = file.name.toLowerCase();
       const ftype = (ext.endsWith('.xlsx') || ext.endsWith('.xls') || ext.endsWith('.csv')) ? 'XLSX' : 'PDF';
       setFormData((p) => ({ ...p, fileUrl: data.url, fileSize: label, fileType: ftype }));
-    } catch (e: any) { setError(e.message || 'Gagal mengunggah.'); }
+    } catch (e: any) { setError(e.message || 'Failed to upload.'); }
     finally { setUploading(false); }
   };
   const handleSubmit = async (e: React.FormEvent) => {
@@ -88,10 +88,10 @@ export default function AdminSustainabilityReportsPage() {
       const method = editingItem ? 'PUT' : 'POST';
       const body = editingItem ? { id: editingItem.id, ...formData } : formData;
       const res = await fetch('/api/cms/sustainability-reports', { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-      if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'Gagal menyimpan.'); }
+      if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'Failed to save.'); }
       setMessage(editingItem ? 'Laporan diperbarui!' : 'Laporan ditambahkan, tampil di /news!');
       handleCloseDialog(); fetchItems();
-    } catch (e: any) { setError(e.message || 'Gagal menyimpan.'); }
+    } catch (e: any) { setError(e.message || 'Failed to save.'); }
     finally { setSaving(false); }
   };
   const handleConfirmDelete = async () => {
@@ -101,13 +101,13 @@ export default function AdminSustainabilityReportsPage() {
       const res = await fetch(`/api/cms/sustainability-reports?id=${deleteTarget.id}`, { method: 'DELETE' });
       if (!res.ok) {
         const data = await res.json().catch(() => null);
-        throw new Error(data?.detail || data?.message || 'Gagal menghapus.');
+        throw new Error(data?.detail || data?.message || 'Failed to delete.');
       }
       setMessage('Data berhasil dihapus!');
       setDeleteTarget(null);
       fetchItems();
     } catch (err: any) {
-      setError(err.message || 'Gagal menghapus.');
+      setError(err.message || 'Failed to delete.');
     } finally {
       setDeleting(false);
     }

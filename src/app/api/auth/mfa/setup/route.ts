@@ -18,7 +18,7 @@ export async function GET() {
 
     if (!targetUser) {
       return NextResponse.json(
-        { error: 'Sesi setup MFA tidak valid atau telah kedaluwarsa. Silakan login kembali.' },
+        { error: 'MFA setup session is invalid or expired. Please log in again.' },
         { status: 401 }
       );
     }

@@ -146,7 +146,7 @@ return (<>
         <Stack direction="row" spacing={1} useFlexGap sx={{ mb: 2.5, flexWrap: 'wrap' }}>
           <Chip
             icon={<EnergySavingsLeafIcon sx={{ fontSize: '18px !important', color: '#fff !important' }} />}
-            label={isEn ? 'Corporate Sustainability • ESG • Regulatory Compliance' : 'Keberlanjutan Perusahaan • ESG • Kepatuhan Regulasi'}
+            label={isEn ? 'Corporate Sustainability • ESG • Regulatory Compliance' : 'Keberlanjutan Company • ESG • Kepatuhan Regulasi'}
             sx={{ bgcolor: 'rgba(255,255,255,0.14)', color: '#fff', fontWeight: 800, border: '1px solid rgba(255,255,255,0.28)' }}
           />
           <Chip

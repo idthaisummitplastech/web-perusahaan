@@ -124,7 +124,7 @@ export default function AdminFaqsPage() {
       handleCloseDialog();
       fetchItems();
     } catch (err: any) {
-      setError(err.message || 'Gagal menyimpan.');
+      setError(err.message || 'Failed to save.');
     } finally {
       setSaving(false);
     }
@@ -137,13 +137,13 @@ export default function AdminFaqsPage() {
       const res = await fetch(`/api/cms/faqs?id=${deleteTarget.id}`, { method: 'DELETE' });
       if (!res.ok) {
         const data = await res.json().catch(() => null);
-        throw new Error(data?.detail || data?.message || 'Gagal menghapus.');
+        throw new Error(data?.detail || data?.message || 'Failed to delete.');
       }
       setMessage('Data berhasil dihapus!');
       setDeleteTarget(null);
       fetchItems();
     } catch (err: any) {
-      setError(err.message || 'Gagal menghapus.');
+      setError(err.message || 'Failed to delete.');
     } finally {
       setDeleting(false);
     }
@@ -326,7 +326,7 @@ export default function AdminFaqsPage() {
               disabled={saving}
               sx={{ bgcolor: '#F59E0B', color: '#0F172A', fontWeight: 800, '&:hover': { bgcolor: '#D97706', color: '#FFFFFF' } }}
             >
-              {saving ? 'Menyimpan...' : 'Simpan FAQ'}
+              {saving ? 'Saving...' : 'Simpan FAQ'}
             </Button>
           </DialogActions>
         </Box>

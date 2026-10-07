@@ -76,7 +76,7 @@ export default function AdminBlogPostsPage() {
       const data = await res.json();
       if (Array.isArray(data)) setItems(data);
     } catch {
-      setError('Gagal memuat artikel.');
+      setError('Failed to load articles.');
     } finally {
       setLoading(false);
     }
@@ -139,14 +139,14 @@ export default function AdminBlogPostsPage() {
 
       if (!res.ok) {
         const errData = await res.json();
-        throw new Error(errData.error || 'Gagal menyimpan artikel.');
+        throw new Error(errData.error || 'Failed to save article.');
       }
 
       setMessage(editingItem ? 'Artikel berhasil diperbarui!' : 'Artikel baru berhasil diterbitkan!');
       handleCloseDialog();
       fetchItems();
     } catch (err: any) {
-      setError(err.message || 'Gagal menyimpan data.');
+      setError(err.message || 'Failed to save data.');
     } finally {
       setSaving(false);
     }
@@ -159,13 +159,13 @@ export default function AdminBlogPostsPage() {
       const res = await fetch(`/api/cms/blog-posts?id=${deleteTarget.id}`, { method: 'DELETE' });
       if (!res.ok) {
         const data = await res.json().catch(() => null);
-        throw new Error(data?.detail || data?.message || 'Gagal menghapus.');
+        throw new Error(data?.detail || data?.message || 'Failed to delete.');
       }
       setMessage('Data berhasil dihapus!');
       setDeleteTarget(null);
       fetchItems();
     } catch (err: any) {
-      setError(err.message || 'Gagal menghapus.');
+      setError(err.message || 'Failed to delete.');
     } finally {
       setDeleting(false);
     }
@@ -313,7 +313,7 @@ export default function AdminBlogPostsPage() {
                 fullWidth
                 value={formData.title}
                 onChange={(e) => handleTitleChange(e.target.value)}
-                placeholder="Contoh: Mengapa Multi-Factor Authentication Wajib untuk Keamanan Perusahaan"
+                placeholder="Contoh: Mengapa Multi-Factor Authentication Wajib untuk Keamanan Company"
               />
 
               <TextField
@@ -373,7 +373,7 @@ export default function AdminBlogPostsPage() {
               disabled={saving}
               sx={{ bgcolor: '#F59E0B', color: '#0F172A', fontWeight: 800, '&:hover': { bgcolor: '#D97706', color: '#FFFFFF' } }}
             >
-              {saving ? 'Menyimpan...' : 'Simpan & Publikasikan'}
+              {saving ? 'Saving...' : 'Simpan & Publikasikan'}
             </Button>
           </DialogActions>
         </Box>

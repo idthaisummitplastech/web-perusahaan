@@ -73,7 +73,7 @@ export default function AdminProfilePage() {
         body: JSON.stringify({ action: 'toggle_mfa', enabled: nextStatus }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Gagal mengubah status MFA.');
+      if (!res.ok) throw new Error(data.error || 'Failed to change MFA status.');
 
       setProfileMsg(data.message || 'Status MFA berhasil diperbarui.');
       fetchProfile();
@@ -101,7 +101,7 @@ export default function AdminProfilePage() {
       setProfileMsg('Nama profil berhasil diperbarui.');
       fetchProfile();
     } catch (err: any) {
-      setProfileErr(err.message || 'Gagal menyimpan.');
+      setProfileErr(err.message || 'Failed to save.');
     } finally {
       setUpdatingProfile(false);
     }
@@ -161,7 +161,7 @@ export default function AdminProfilePage() {
           Profil & Keamanan Akun
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-          Kelola informasi akun, kata sandi, dan status Autentikasi Multi-Faktor (MFA) Anda.
+          Kelola informasi akun, kata sandi, dan status Multi-Factor Authentication (MFA) Anda.
         </Typography>
       </Box>
 
@@ -187,7 +187,7 @@ export default function AdminProfilePage() {
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                   <ShieldIcon sx={{ color: isMfaActive ? '#018730' : '#94A3B8', fontSize: 32 }} />
                   <Typography variant="h6" fontWeight={800} color="#FFFFFF">
-                    Autentikasi Multi-Faktor (MFA)
+                    Multi-Factor Authentication (MFA)
                   </Typography>
                 </Box>
                 <Chip
@@ -312,7 +312,7 @@ export default function AdminProfilePage() {
               <Box component="form" onSubmit={handleUpdateProfile}>
                 <Stack spacing={2.5}>
                   <TextField
-                    label="Alamat Email (Login)"
+                    label="Email Address (Login)"
                     fullWidth
                     disabled
                     value={profile?.email || ''}
@@ -340,7 +340,7 @@ export default function AdminProfilePage() {
                       '&:hover': { bgcolor: '#016f27' },
                     }}
                   >
-                    {updatingProfile ? 'Menyimpan...' : 'Perbarui Profil'}
+                    {updatingProfile ? 'Saving...' : 'Perbarui Profil'}
                   </Button>
                 </Stack>
               </Box>
@@ -354,7 +354,7 @@ export default function AdminProfilePage() {
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
               <KeyIcon sx={{ color: '#fc4509' }} />
               <Typography variant="h6" fontWeight={800} color="#0F172A">
-                Ubah Kata Sandi
+                Ubah Password
               </Typography>
             </Box>
 
@@ -364,7 +364,7 @@ export default function AdminProfilePage() {
             <Box component="form" onSubmit={handleChangePassword}>
               <Stack spacing={2.5}>
                 <TextField
-                  label="Kata Sandi Saat Ini"
+                  label="Password Saat Ini"
                   type="password"
                   required
                   fullWidth
@@ -373,7 +373,7 @@ export default function AdminProfilePage() {
                 />
 
                 <TextField
-                  label="Kata Sandi Baru"
+                  label="Password Baru"
                   type="password"
                   required
                   fullWidth
@@ -383,7 +383,7 @@ export default function AdminProfilePage() {
                 />
 
                 <TextField
-                  label="Konfirmasi Kata Sandi Baru"
+                  label="Konfirmasi Password Baru"
                   type="password"
                   required
                   fullWidth
@@ -404,7 +404,7 @@ export default function AdminProfilePage() {
                     '&:hover': { bgcolor: '#1E293B' },
                   }}
                 >
-                  {changingPassword ? 'Menyimpan...' : 'Ganti Kata Sandi'}
+                  {changingPassword ? 'Saving...' : 'Ganti Password'}
                 </Button>
               </Stack>
             </Box>

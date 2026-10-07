@@ -31,12 +31,12 @@ export default async function ServiceDetailPage({
           startIcon={<ArrowBackIcon />}
           sx={{ mb: 4, color: '#64748B', fontWeight: 600, '&:hover': { color: '#018730' } }}
         >
-          Kembali ke Semua Layanan
+          Kembali ke Semua Services
         </Button>
 
         <Paper elevation={2} sx={{ p: { xs: 4, md: 6 }, borderRadius: 4, bgcolor: '#FFFFFF', border: '1px solid #E2E8F0' }}>
           <Chip
-            label="Layanan Unggulan"
+            label="Services Unggulan"
             sx={{
               bgcolor: '#e8f6ed',
               color: '#018730',
@@ -63,7 +63,7 @@ export default async function ServiceDetailPage({
 
           <Box sx={{ p: 3, bgcolor: '#F8FAFC', borderRadius: 3, border: '1px solid #E2E8F0', mb: 4 }}>
             <Typography variant="subtitle1" fontWeight={700} color="#0F172A" sx={{ mb: 2 }}>
-              Jaminan Standar Mutu & Keunggulan Layanan:
+              Jaminan Standar Mutu & Keunggulan Services:
             </Typography>
             <Stack spacing={1.5}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>

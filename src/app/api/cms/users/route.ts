@@ -131,7 +131,7 @@ export async function PUT(req: Request) {
   }
 }
 
-// DELETE /api/cms/users?id=123 - Hapus pengguna
+// DELETE /api/cms/users?id=123 - Delete user
 export async function DELETE(req: Request) {
   const currentUser = await getCurrentUser();
   if (!currentUser) {
@@ -167,6 +167,6 @@ export async function DELETE(req: Request) {
     return NextResponse.json({ success: true });
   } catch (error: any) {
     console.error('Error DELETE /api/cms/users:', error);
-    return NextResponse.json({ error: 'Gagal menghapus pengguna.' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to delete user.' }, { status: 500 });
   }
 }

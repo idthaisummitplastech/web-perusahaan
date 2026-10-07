@@ -47,7 +47,7 @@ export async function POST(
     });
     return NextResponse.json(created);
   } catch (error: any) {
-    return NextResponse.json({ error: error.message || 'Gagal menyimpan data.' }, { status: 500 });
+    return NextResponse.json({ error: error.message || 'Failed to save data.' }, { status: 500 });
   }
 }
 

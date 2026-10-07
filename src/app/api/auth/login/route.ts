@@ -8,7 +8,7 @@ export async function POST(req: Request) {
 
     if (!email || !password) {
       return NextResponse.json(
-        { error: 'Email dan password wajib diisi.' },
+        { error: 'Email and password are required.' },
         { status: 400 }
       );
     }
@@ -21,7 +21,7 @@ export async function POST(req: Request) {
       });
     } catch (err: any) {
       return NextResponse.json(
-        { error: err.message || 'Email atau password salah.' },
+        { error: err.message || 'Invalid email or password.' },
         { status: 401 }
       );
     }

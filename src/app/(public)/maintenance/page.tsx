@@ -11,7 +11,7 @@ export default function MaintenancePage() {
   return (
     <MaintenanceNotice
       title="Halaman Sedang Dalam Tahap Pemeliharaan & Integrasi"
-      subtitle="Layanan dan konten pada halaman ini sedang ditingkatkan oleh tim kami untuk memastikan informasi yang disajikan akurat, mutakhir, dan berstandar internasional."
+      subtitle="Services dan konten pada halaman ini sedang ditingkatkan oleh tim kami untuk memastikan informasi yang disajikan akurat, mutakhir, dan berstandar internasional."
       isNotFound={false}
     />
   );

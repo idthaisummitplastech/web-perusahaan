@@ -84,7 +84,7 @@ const TEMPLATE_OPTIONS = [
   {
     value: 'rich_text',
     label: '📝 Halaman Artikel Bebas / Profil',
-    desc: 'Layout artikel elegan dengan typography modern. Cocok untuk Kebijakan Perusahaan, CSR, Visi Misi.',
+    desc: 'Layout artikel elegan dengan typography modern. Cocok untuk Kebijakan Company, CSR, Visi Misi.',
     icon: <ArticleIcon sx={{ color: '#0284C7' }} />,
   },
   {
@@ -276,7 +276,7 @@ export default function AdminCustomPagesPage() {
       handleCloseDialog();
       fetchItems();
     } catch (err: any) {
-      setError(err.message || 'Gagal menyimpan data.');
+      setError(err.message || 'Failed to save data.');
     } finally {
       setSaving(false);
     }
@@ -289,13 +289,13 @@ export default function AdminCustomPagesPage() {
       const res = await fetch(`/api/cms/pages?id=${deleteTarget.id}`, { method: 'DELETE' });
       if (!res.ok) {
         const data = await res.json().catch(() => null);
-        throw new Error(data?.detail || data?.message || 'Gagal menghapus.');
+        throw new Error(data?.detail || data?.message || 'Failed to delete.');
       }
       setMessage('Data berhasil dihapus!');
       setDeleteTarget(null);
       fetchItems();
     } catch (err: any) {
-      setError(err.message || 'Gagal menghapus.');
+      setError(err.message || 'Failed to delete.');
     } finally {
       setDeleting(false);
     }

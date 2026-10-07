@@ -142,7 +142,7 @@ export default async function DynamicCustomPage({ params, searchParams }: PagePr
             <span>
               {templateType === 'gallery'
                 ? 'Galeri Dokumentasi Resmi'
-                : 'Informasi & Dokumentasi Perusahaan'}
+                : 'Informasi & Dokumentasi Company'}
             </span>
           </Box>
 
@@ -202,7 +202,7 @@ export default async function DynamicCustomPage({ params, searchParams }: PagePr
         {/* Footer Contact Banner */}
         <Box sx={{ mt: 10, p: { xs: 4, md: 6 }, borderRadius: 4, bgcolor: '#018730', color: '#FFFFFF', textAlign: 'center' }}>
           <Typography variant="h4" fontWeight={900} sx={{ mb: 1.5 }}>
-            Ingin Informasi Lebih Lengkap Mengenai Fasilitas & Layanan Kami?
+            Ingin Informasi Lebih Lengkap Mengenai Fasilitas & Services Kami?
           </Typography>
           <Typography variant="body1" sx={{ color: 'rgba(255, 255, 255, 0.9)', mb: 3.5, maxWidth: 640, mx: 'auto' }}>
             Hubungi perwakilan manajemen atau tim pemasaran PT Indonesia Thai Summit Plastech untuk konsultasi proyek dan kunjungan pabrik.

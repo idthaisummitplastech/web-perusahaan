@@ -48,14 +48,14 @@ export default function LoginPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error || 'Login gagal.');
+        throw new Error(data.error || 'Login failed.');
       }
 
       if (data.redirect) {
         router.push(data.redirect);
       }
     } catch (err: any) {
-      setError(err.message || 'Terjadi kesalahan saat login.');
+      setError(err.message || 'An error occurred during login.');
     } finally {
       setLoading(false);
     }
@@ -89,10 +89,10 @@ export default function LoginPage() {
               <BrandLogo title="Indonesia Thai Summit Plastech" lightText={false} size="medium" />
             </Box>
             <Typography variant="h5" component="h1" sx={{ fontWeight: 800, color: '#0F172A', letterSpacing: '-0.02em' }}>
-              Portal Manajemen CMS
+              CMS Management Portal
             </Typography>
             <Typography variant="body2" sx={{ color: '#64748B', mt: 0.75 }}>
-              Masuk ke Dashboard Administrator
+              Sign in to Admin Dashboard
             </Typography>
           </Box>
 
@@ -106,7 +106,7 @@ export default function LoginPage() {
             <Stack spacing={2.5}>
               <Box>
                 <Typography variant="caption" sx={{ fontWeight: 700, color: '#334155', display: 'block', mb: 0.75 }}>
-                  Alamat Email
+                  Email Address
                 </Typography>
                 <TextField
                   variant="outlined"
@@ -132,7 +132,7 @@ export default function LoginPage() {
 
               <Box>
                 <Typography variant="caption" sx={{ fontWeight: 700, color: '#334155', display: 'block', mb: 0.75 }}>
-                  Kata Sandi
+                  Password
                 </Typography>
                 <TextField
                   variant="outlined"
@@ -142,7 +142,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   autoComplete="current-password"
-                  placeholder="Masukkan kata sandi..."
+                  placeholder="Enter your password..."
                   slotProps={{
                     input: {
                       startAdornment: (
@@ -179,7 +179,7 @@ export default function LoginPage() {
               >
                 <ShieldOutlinedIcon sx={{ color: '#018730', fontSize: 24, flexShrink: 0 }} />
                 <Typography variant="caption" sx={{ color: '#015e21', lineHeight: 1.5 }}>
-                  Dilindungi dengan <strong>Autentikasi Multi-Faktor (MFA)</strong> untuk menjaga keamanan akun Anda.
+                  Protected by <strong>Multi-Factor Authentication (MFA)</strong> to keep your account secure.
                 </Typography>
               </Box>
 
@@ -203,7 +203,7 @@ export default function LoginPage() {
                   },
                 }}
               >
-                {loading ? <CircularProgress size={24} color="inherit" /> : 'Lanjutkan Masuk'}
+                {loading ? <CircularProgress size={24} color="inherit" /> : 'Continue to Sign In'}
               </Button>
             </Stack>
           </Box>
@@ -212,7 +212,7 @@ export default function LoginPage() {
 
           <Box sx={{ textAlign: 'center' }}>
             <Link href="/" style={{ color: '#018730', fontSize: '0.875rem', fontWeight: 600, textDecoration: 'none' }}>
-              &larr; Kembali ke Beranda Website
+              &larr; Back to Website Home
             </Link>
           </Box>
         </Paper>

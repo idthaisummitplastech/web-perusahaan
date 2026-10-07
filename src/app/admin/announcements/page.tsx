@@ -71,7 +71,7 @@ export default function AdminAnnouncementsPage() {
       const data = await res.json();
       if (Array.isArray(data)) setItems(data);
     } catch {
-      setError('Gagal memuat pengumuman.');
+      setError('Failed to load announcements.');
     } finally {
       setLoading(false);
     }
@@ -118,13 +118,13 @@ export default function AdminAnnouncementsPage() {
         body: JSON.stringify(body),
       });
 
-      if (!res.ok) throw new Error('Gagal menyimpan pengumuman.');
+      if (!res.ok) throw new Error('Failed to save announcement.');
 
       setMessage(editingItem ? 'Pengumuman diperbarui!' : 'Pengumuman baru ditambahkan!');
       handleCloseDialog();
       fetchItems();
     } catch (err: any) {
-      setError(err.message || 'Gagal menyimpan data.');
+      setError(err.message || 'Failed to save data.');
     } finally {
       setSaving(false);
     }
@@ -137,13 +137,13 @@ export default function AdminAnnouncementsPage() {
       const res = await fetch(`/api/cms/announcements?id=${deleteTarget.id}`, { method: 'DELETE' });
       if (!res.ok) {
         const data = await res.json().catch(() => null);
-        throw new Error(data?.detail || data?.message || 'Gagal menghapus.');
+        throw new Error(data?.detail || data?.message || 'Failed to delete.');
       }
       setMessage('Data berhasil dihapus!');
       setDeleteTarget(null);
       fetchItems();
     } catch (err: any) {
-      setError(err.message || 'Gagal menghapus.');
+      setError(err.message || 'Failed to delete.');
     } finally {
       setDeleting(false);
     }
@@ -322,7 +322,7 @@ export default function AdminAnnouncementsPage() {
               disabled={saving}
               sx={{ bgcolor: '#F59E0B', color: '#0F172A', fontWeight: 800, '&:hover': { bgcolor: '#D97706', color: '#FFFFFF' } }}
             >
-              {saving ? 'Menyimpan...' : 'Simpan Pengumuman'}
+              {saving ? 'Saving...' : 'Simpan Pengumuman'}
             </Button>
           </DialogActions>
         </Box>

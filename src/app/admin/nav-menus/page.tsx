@@ -42,6 +42,7 @@ import SubdirectoryArrowRightIcon from '@mui/icons-material/SubdirectoryArrowRig
 import WebIcon from '@mui/icons-material/Web';
 import ViewColumnIcon from '@mui/icons-material/ViewColumn';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
+import ConfirmDeleteDialog from '@/components/admin/ConfirmDeleteDialog';
 
 interface NavMenu {
   id: number;
@@ -54,6 +55,8 @@ interface NavMenu {
   isMaintenance?: boolean;
   is_maintenance?: boolean;
   parentId: number | null;
+  allowedRoles?: string | null;
+  allowed_roles?: string | null;
 }
 
 export default function AdminNavMenusPage() {
@@ -73,6 +76,7 @@ export default function AdminNavMenusPage() {
     sortOrder: 0,
     isActive: true,
     isMaintenance: false,
+    allowedRoles: '' as string,
   });
 
   const [saving, setSaving] = useState(false);
@@ -83,23 +87,46 @@ export default function AdminNavMenusPage() {
 
   // Drag & Drop state
   const [draggedItemId, setDraggedItemId] = useState<number | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: number; title: string; subtitle?: string } | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     fetchItems();
   }, []);
 
+  function normalizeNavMenus(raw: any[]): NavMenu[] {
+    return (raw || []).map((x: any) => ({
+      id: Number(x.id),
+      title: String(x.title ?? ''),
+      url: String(x.url ?? '/'),
+      location: String(x.location ?? 'navbar'),
+      section: x.section ?? null,
+      sortOrder: Number(x.sortOrder ?? x.sort_order ?? 0),
+      isActive: Boolean(x.isActive ?? x.is_active ?? true),
+      isMaintenance: Boolean(x.isMaintenance ?? x.is_maintenance ?? false),
+      is_maintenance: Boolean(x.isMaintenance ?? x.is_maintenance ?? false),
+      parentId: (x.parentId ?? x.parent_id ?? null) != null ? Number(x.parentId ?? x.parent_id) : null,
+      allowedRoles: (x.allowedRoles ?? x.allowed_roles ?? null) as string | null,
+      allowed_roles: (x.allowed_roles ?? x.allowedRoles ?? null) as string | null,
+    }));
+  }
+
   const fetchItems = async () => {
     try {
       setLoading(true);
       setError('');
-      const res = await fetch('/api/cms/nav-menus');
-      const data = await res.json();
-      if (Array.isArray(data)) {
-        setItems(data);
+      const res = await fetch('/api/cms/nav-menus', { cache: 'no-store' });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error((data && (data.error || data.detail)) || `Gagal memuat (${res.status})`);
+      }
+      const raw = Array.isArray(data) ? data : (Array.isArray(data?.data) ? data.data : (Array.isArray(data?.items) ? data.items : []));
+      if (Array.isArray(raw)) {
+        setItems(normalizeNavMenus(raw));
       } else if (data && data.error) {
         setError(`Gagal memuat menu navigasi: ${data.error}`);
-      } else if (data && Array.isArray(data.data)) {
-        setItems(data.data);
+      } else {
+        setError('Gagal memuat menu navigasi: format respons tidak dikenali.');
       }
     } catch (err: any) {
       setError(err?.message || 'Gagal memuat menu navigasi.');
@@ -141,6 +168,7 @@ export default function AdminNavMenusPage() {
         sortOrder: item.sortOrder,
         isActive: item.isActive,
         isMaintenance: Boolean(item.isMaintenance ?? item.is_maintenance),
+        allowedRoles: String(item.allowedRoles ?? item.allowed_roles ?? ''),
       });
     } else {
       setEditingItem(null);
@@ -149,11 +177,12 @@ export default function AdminNavMenusPage() {
         title: '',
         url: isNavbar ? '/' : '/about',
         location: activeTab,
-        section: activeTab === 'footer' ? 'Perusahaan' : '',
+        section: activeTab === 'footer' ? 'Company' : '',
         parentId: presetParentId || '',
         sortOrder: items.length + 1,
         isActive: true,
         isMaintenance: false,
+        allowedRoles: '',
       });
     }
     setDialogOpen(true);
@@ -216,16 +245,20 @@ export default function AdminNavMenusPage() {
 
     try {
       const method = editingItem ? 'PUT' : 'POST';
+      const allowed = formData.allowedRoles.trim();
       const body = {
         ...(editingItem ? { id: editingItem.id } : {}),
         title: formData.title,
         url: formData.url,
         location: formData.location,
-        section: formData.location === 'footer' ? formData.section || 'Perusahaan' : null,
+        section: formData.location === 'footer' ? formData.section || 'Company' : null,
         parentId: formData.location === 'navbar' && formData.parentId ? parseInt(String(formData.parentId)) : null,
         sortOrder: formData.sortOrder,
         isActive: formData.isActive,
         is_maintenance: formData.isMaintenance,
+        allowed_roles: allowed || null,
+        portal: (formData as any).portal || undefined,
+        icon: (formData as any).icon || null,
       };
 
       const res = await fetch('/api/cms/nav-menus', {
@@ -256,7 +289,7 @@ export default function AdminNavMenusPage() {
       setDeleteTarget(null);
       fetchItems();
     } catch (err: any) {
-      setError(err.message || 'Gagal menghapus.');
+      setError(err.message || 'Failed to delete.');
     } finally {
       setDeleting(false);
     }
@@ -703,7 +736,7 @@ export default function AdminNavMenusPage() {
                               <IconButton size="small" sx={{ color: '#018730' }} onClick={() => handleOpenDialog(parent)} title="Ubah menu">
                                 <EditIcon fontSize="small" />
                               </IconButton>
-                              <IconButton size="small" color="error" onClick={() => handleDelete(parent.id, parent.title)} title="Hapus menu">
+                              <IconButton size="small" color="error" onClick={() => setDeleteTarget({ id: parent.id, title: parent.title, subtitle: `Menu navbar • URL: ${parent.url}` })} title="Hapus menu">
                                 <DeleteIcon fontSize="small" />
                               </IconButton>
                             </Stack>
@@ -870,7 +903,7 @@ export default function AdminNavMenusPage() {
                                 <IconButton size="small" sx={{ color: '#018730' }} onClick={() => handleOpenDialog(child)} title="Ubah sub-menu">
                                   <EditIcon fontSize="small" />
                                 </IconButton>
-                                <IconButton size="small" color="error" onClick={() => handleDelete(child.id, child.title)} title="Hapus sub-menu">
+                                <IconButton size="small" color="error" onClick={() => setDeleteTarget({ id: child.id, title: child.title, subtitle: `Sub-menu navbar • URL: ${child.url}` })} title="Hapus sub-menu">
                                   <DeleteIcon fontSize="small" />
                                 </IconButton>
                               </TableCell>
@@ -1103,7 +1136,7 @@ export default function AdminNavMenusPage() {
                                 <IconButton size="small" sx={{ color: '#018730' }} onClick={() => handleOpenDialog(item)} title="Ubah">
                                   <EditIcon fontSize="small" />
                                 </IconButton>
-                                <IconButton size="small" color="error" onClick={() => setDeleteTarget({ id: item.id, title: item.title, subtitle: `Menu Utama • Tautan: ${item.path}` })} title="Hapus">
+                                <IconButton size="small" color="error" onClick={() => setDeleteTarget({ id: item.id, title: item.title, subtitle: `Tautan footer • URL: ${item.url} • Seksi: ${item.section}` })} title="Hapus">
                                   <DeleteIcon fontSize="small" />
                                 </IconButton>
                               </TableCell>
@@ -1193,10 +1226,19 @@ export default function AdminNavMenusPage() {
                   fullWidth
                   value={formData.section}
                   onChange={(e) => setFormData({ ...formData, section: e.target.value })}
-                  placeholder="Misal: Perusahaan, Layanan, Legal, Dukungan"
+                  placeholder="Misal: Company, Services, Legal, Dukungan"
                   helperText="Tautan footer akan dikelompokkan berdasarkan nama seksi ini."
                 />
               )}
+
+              <TextField
+                label="Batasan Role (opsional, CSV)"
+                fullWidth
+                value={formData.allowedRoles}
+                onChange={(e) => setFormData({ ...formData, allowedRoles: e.target.value })}
+                placeholder="Kosong = tampil untuk semua. Contoh: admin,hr atau marketing"
+                helperText="Gunakan kolom ini untuk kontrol visibilitas per-role (nav-menus: filter via FE; admin-menus: filter via BE query ?role=)."
+              />
 
               <Paper
                 variant="outlined"
@@ -1272,7 +1314,7 @@ export default function AdminNavMenusPage() {
               disabled={saving}
               sx={{ bgcolor: '#018730', fontWeight: 700, px: 3, '&:hover': { bgcolor: '#016f27' } }}
             >
-              {saving ? 'Menyimpan...' : editingItem ? 'Perbarui Menu' : 'Simpan Menu'}
+              {saving ? 'Saving...' : editingItem ? 'Perbarui Menu' : 'Simpan Menu'}
             </Button>
           </DialogActions>
         </Box>

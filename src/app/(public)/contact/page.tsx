@@ -48,7 +48,7 @@ export default function ContactPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error || 'Gagal mengirim pesan.');
+        throw new Error(data.error || 'Failed to send message.');
       }
 
       setSuccessMsg(data.message);
@@ -125,7 +125,7 @@ export default function ContactPage() {
 
                   <Box>
                     <Typography variant="caption" fontWeight={700} color="#334155" sx={{ display: 'block', mb: 0.75 }}>
-                      Alamat Email *
+                      Email Address *
                     </Typography>
                     <TextField
                       type="email"
@@ -258,7 +258,7 @@ export default function ContactPage() {
                     </Box>
                     <Box>
                       <Typography variant="caption" color="#018730" fontWeight={700}>
-                        Email Resmi
+                        Official Email
                       </Typography>
                       <Typography variant="body2" fontWeight={600} color="#F8FAFC" sx={{ mt: 0.5 }}>
                         info@thaisummit.co.id

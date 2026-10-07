@@ -139,11 +139,11 @@ export default function AdminServicesPage() {
         throw new Error(errData.error || 'Gagal menyimpan layanan.');
       }
 
-      setMessage(editingItem ? 'Layanan berhasil diperbarui!' : 'Layanan baru berhasil ditambahkan!');
+      setMessage(editingItem ? 'Services berhasil diperbarui!' : 'Services baru berhasil ditambahkan!');
       handleCloseDialog();
       fetchItems();
     } catch (err: any) {
-      setError(err.message || 'Gagal menyimpan data.');
+      setError(err.message || 'Failed to save data.');
     } finally {
       setSaving(false);
     }
@@ -156,13 +156,13 @@ export default function AdminServicesPage() {
       const res = await fetch(`/api/cms/services?id=${deleteTarget.id}`, { method: 'DELETE' });
       if (!res.ok) {
         const data = await res.json().catch(() => null);
-        throw new Error(data?.detail || data?.message || 'Gagal menghapus.');
+        throw new Error(data?.detail || data?.message || 'Failed to delete.');
       }
       setMessage('Data berhasil dihapus!');
       setDeleteTarget(null);
       fetchItems();
     } catch (err: any) {
-      setError(err.message || 'Gagal menghapus.');
+      setError(err.message || 'Failed to delete.');
     } finally {
       setDeleting(false);
     }
@@ -173,7 +173,7 @@ export default function AdminServicesPage() {
       <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Box>
           <Typography variant="h4" fontWeight={900} color="#0F172A">
-            Manajemen Layanan Perusahaan
+            Manajemen Services Company
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
             Kelola daftar layanan profesional, deskripsi keahlian, dan URL slug halaman detail.
@@ -185,7 +185,7 @@ export default function AdminServicesPage() {
           onClick={() => handleOpenDialog()}
           sx={{ bgcolor: '#F59E0B', color: '#0F172A', fontWeight: 800, '&:hover': { bgcolor: '#D97706', color: '#FFFFFF' } }}
         >
-          Tambah Layanan
+          Tambah Services
         </Button>
       </Box>
 
@@ -228,7 +228,7 @@ export default function AdminServicesPage() {
                   <Table>
                     <TableHead sx={{ bgcolor: '#F8FAFC' }}>
                       <TableRow>
-                        <TableCell sx={{ fontWeight: 700 }}>Nama Layanan</TableCell>
+                        <TableCell sx={{ fontWeight: 700 }}>Nama Services</TableCell>
                         <TableCell sx={{ fontWeight: 700 }}>Subjudul / Kategori</TableCell>
                         <TableCell sx={{ fontWeight: 700 }}>URL Slug</TableCell>
                         <TableCell sx={{ fontWeight: 700 }}>Urutan</TableCell>
@@ -240,7 +240,7 @@ export default function AdminServicesPage() {
                       {filteredItems.length === 0 ? (
                         <TableRow>
                           <TableCell colSpan={6} sx={{ textAlign: 'center', py: 6, color: 'text.secondary' }}>
-                            {searchQuery ? 'Tidak ada layanan yang cocok dengan pencarian.' : 'Belum ada data layanan. Klik tombol "Tambah Layanan" di atas untuk menambahkan.'}
+                            {searchQuery ? 'Tidak ada layanan yang cocok dengan pencarian.' : 'Belum ada data layanan. Klik tombol "Tambah Services" di atas untuk menambahkan.'}
                           </TableCell>
                         </TableRow>
                       ) : (
@@ -295,12 +295,12 @@ export default function AdminServicesPage() {
       <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="md" fullWidth>
         <Box component="form" onSubmit={handleSubmit}>
           <DialogTitle sx={{ fontWeight: 800 }}>
-            {editingItem ? 'Edit Layanan' : 'Tambah Layanan Baru'}
+            {editingItem ? 'Edit Services' : 'Tambah Services Baru'}
           </DialogTitle>
           <DialogContent dividers>
             <Stack spacing={2.5} sx={{ pt: 1 }}>
               <TextField
-                label="Nama Layanan"
+                label="Nama Services"
                 required
                 fullWidth
                 value={formData.title}
@@ -326,7 +326,7 @@ export default function AdminServicesPage() {
               />
 
               <TextField
-                label="Deskripsi Lengkap Layanan"
+                label="Deskripsi Lengkap Services"
                 fullWidth
                 multiline
                 rows={4}
@@ -363,7 +363,7 @@ export default function AdminServicesPage() {
               disabled={saving}
               sx={{ bgcolor: '#F59E0B', color: '#0F172A', fontWeight: 800, '&:hover': { bgcolor: '#D97706', color: '#FFFFFF' } }}
             >
-              {saving ? 'Menyimpan...' : 'Simpan Layanan'}
+              {saving ? 'Saving...' : 'Simpan Services'}
             </Button>
           </DialogActions>
         </Box>
@@ -372,11 +372,11 @@ export default function AdminServicesPage() {
       {/* Dialog Konfirmasi Hapus In-App */}
       <ConfirmDeleteDialog
         open={Boolean(deleteTarget)}
-        title="Konfirmasi Hapus Layanan"
+        title="Konfirmasi Hapus Services"
         itemName={deleteTarget?.title}
         itemSubtitle={deleteTarget?.slug ? `URL: /services/${deleteTarget.slug}` : undefined}
         description="Apakah Anda yakin ingin menghapus layanan ini?"
-        warningText="Tindakan ini permanen. Layanan ini tidak akan tampil lagi di website."
+        warningText="Tindakan ini permanen. Services ini tidak akan tampil lagi di website."
         loading={deleting}
         onClose={() => setDeleteTarget(null)}
         onConfirm={handleConfirmDelete}

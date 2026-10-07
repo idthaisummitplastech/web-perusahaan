@@ -47,13 +47,13 @@ export default function AdminMenusPage(){
   };
   return(<Box>
     <Box sx={{display:'flex',justifyContent:'space-between',alignItems:'center',mb:3,flexWrap:'wrap',gap:2}}>
-      <Box><Typography variant="h5" fontWeight={900} color="#0F172A">Menu Admin Dinamis</Typography><Typography variant="body2" color="text.secondary">Kelola sidebar Perusahaan & top-nav Karir. Filter portal & role.</Typography></Box>
+      <Box><Typography variant="h5" fontWeight={900} color="#0F172A">Menu Admin Dinamis</Typography><Typography variant="body2" color="text.secondary">Kelola sidebar Company & top-nav Karir. Filter portal & role.</Typography></Box>
       <Button variant="contained" startIcon={<AddIcon/>} onClick={add} sx={{bgcolor:'#018730',fontWeight:700}}>Tambah Menu</Button>
     </Box>
     {msg&&<Alert severity="success" sx={{mb:2}} onClose={()=>setMsg('')}>{msg}</Alert>}
     {err&&<Alert severity="error" sx={{mb:2}} onClose={()=>setErr('')}>{err}</Alert>}
     <Stack direction="row" spacing={1} sx={{mb:2}}>
-      <Button variant={tab==='perusahaan'?'contained':'outlined'} onClick={()=>setTab('perusahaan')} sx={{fontWeight:700}}>Perusahaan (Sidebar)</Button>
+      <Button variant={tab==='perusahaan'?'contained':'outlined'} onClick={()=>setTab('perusahaan')} sx={{fontWeight:700}}>Company (Sidebar)</Button>
       <Button variant={tab==='karir'?'contained':'outlined'} onClick={()=>setTab('karir')} sx={{fontWeight:700}}>Karir (Top Nav)</Button>
     </Stack>
     {loading?<Box sx={{p:6,display:'flex',justifyContent:'center'}}><CircularProgress sx={{color:'#018730'}}/></Box>:(
@@ -85,7 +85,7 @@ export default function AdminMenusPage(){
         <TextField label="allowed_roles CSV" value={form.allowedRoles} onChange={e=>setForm({...form,allowedRoles:e.target.value})} fullWidth placeholder="admin,hr atau kosong=semua"/>
         <FormControlLabel control={<Switch checked={form.isActive} onChange={e=>setForm({...form,isActive:e.target.checked})} color="success"/>} label="Aktif"/>
       </DialogContent>
-      <DialogActions><Button onClick={()=>setOpen(false)}>Batal</Button><Button variant="contained" onClick={save} disabled={saving} sx={{bgcolor:'#018730'}}>{saving?'Menyimpan...':'Simpan'}</Button></DialogActions>
+      <DialogActions><Button onClick={()=>setOpen(false)}>Batal</Button><Button variant="contained" onClick={save} disabled={saving} sx={{bgcolor:'#018730'}}>{saving?'Saving...':'Simpan'}</Button></DialogActions>
     </Dialog>
   </Box>);
 }

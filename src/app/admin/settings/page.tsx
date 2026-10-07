@@ -118,7 +118,7 @@ export default function AdminSettingsPage() {
             </Grid>
             <Grid size={{ xs: 12, md: 6 }}>
               <TextField
-                label="Tagline Perusahaan"
+                label="Tagline Company"
                 fullWidth
                 value={settings.site_tagline || ''}
                 onChange={(e) => setSettings({ ...settings, site_tagline: e.target.value })}
@@ -147,7 +147,7 @@ export default function AdminSettingsPage() {
           <Grid container spacing={3} sx={{ mb: 4 }}>
             <Grid size={{ xs: 12, md: 6 }}>
               <TextField
-                label="Email Resmi Perusahaan"
+                label="Official Email Company"
                 type="email"
                 fullWidth
                 value={settings.contact_email || ''}
@@ -193,7 +193,7 @@ export default function AdminSettingsPage() {
               '&:hover': { bgcolor: '#D97706', color: '#FFFFFF' },
             }}
           >
-            {saving ? <CircularProgress size={24} color="inherit" /> : 'Simpan Perubahan'}
+            {saving ? <CircularProgress size={24} color="inherit" /> : 'Save Changes'}
           </Button>
         </Box>
       </Paper>

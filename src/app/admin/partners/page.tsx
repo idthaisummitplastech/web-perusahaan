@@ -134,7 +134,7 @@ export default function AdminPartnersPage() {
       handleCloseDialog();
       fetchItems();
     } catch (err: any) {
-      setError(err.message || 'Gagal menyimpan.');
+      setError(err.message || 'Failed to save.');
     } finally {
       setSaving(false);
     }
@@ -147,13 +147,13 @@ export default function AdminPartnersPage() {
       const res = await fetch(`/api/cms/partners?id=${deleteTarget.id}`, { method: 'DELETE' });
       if (!res.ok) {
         const data = await res.json().catch(() => null);
-        throw new Error(data?.detail || data?.message || 'Gagal menghapus.');
+        throw new Error(data?.detail || data?.message || 'Failed to delete.');
       }
       setMessage('Data berhasil dihapus!');
       setDeleteTarget(null);
       fetchItems();
     } catch (err: any) {
-      setError(err.message || 'Gagal menghapus.');
+      setError(err.message || 'Failed to delete.');
     } finally {
       setDeleting(false);
     }
@@ -227,7 +227,7 @@ export default function AdminPartnersPage() {
                     <TableHead sx={{ bgcolor: '#F8FAFC' }}>
                       <TableRow>
                         <TableCell sx={{ fontWeight: 700, width: 100 }}>Logo</TableCell>
-                        <TableCell sx={{ fontWeight: 700 }}>Nama Perusahaan / Klien</TableCell>
+                        <TableCell sx={{ fontWeight: 700 }}>Nama Company / Klien</TableCell>
                         <TableCell sx={{ fontWeight: 700 }}>URL Website</TableCell>
                         <TableCell sx={{ fontWeight: 700 }}>Urutan</TableCell>
                         <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
@@ -347,7 +347,7 @@ export default function AdminPartnersPage() {
           <DialogContent dividers>
             <Stack spacing={2.5} sx={{ pt: 1 }}>
               <TextField
-                label="Nama Perusahaan / Klien"
+                label="Nama Company / Klien"
                 required
                 fullWidth
                 value={formData.name}
@@ -358,7 +358,7 @@ export default function AdminPartnersPage() {
               <ImageUpload
                 value={formData.logo}
                 onChange={(url) => setFormData((prev) => ({ ...prev, logo: url, logoType: 'image' }))}
-                label="Logo Perusahaan / Klien"
+                label="Logo Company / Klien"
                 helperText="Unggah file logo resmi (PNG dengan background transparan disarankan, JPG, SVG, WEBP)"
               />
 
@@ -409,7 +409,7 @@ export default function AdminPartnersPage() {
                 '&:hover': { background: 'linear-gradient(135deg, #016f27 0%, #018730 100%)' },
               }}
             >
-              {saving ? 'Menyimpan...' : 'Simpan Mitra'}
+              {saving ? 'Saving...' : 'Simpan Mitra'}
             </Button>
           </DialogActions>
         </Box>

@@ -84,7 +84,7 @@ export default async function HomePage() {
         }
         primaryBtnText={hero?.primaryBtnText || 'Hubungi Kami'}
         primaryBtnUrl={hero?.primaryBtnUrl || '/contact'}
-        secondaryBtnText={hero?.secondaryBtnText || 'Jelajahi Produk & Layanan'}
+        secondaryBtnText={hero?.secondaryBtnText || 'Jelajahi Produk & Services'}
         secondaryBtnUrl={hero?.secondaryBtnUrl || '/products'}
       />
 
@@ -276,7 +276,7 @@ export default async function HomePage() {
             >
               <Box>
                 <Chip
-                  label="Layanan & Solusi"
+                  label="Services & Solusi"
                   sx={{
                     bgcolor: '#e8f6ed',
                     color: '#018730',
@@ -299,7 +299,7 @@ export default async function HomePage() {
                   '&:hover': { color: '#016f27', bgcolor: '#e8f6ed' },
                 }}
               >
-                Lihat Semua Layanan
+                Lihat Semua Services
               </Button>
             </Box>
 
@@ -347,7 +347,7 @@ export default async function HomePage() {
                         '&:hover': { color: '#016f27', bgcolor: 'transparent' },
                       }}
                     >
-                      Detail Layanan
+                      Detail Services
                     </Button>
                   </Card>
                 </Grid>

@@ -16,7 +16,7 @@ export default async function ServicesPage() {
       <Container maxWidth="lg">
         <Box sx={{ textAlign: 'center', mb: 8 }}>
           <Chip
-            label="Layanan & Solusi Manufaktur"
+            label="Services & Solusi Manufaktur"
             sx={{
               bgcolor: '#e8f6ed',
               color: '#018730',

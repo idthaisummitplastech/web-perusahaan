@@ -76,7 +76,7 @@ export default function AdminTestimonialsPage() {
       const data = await res.json();
       if (Array.isArray(data)) setItems(data);
     } catch {
-      setError('Gagal memuat testimoni.');
+      setError('Failed to load testimonials.');
     } finally {
       setLoading(false);
     }
@@ -127,13 +127,13 @@ export default function AdminTestimonialsPage() {
         body: JSON.stringify(body),
       });
 
-      if (!res.ok) throw new Error('Gagal menyimpan testimoni.');
+      if (!res.ok) throw new Error('Failed to save testimonial.');
 
       setMessage(editingItem ? 'Testimoni berhasil diperbarui!' : 'Testimoni baru berhasil ditambahkan!');
       handleCloseDialog();
       fetchItems();
     } catch (err: any) {
-      setError(err.message || 'Gagal menyimpan.');
+      setError(err.message || 'Failed to save.');
     } finally {
       setSaving(false);
     }
@@ -146,13 +146,13 @@ export default function AdminTestimonialsPage() {
       const res = await fetch(`/api/cms/testimonials?id=${deleteTarget.id}`, { method: 'DELETE' });
       if (!res.ok) {
         const data = await res.json().catch(() => null);
-        throw new Error(data?.detail || data?.message || 'Gagal menghapus.');
+        throw new Error(data?.detail || data?.message || 'Failed to delete.');
       }
       setMessage('Data berhasil dihapus!');
       setDeleteTarget(null);
       fetchItems();
     } catch (err: any) {
-      setError(err.message || 'Gagal menghapus.');
+      setError(err.message || 'Failed to delete.');
     } finally {
       setDeleting(false);
     }
@@ -219,7 +219,7 @@ export default function AdminTestimonialsPage() {
                     <TableHead sx={{ bgcolor: '#F8FAFC' }}>
                       <TableRow>
                         <TableCell sx={{ fontWeight: 700 }}>Nama Klien</TableCell>
-                        <TableCell sx={{ fontWeight: 700 }}>Jabatan & Perusahaan</TableCell>
+                        <TableCell sx={{ fontWeight: 700 }}>Jabatan & Company</TableCell>
                         <TableCell sx={{ fontWeight: 700 }}>Rating</TableCell>
                         <TableCell sx={{ fontWeight: 700 }}>Isi Ulasan</TableCell>
                         <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
@@ -311,7 +311,7 @@ export default function AdminTestimonialsPage() {
                   placeholder="CTO / Direktur"
                 />
                 <TextField
-                  label="Perusahaan"
+                  label="Company"
                   fullWidth
                   value={formData.company}
                   onChange={(e) => setFormData({ ...formData, company: e.target.value })}
@@ -361,7 +361,7 @@ export default function AdminTestimonialsPage() {
               disabled={saving}
               sx={{ bgcolor: '#F59E0B', color: '#0F172A', fontWeight: 800, '&:hover': { bgcolor: '#D97706', color: '#FFFFFF' } }}
             >
-              {saving ? 'Menyimpan...' : 'Simpan Testimoni'}
+              {saving ? 'Saving...' : 'Simpan Testimoni'}
             </Button>
           </DialogActions>
         </Box>
@@ -372,7 +372,7 @@ export default function AdminTestimonialsPage() {
         open={Boolean(deleteTarget)}
         title="Konfirmasi Hapus Testimoni"
         itemName={deleteTarget?.name}
-        itemSubtitle={`Jabatan: ${deleteTarget?.role || "-"} • Perusahaan: ${deleteTarget?.company || "-"}`}
+        itemSubtitle={`Jabatan: ${deleteTarget?.role || "-"} • Company: ${deleteTarget?.company || "-"}`}
         description="Apakah Anda yakin ingin menghapus testimoni ini?"
         warningText="Tindakan ini permanen. Ulasan klien ini tidak akan tampil lagi di website."
         loading={deleting}

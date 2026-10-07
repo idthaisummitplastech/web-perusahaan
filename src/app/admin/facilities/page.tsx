@@ -160,7 +160,7 @@ export default function AdminFacilitiesPage() {
       handleCloseDialog();
       fetchItems();
     } catch (err: any) {
-      setError(err.message || 'Gagal menyimpan data.');
+      setError(err.message || 'Failed to save data.');
     } finally {
       setSaving(false);
     }
@@ -173,13 +173,13 @@ export default function AdminFacilitiesPage() {
       const res = await fetch(`/api/cms/facilities?id=${deleteTarget.id}`, { method: 'DELETE' });
       if (!res.ok) {
         const data = await res.json().catch(() => null);
-        throw new Error(data?.detail || data?.message || 'Gagal menghapus.');
+        throw new Error(data?.detail || data?.message || 'Failed to delete.');
       }
       setMessage('Data berhasil dihapus!');
       setDeleteTarget(null);
       fetchItems();
     } catch (err: any) {
-      setError(err.message || 'Gagal menghapus.');
+      setError(err.message || 'Failed to delete.');
     } finally {
       setDeleting(false);
     }
@@ -591,7 +591,7 @@ export default function AdminFacilitiesPage() {
               disabled={saving}
               sx={{ bgcolor: '#018730', fontWeight: 700, px: 3, '&:hover': { bgcolor: '#016f27' } }}
             >
-              {saving ? 'Menyimpan...' : 'Simpan Fasilitas'}
+              {saving ? 'Saving...' : 'Simpan Fasilitas'}
             </Button>
           </DialogActions>
         </Box>

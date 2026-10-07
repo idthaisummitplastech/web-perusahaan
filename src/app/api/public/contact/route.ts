@@ -27,7 +27,7 @@ export async function POST(req: Request) {
   } catch (error: any) {
     console.error('Contact submission error:', error);
     return NextResponse.json(
-      { error: 'Gagal mengirim pesan. Silakan coba lagi.' },
+      { error: 'Failed to send message. Silakan coba lagi.' },
       { status: 500 }
     );
   }

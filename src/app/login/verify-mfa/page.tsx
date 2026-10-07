@@ -159,7 +159,7 @@ export default function VerifyMfaPage() {
                 }}
               >
                 <span className="notranslate" translate="no" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
-                  {loading ? <CircularProgress size={24} color="inherit" /> : 'Verifikasi & Masuk'}
+                  {loading ? <CircularProgress size={24} color="inherit" /> : 'Verify & Sign In'}
                 </span>
               </Button>
             </Stack>
