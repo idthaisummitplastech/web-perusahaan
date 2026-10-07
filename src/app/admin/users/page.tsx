@@ -50,11 +50,15 @@ import ConfirmDeleteDialog from '@/components/admin/ConfirmDeleteDialog';
 
 interface UserItem {
   id: number;
+  username?: string | null;
   email: string;
   name: string;
   role: string;
+  department?: string | null;
   mfaEnabled: boolean;
   backupCodes?: string | null;
+  isActive: boolean;
+  portalAccess: string; // perusahaan | karir | both
   createdAt: string;
 }
 
@@ -118,6 +122,8 @@ export default function AdminUsersPage() {
     password: '',
     role: 'marketing',
     mfaEnabled: false,
+    isActive: true,
+    portalAccess: 'both' as string,
   });
   const [saving, setSaving] = useState(false);
   const [togglingMfaId, setTogglingMfaId] = useState<number | null>(null);
@@ -140,6 +146,14 @@ export default function AdminUsersPage() {
     fetchUsers();
   }, []);
 
+  const normalizeUser = (u: any): UserItem => ({
+    ...u,
+    isActive: u.isActive ?? u.is_active ?? true,
+    portalAccess: u.portalAccess ?? u.portal_access ?? 'both',
+    mfaEnabled: u.mfaEnabled ?? u.mfa_enabled ?? false,
+    department: u.department ?? null,
+    username: u.username ?? null,
+  });
   const fetchUsers = async () => {
     try {
       setLoading(true);
@@ -148,8 +162,9 @@ export default function AdminUsersPage() {
         setError('Akses terbatas. Anda tidak memiliki izin untuk mengelola pengguna.');
         return;
       }
-      const data = await res.json();
-      if (Array.isArray(data)) setUsers(data);
+      const raw = await res.json();
+      const arr: any[] = Array.isArray(raw) ? raw : (raw?.data ?? raw?.users ?? []);
+      if (Array.isArray(arr)) setUsers(arr.map(normalizeUser));
     } catch {
       setError('Gagal memuat daftar pengguna.');
     } finally {
@@ -198,6 +213,27 @@ export default function AdminUsersPage() {
     }
   };
 
+  const handleToggleActive = async (user: UserItem) => {
+    const next = !user.isActive;
+    setError(''); setMessage('');
+    try {
+      const res = await fetch('/api/cms/users', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: user.id, isActive: next }) });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Gagal ubah status aktif.');
+      setUsers(prev => prev.map(u => u.id === user.id ? { ...u, isActive: next } : u));
+      setMessage(`${user.name} sekarang ${next ? 'AKTIF' : 'NON-AKTIF'}.`);
+    } catch (e: any) { setError(e.message || 'Gagal toggle aktif.'); }
+  };
+  const handleChangePortal = async (user: UserItem, portalAccess: string) => {
+    try {
+      const res = await fetch('/api/cms/users', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: user.id, portalAccess }) });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Gagal ubah portal.');
+      setUsers(prev => prev.map(u => u.id === user.id ? { ...u, portalAccess } : u));
+      setMessage(`Akses portal ${user.name} → ${portalAccess}.`);
+    } catch (e: any) { setError(e.message || 'Gagal ubah portal.'); }
+  };
+
   const handleOpenDialog = (user?: UserItem) => {
     if (user) {
       setEditingUser(user);
@@ -207,6 +243,8 @@ export default function AdminUsersPage() {
         password: '',
         role: user.role,
         mfaEnabled: Boolean(user.mfaEnabled),
+        isActive: Boolean(user.isActive),
+        portalAccess: user.portalAccess || 'both',
       });
     } else {
       setEditingUser(null);
@@ -216,6 +254,8 @@ export default function AdminUsersPage() {
         password: `Itsp@${new Date().getFullYear()}`,
         role: 'marketing',
         mfaEnabled: false,
+        isActive: true,
+        portalAccess: 'both',
       });
     }
     setDialogOpen(true);
@@ -241,6 +281,8 @@ export default function AdminUsersPage() {
             role: formData.role,
             newPassword: formData.password,
             mfaEnabled: formData.mfaEnabled,
+            isActive: formData.isActive,
+            portalAccess: formData.portalAccess,
           }
         : formData;
 
@@ -447,16 +489,18 @@ export default function AdminUsersPage() {
                       <TableRow>
                         <TableCell sx={{ fontWeight: 700 }}>Pengguna</TableCell>
                         <TableCell sx={{ fontWeight: 700 }}>Email Login</TableCell>
-                        <TableCell sx={{ fontWeight: 700 }}>Peran (Role)</TableCell>
-                        <TableCell sx={{ fontWeight: 700 }}>Keamanan MFA (Aktifkan/Nonaktifkan)</TableCell>
-                        <TableCell sx={{ fontWeight: 700 }}>Terdaftar Pada</TableCell>
+                        <TableCell sx={{ fontWeight: 700 }}>Peran</TableCell>
+                        <TableCell sx={{ fontWeight: 700 }}>MFA</TableCell>
+                        <TableCell sx={{ fontWeight: 700 }}>Aktif</TableCell>
+                        <TableCell sx={{ fontWeight: 700 }}>Akses Portal</TableCell>
+                        <TableCell sx={{ fontWeight: 700 }}>Terdaftar</TableCell>
                         <TableCell align="right" sx={{ fontWeight: 700 }}>Aksi</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
                       {filteredUsers.length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={6} sx={{ textAlign: 'center', py: 6, color: 'text.secondary' }}>
+                          <TableCell colSpan={8} sx={{ textAlign: 'center', py: 6, color: 'text.secondary' }}>
                             {searchQuery ? 'Tidak ada pengguna yang cocok dengan pencarian.' : 'Belum ada data pengguna.'}
                           </TableCell>
                         </TableRow>
@@ -466,7 +510,7 @@ export default function AdminUsersPage() {
                           const isToggling = togglingMfaId === u.id;
 
                           return (
-                            <TableRow key={u.id} hover>
+                            <TableRow key={u.id} hover sx={{ opacity: u.isActive ? 1 : 0.6 }}>
                               <TableCell>
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                                   <Avatar sx={{ width: 38, height: 38, bgcolor: roleConfig.color, color: '#FFFFFF', fontWeight: 700, fontSize: '0.875rem' }}>
@@ -554,6 +598,19 @@ export default function AdminUsersPage() {
                                     </Tooltip>
                                   )}
                                 </Box>
+                              </TableCell>
+                              <TableCell>
+                                <Tooltip title={u.isActive ? 'Klik untuk nonaktifkan' : 'Klik untuk aktifkan'}>
+                                  <Switch size="small" checked={u.isActive} onChange={() => handleToggleActive(u)} sx={{ '& .MuiSwitch-switchBase.Mui-checked': { color: '#018730' }, '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { bgcolor: '#018730' } }} />
+                                </Tooltip>
+                                <Chip label={u.isActive ? 'Aktif' : 'Non-aktif'} size="small" sx={{ ml: 1, bgcolor: u.isActive ? '#DCFCE7' : '#F1F5F9', color: u.isActive ? '#15803D' : '#64748B', fontWeight: 700, fontSize: '0.7rem' }} />
+                              </TableCell>
+                              <TableCell>
+                                <TextField select size="small" value={u.portalAccess} onChange={(e) => handleChangePortal(u, e.target.value)} sx={{ minWidth: 140, '& .MuiInputBase-root': { fontSize: '0.8rem', fontWeight: 700 } }}>
+                                  <MenuItem value="perusahaan">Perusahaan</MenuItem>
+                                  <MenuItem value="karir">Karir</MenuItem>
+                                  <MenuItem value="both">Keduanya</MenuItem>
+                                </TextField>
                               </TableCell>
                               <TableCell sx={{ color: '#64748B', fontSize: '0.8125rem' }}>
                                 {new Date(u.createdAt).toLocaleDateString('id-ID', { year: 'numeric', month: 'short', day: 'numeric' })}
@@ -655,42 +712,23 @@ export default function AdminUsersPage() {
                 }}
               />
 
-              {/* MFA Switch in Dialog */}
-              <Box
-                sx={{
-                  p: 2,
-                  bgcolor: formData.mfaEnabled ? '#e8f6ed' : '#F8FAFC',
-                  borderRadius: 2.5,
-                  border: `1px solid ${formData.mfaEnabled ? '#01873044' : '#E2E8F0'}`,
-                }}
-              >
+              <Stack direction="row" spacing={2}>
+                <FormControlLabel control={<Switch checked={formData.isActive} onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })} />} label={<Typography variant="body2" fontWeight={800}>{formData.isActive ? 'Akun Aktif' : 'Akun Non-aktif'}</Typography>} />
+                <TextField select label="Akses Portal" value={formData.portalAccess} onChange={(e) => setFormData({ ...formData, portalAccess: e.target.value })} sx={{ minWidth: 180 }}><MenuItem value="perusahaan">Web Perusahaan</MenuItem><MenuItem value="karir">Web Karir</MenuItem><MenuItem value="both">Keduanya</MenuItem></TextField>
+              </Stack>
+              <Box sx={{ p: 2, bgcolor: formData.mfaEnabled ? '#e8f6ed' : '#F8FAFC', borderRadius: 2.5, border: `1px solid ${formData.mfaEnabled ? '#01873044' : '#E2E8F0'}` }}>
                 <FormControlLabel
                   control={
                     <Switch
                       checked={formData.mfaEnabled}
                       onChange={(e) => setFormData({ ...formData, mfaEnabled: e.target.checked })}
-                      sx={{
-                        '& .MuiSwitch-switchBase.Mui-checked': {
-                          color: '#018730',
-                        },
-                        '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
-                          backgroundColor: '#018730',
-                        },
-                      }}
+                      sx={{ '& .MuiSwitch-switchBase.Mui-checked': { color: '#018730' }, '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { backgroundColor: '#018730' } }}
                     />
                   }
                   label={
                     <Box>
-                      <Typography variant="subtitle2" fontWeight={800} color="#0F172A">
-                        {formData.mfaEnabled
-                          ? 'Autentikasi Multi-Faktor (MFA) Diaktifkan'
-                          : 'Autentikasi Multi-Faktor (MFA) Dinonaktifkan'}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {formData.mfaEnabled
-                          ? 'Pengguna memerlukan kode authenticator TOTP atau kode cadangan saat login.'
-                          : 'Pengguna dapat langsung login hanya menggunakan email dan kata sandi.'}
-                      </Typography>
+                      <Typography variant="subtitle2" fontWeight={800} color="#0F172A">{formData.mfaEnabled ? 'MFA Diaktifkan' : 'MFA Dinonaktifkan'}</Typography>
+                      <Typography variant="caption" color="text.secondary">{formData.mfaEnabled ? 'Perlu kode Authenticator saat login.' : 'Login hanya email + password.'}</Typography>
                     </Box>
                   }
                 />

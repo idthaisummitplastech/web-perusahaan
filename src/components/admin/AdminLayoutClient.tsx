@@ -87,6 +87,13 @@ const MENU_ITEMS: MenuItemConfig[] = [
   { key: 'menu_security', defaultText: 'Security & MFA', href: '/admin/profile', icon: <ShieldIcon /> },
 ];
 
+function iconFor(name?: string | null): React.ReactElement {
+  const map: Record<string, React.ReactElement> = {
+    DashboardIcon: <DashboardIcon />, Inventory2Icon: <Inventory2Icon />, WorkspacePremiumIcon: <WorkspacePremiumIcon />, PrecisionManufacturingIcon: <PrecisionManufacturingIcon />, MiscellaneousServicesIcon: <MiscellaneousServicesIcon />, ArticleIcon: <ArticleIcon />, AssessmentIcon: <ReportIcon />, ViewCarouselIcon: <ViewCarouselIcon />, CampaignIcon: <CampaignIcon />, StarIcon: <StarIcon />, HandshakeIcon: <HandshakeIcon />, FormatQuoteIcon: <FormatQuoteIcon />, QuizIcon: <QuizIcon />, BarChartIcon: <BarChartIcon />, MailIcon: <MailIcon />, AdminPanelSettingsIcon: <AdminPanelSettingsIcon />, NavigationIcon: <NavigationIcon />, WebAssetIcon: <WebAssetIcon />, ShieldIcon: <ShieldIcon />, SettingsIcon: <SettingsIcon />,
+  };
+  return map[name || ''] || <WebAssetIcon />;
+}
+
 export default function AdminLayoutClient({
   children,
   user,
@@ -101,6 +108,23 @@ export default function AdminLayoutClient({
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const pathname = usePathname();
   const router = useRouter();
+  const [dynamicMenus, setDynamicMenus] = useState<MenuItemConfig[] | null>(null);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    fetch(`/api/cms/admin-menus?portal=perusahaan&role=${encodeURIComponent(user.role)}`, { cache: 'no-store' })
+      .then(r => r.json().catch(() => ({}))).then((j: any) => {
+        const arr = Array.isArray(j) ? j : (Array.isArray(j?.data) ? j.data : []);
+        if (!cancelled && Array.isArray(arr) && arr.length > 0) {
+          const mapped: MenuItemConfig[] = arr.sort((a: any, b: any) => (a.sort_order ?? a.sortOrder ?? 0) - (b.sort_order ?? b.sortOrder ?? 0)).map((m: any) => ({
+            key: (m.url?.replace(/[^a-zA-Z0-9]/g, '_') || 'menu_dynamic') as any, defaultText: m.title, href: m.url, icon: iconFor(m.icon),
+            adminOnly: (m.allowed_roles || m.allowedRoles || '').toLowerCase().includes('admin') && !(m.allowed_roles || m.allowedRoles || '').includes('hr'),
+          }));
+          setDynamicMenus(mapped);
+        }
+      }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [user.role]);
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -141,7 +165,7 @@ export default function AdminLayoutClient({
       {/* Navigation Links */}
       <Box sx={{ flexGrow: 1, overflowY: 'auto', p: 1.5 }}>
         <List disablePadding>
-          {MENU_ITEMS.filter((item) => !item.adminOnly || user.role === 'admin').map((item) => {
+          {(dynamicMenus || MENU_ITEMS).filter((item) => !item.adminOnly || user.role === 'admin').map((item) => {
             const isActive = pathname === item.href;
             const label = t(item.key, item.defaultText);
             return (

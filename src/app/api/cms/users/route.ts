@@ -41,7 +41,7 @@ export async function POST(req: Request) {
 
   try {
     const body = await req.json();
-    const { name, email, password, role, mfaEnabled } = body;
+    const { name, email, password, role, mfaEnabled, isActive, portalAccess, username, department } = body;
 
     if (!name || !email || !password) {
       return NextResponse.json(
@@ -57,6 +57,8 @@ export async function POST(req: Request) {
       );
     }
 
+    const pa = (portalAccess || 'both').toLowerCase();
+    const validPA = ['perusahaan','karir','both'].includes(pa) ? pa : 'both';
     const newUser = await fetchFromBackend('/cms/users', {
       method: 'POST',
       body: JSON.stringify({
@@ -65,6 +67,10 @@ export async function POST(req: Request) {
         password,
         role: role || 'marketing',
         mfa_enabled: Boolean(mfaEnabled),
+        is_active: typeof isActive === 'boolean' ? isActive : true,
+        portal_access: validPA,
+        username: username?.trim() || undefined,
+        department: department?.trim() || undefined,
       }),
     });
 
@@ -91,7 +97,7 @@ export async function PUT(req: Request) {
 
   try {
     const body = await req.json();
-    const { id, name, email, role, newPassword, mfaEnabled, regenerateBackupCodes } = body;
+    const { id, name, email, role, newPassword, mfaEnabled, isActive, portalAccess, username, department } = body;
 
     if (!id) {
       return NextResponse.json({ error: 'ID pengguna wajib disertakan.' }, { status: 400 });
@@ -101,7 +107,14 @@ export async function PUT(req: Request) {
     if (name) payload.name = name.trim();
     if (email) payload.email = email.toLowerCase().trim();
     if (role) payload.role = role;
+    if (username !== undefined) payload.username = username.trim();
+    if (department !== undefined) payload.department = department.trim();
     if (typeof mfaEnabled === 'boolean') payload.mfa_enabled = mfaEnabled;
+    if (typeof isActive === 'boolean') payload.is_active = isActive;
+    if (portalAccess) {
+      const pa = String(portalAccess).toLowerCase().trim();
+      if (['perusahaan','karir','both'].includes(pa)) payload.portal_access = pa;
+    }
     if (newPassword && newPassword.trim().length >= 6) {
       payload.password = newPassword.trim();
     }

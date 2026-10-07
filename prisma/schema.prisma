@@ -12,13 +12,17 @@ datasource db {
 
 model User {
   id          Int      @id @default(autoincrement())
+  username    String?  @unique
   email       String   @unique
   password    String
   name        String
   role        String   @default("admin")
+  department  String?
   mfaEnabled  Boolean  @default(false) @map("mfa_enabled")
   mfaSecret   String?  @map("mfa_secret")
   backupCodes String?  @map("backup_codes")
+  isActive    Boolean  @default(true) @map("is_active")
+  portalAccess String  @default("both") @map("portal_access") // perusahaan | karir | both
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
@@ -34,20 +38,44 @@ model SiteSetting {
 }
 
 model NavMenu {
-  id        Int       @id @default(autoincrement())
-  title     String
-  url       String
-  location  String
-  section   String?
-  sortOrder Int       @default(0) @map("sort_order")
-  isActive  Boolean   @default(true) @map("is_active")
-  parentId  Int?      @map("parent_id")
-  parent    NavMenu?  @relation("NavMenuHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
-  children  NavMenu[] @relation("NavMenuHierarchy")
-  createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime  @updatedAt @map("updated_at")
+  id            Int       @id @default(autoincrement())
+  title         String
+  url           String
+  location      String    // navbar | footer | admin_sidebar | admin_top
+  section       String?
+  sortOrder     Int       @default(0) @map("sort_order")
+  isActive      Boolean   @default(true) @map("is_active")
+  isMaintenance Boolean   @default(false) @map("is_maintenance")
+  portal        String    @default("perusahaan") // perusahaan | karir | both
+  allowedRoles  String?   @map("allowed_roles") // CSV NULL=all
+  icon          String?
+  parentId      Int?      @map("parent_id")
+  parent        NavMenu?  @relation("NavMenuHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  children      NavMenu[] @relation("NavMenuHierarchy")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
 
   @@map("nav_menus")
+}
+
+model AdminMenu {
+  id           Int       @id @default(autoincrement())
+  title        String
+  url          String
+  portal       String    @default("perusahaan") // perusahaan | karir | both
+  location     String    @default("admin_sidebar") // admin_sidebar | admin_top
+  icon         String?
+  section      String?
+  sortOrder    Int       @default(0) @map("sort_order")
+  isActive     Boolean   @default(true) @map("is_active")
+  allowedRoles String?   @map("allowed_roles") // CSV NULL=all
+  parentId     Int?      @map("parent_id")
+  parent       AdminMenu? @relation("AdminMenuHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  children     AdminMenu[] @relation("AdminMenuHierarchy")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  @@map("admin_menus")
 }
 
 model HeroSection {
