@@ -29,6 +29,57 @@ async function main() {
   });
   console.log('✅ Admin user ready:', admin.email);
 
+  // 1b. Primary Superadmin ITSP.1526.08.26 / it-04@thaisummit.co.id — Employee ID immutable, role admin portal both
+  const it04Plain = process.env.SEED_IT04_PASSWORD && process.env.SEED_IT04_PASSWORD.length >= 12 ? process.env.SEED_IT04_PASSWORD : `Itsp@${new Date().getFullYear()}`;
+  const hashedIT04 = await bcrypt.hash(it04Plain, 12);
+  const it04 = await prisma.user.upsert({
+    where: { email: 'it-04@thaisummit.co.id' },
+    update: {
+      employeeId: 'ITSP.1526.08.26',
+      username: 'it-04',
+      name: 'IT Admin',
+      role: 'admin',
+      department: 'IT',
+      isActive: true,
+      portalAccess: 'both',
+      isFirstLogin: true,
+      password: hashedIT04,
+    } as any,
+    create: {
+      employeeId: 'ITSP.1526.08.26',
+      username: 'it-04',
+      email: 'it-04@thaisummit.co.id',
+      password: hashedIT04,
+      name: 'IT Admin',
+      role: 'admin',
+      department: 'IT',
+      mfaEnabled: false,
+      isActive: true,
+      portalAccess: 'both',
+      isFirstLogin: true,
+    } as any,
+  });
+  try {
+    await prisma.user.upsert({
+      where: { employeeId: 'ITSP.1526.08.26' } as any,
+      update: { email: 'it-04@thaisummit.co.id', username: 'it-04', role: 'admin', isActive: true, portalAccess: 'both' } as any,
+      create: {
+        employeeId: 'ITSP.1526.08.26',
+        username: 'it-04',
+        email: 'it-04@thaisummit.co.id',
+        password: hashedIT04,
+        name: 'IT Admin',
+        role: 'admin',
+        department: 'IT',
+        mfaEnabled: false,
+        isActive: true,
+        portalAccess: 'both',
+        isFirstLogin: true,
+      } as any,
+    });
+  } catch {}
+  console.log('✅ Primary superadmin ready:', it04.email, (it04 as any).employeeId);
+
   // 2. Site Settings — PT Indonesia Thai Summit Plastech (ITSP)
   const settings = [
     { key: 'site_title', value: 'PT Indonesia Thai Summit Plastech' },
