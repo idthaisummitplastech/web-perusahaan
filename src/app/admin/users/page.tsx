@@ -47,12 +47,13 @@ import PeopleIcon from '@mui/icons-material/People';
 import EngineeringIcon from '@mui/icons-material/Engineering';
 import { CmsTablePagination, CmsTableToolbar } from '@/components/admin/CmsTablePagination';
 import ConfirmDeleteDialog from '@/components/admin/ConfirmDeleteDialog';
+import Autocomplete from '@mui/material/Autocomplete';
 
 interface UserItem {
   id: number;
   username?: string | null;
   email: string;
-  employeeId?: string | null; // immutable Employee ID e.g. ITSP.004.02.16
+  employeeId?: string | null; // immutable Employee ID e.g. 1526.08.26
   employee_id?: string | null;
   name: string;
   role: string;
@@ -119,7 +120,7 @@ export default function AdminUsersPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<UserItem | null>(null);
   const [formData, setFormData] = useState({
-    employeeId: '', // immutable Employee ID e.g. ITSP.004.02.16 — email retained for audit, fallback 6 months
+    employeeId: '', // immutable Employee ID e.g. 1526.08.26 — email retained for audit, fallback 6 months
     name: '',
     email: '',
     password: '',
@@ -129,6 +130,10 @@ export default function AdminUsersPage() {
     portalAccess: 'both' as string,
   });
   const [saving, setSaving] = useState(false);
+  const [karyawanOptions, setKaryawanOptions] = useState<any[]>([]);
+  const [karyawanLoading, setKaryawanLoading] = useState(false);
+  const [karyawanQuery, setKaryawanQuery] = useState('');
+  const [selectedKaryawan, setSelectedKaryawan] = useState<any | null>(null);
   const [togglingMfaId, setTogglingMfaId] = useState<number | null>(null);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
@@ -176,6 +181,26 @@ export default function AdminUsersPage() {
       setLoading(false);
     }
   };
+
+  // Pilih Karyawan dropdown - searchable Data Karyawan polos 1526.08.26 tanpa prefix ITSP.
+  React.useEffect(() => {
+    if (!dialogOpen || editingUser) return;
+    let active=true;
+    const fetchKaryawanOptions=async()=>{
+      setKaryawanLoading(true);
+      try{
+        let res=await fetch('/api/cms/employees?search='+encodeURIComponent(karyawanQuery)+'&employee_status=all',{cache:'no-store'});
+        if(!res.ok) res=await fetch('/api/admin/employees?search='+encodeURIComponent(karyawanQuery)+'&employee_status=all',{cache:'no-store'});
+        const data=await res.json().catch(()=>({}));
+        if(!active) return;
+        const list=Array.isArray(data.employees)?data.employees:Array.isArray(data)?data:[];
+        setKaryawanOptions(list);
+      }catch{ if(active) setKaryawanOptions([]);}
+      finally{ if(active) setKaryawanLoading(false);}
+    };
+    const tm=setTimeout(fetchKaryawanOptions,300);
+    return()=>{active=false;clearTimeout(tm);};
+  },[karyawanQuery,dialogOpen,editingUser]);
 
   const handleToggleMfa = async (user: UserItem) => {
     const nextStatus = !user.mfaEnabled;
@@ -264,6 +289,8 @@ export default function AdminUsersPage() {
         isActive: true,
         portalAccess: 'both',
       });
+      setSelectedKaryawan(null);
+      setKaryawanQuery('');
     }
     setDialogOpen(true);
   };
@@ -271,6 +298,8 @@ export default function AdminUsersPage() {
   const handleCloseDialog = () => {
     setDialogOpen(false);
     setEditingUser(null);
+    setSelectedKaryawan(null);
+    setKaryawanQuery('');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -464,7 +493,7 @@ export default function AdminUsersPage() {
       {message && <Alert severity="success" onClose={() => setMessage('')} sx={{ mb: 3, borderRadius: 2 }}>{message}</Alert>}
       {error && <Alert severity="error" onClose={() => setError('')} sx={{ mb: 3, borderRadius: 2 }}>{error}</Alert>}
 
-      {/* Users Table — Employee ID immutable (ITSP.004.02.16), email retained for audit, fallback 6 months */}
+      {/* Users Table — Employee ID immutable (1526.08.26), email retained for audit, fallback 6 months */}
       {(() => {
         const filteredUsers = users.filter((u) => {
           if (!searchQuery.trim()) return true;
@@ -487,7 +516,7 @@ export default function AdminUsersPage() {
                 setSearchQuery(val);
                 setPage(0);
               }}
-              placeholder="Cari nama, Employee ID (ITSP.004.02.16), email, role…"
+              placeholder="Cari nama, Employee ID (1526.08.26), email, role…"
               totalCount={users.length}
               filteredCount={filteredUsers.length}
             />
@@ -677,14 +706,26 @@ export default function AdminUsersPage() {
           </DialogTitle>
           <DialogContent dividers>
             <Stack spacing={2.5} sx={{ pt: 1 }}>
+                            <Autocomplete
+                options={karyawanOptions}
+                loading={karyawanLoading}
+                disabled={Boolean(editingUser && (editingUser.employeeId || (editingUser as any).employee_id))}
+                getOptionLabel={(opt:any)=>`${opt.employee_id||opt.employeeId||''} \u2014 ${opt.full_name||opt.name||''} ${opt.email?'('+opt.email+')':''} `}
+                inputValue={karyawanQuery}
+                onInputChange={(_,v)=>setKaryawanQuery(v)}
+                value={selectedKaryawan}
+                onChange={(_,val:any)=>{ setSelectedKaryawan(val); if(val){ const eid=String(val.employee_id||val.employeeId||'').trim(); const nm=String(val.full_name||val.name||'').trim(); const em=String(val.email||'').trim(); if(eid) setFormData((prev:any)=>({...prev, employeeId:eid})); if(nm) setFormData((prev:any)=>({...prev, name:nm})); if(em) setFormData((prev:any)=>({...prev, email:em})); } }}
+                noOptionsText={karyawanLoading?'Memuat...':'Tidak ada karyawan (coba kata kunci lain)'}
+                renderInput={(params)=>( <TextField {...params} label="Pilih Karyawan (anti-typo) *" placeholder="Ketik nama / Employee ID / email..." helperText="Pilih dari Data Karyawan \u2014 otomatis isi Employee ID, Nama, Email (tanpa prefix ITSP.)" InputProps={{...params.InputProps,endAdornment:(<>{karyawanLoading?<CircularProgress size={18}/>:null}{params.InputProps.endAdornment}</>)}} /> )}
+              />
               <TextField
-                label="Employee ID *"
+                label="Employee ID (otomatis) *"
                 required
                 fullWidth
                 value={formData.employeeId}
                 onChange={(e) => setFormData({ ...formData, employeeId: e.target.value })}
-                placeholder="ITSP.004.02.16"
-                helperText={editingUser && (editingUser.employeeId || (editingUser as any).employee_id) ? 'immutable — tidak dapat diubah (hubungi HR jika salah)' : 'immutable — contoh: ITSP.004.02.16 • Email tetap tercatat untuk audit, fallback 6 bulan'}
+                placeholder="1526.08.26"
+                helperText={editingUser && (editingUser.employeeId || (editingUser as any).employee_id) ? 'immutable \u2014 tidak dapat diubah (hubungi HR jika salah)' : 'Otomatis dari dropdown di atas \u2014 tanpa prefix ITSP. (polos 1526.08.26). Bisa edit manual bila perlu.'}
                 disabled={Boolean(editingUser && (editingUser.employeeId || (editingUser as any).employee_id))}
                 slotProps={{ htmlInput: { style: { fontFamily: 'monospace', fontWeight: 700 } } }}
               />
