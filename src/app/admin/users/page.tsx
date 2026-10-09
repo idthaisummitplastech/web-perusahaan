@@ -182,9 +182,10 @@ export default function AdminUsersPage() {
     }
   };
 
-  // Pilih Karyawan dropdown - searchable Data Karyawan polos 1526.08.26 tanpa prefix ITSP.
+  // Pilih Karyawan dropdown - searchable Data Karyawan polos 1526.08.26 tanpa prefix ITSP. (Add + Edit tanpa Employee ID)
   React.useEffect(() => {
-    if (!dialogOpen || editingUser) return;
+    if (!dialogOpen) return;
+    if (editingUser && (editingUser.employeeId || (editingUser as any).employee_id)) return;
     let active=true;
     const fetchKaryawanOptions=async()=>{
       setKaryawanLoading(true);
@@ -716,7 +717,7 @@ export default function AdminUsersPage() {
                 value={selectedKaryawan}
                 onChange={(_,val:any)=>{ setSelectedKaryawan(val); if(val){ const eid=String(val.employee_id||val.employeeId||'').trim(); const nm=String(val.full_name||val.name||'').trim(); const em=String(val.email||'').trim(); if(eid) setFormData((prev:any)=>({...prev, employeeId:eid})); if(nm) setFormData((prev:any)=>({...prev, name:nm})); if(em) setFormData((prev:any)=>({...prev, email:em})); } }}
                 noOptionsText={karyawanLoading?'Memuat...':'Tidak ada karyawan (coba kata kunci lain)'}
-                renderInput={(params)=>( <TextField {...params} label="Pilih Karyawan (anti-typo) *" placeholder="Ketik nama / Employee ID / email..." helperText="Pilih dari Data Karyawan \u2014 otomatis isi Employee ID, Nama, Email (tanpa prefix ITSP.)" InputProps={{...params.InputProps,endAdornment:(<>{karyawanLoading?<CircularProgress size={18}/>:null}{params.InputProps.endAdornment}</>)}} /> )}
+                renderInput={(params)=>( <TextField {...params} label="Pilih Karyawan (anti-typo) *" placeholder="Ketik nama / Employee ID / email..." helperText="Pilih dari Data Karyawan \u2014 otomatis isi Employee ID, Nama, Email (tanpa prefix ITSP.)" InputProps={{...(params.InputProps||{}),endAdornment:(<>{karyawanLoading?<CircularProgress size={18}/>:null}{(params.InputProps as any)?.endAdornment}</>)}} slotProps={{input:{...(params.InputProps||{}),endAdornment:(<>{karyawanLoading?<CircularProgress size={18}/>:null}{(params.InputProps as any)?.endAdornment}</>)}}} /> )}
               />
               <TextField
                 label="Employee ID (otomatis) *"
