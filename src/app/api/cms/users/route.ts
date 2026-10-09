@@ -41,8 +41,12 @@ export async function POST(req: Request) {
 
   try {
     const body = await req.json();
+    const employeeIdRaw: string = String(body.employeeId || body.employee_id || body.employeeID || '').trim();
     const { name, email, password, role, mfaEnabled, isActive, portalAccess, username, department } = body;
 
+    if (!employeeIdRaw) {
+      return NextResponse.json({ error: 'Employee ID wajib diisi (contoh: ITSP.004.02.16).' }, { status: 400 });
+    }
     if (!name || !email || !password) {
       return NextResponse.json(
         { error: 'Nama, email, dan kata sandi wajib diisi.' },
@@ -62,6 +66,8 @@ export async function POST(req: Request) {
     const newUser = await fetchFromBackend('/cms/users', {
       method: 'POST',
       body: JSON.stringify({
+        employee_id: employeeIdRaw,
+        employeeId: employeeIdRaw,
         name: name.trim(),
         email: email.toLowerCase().trim(),
         password,
@@ -97,6 +103,7 @@ export async function PUT(req: Request) {
 
   try {
     const body = await req.json();
+    const employeeIdRaw: string = String(body.employeeId || body.employee_id || body.employeeID || '').trim();
     const { id, name, email, role, newPassword, mfaEnabled, isActive, portalAccess, username, department } = body;
 
     if (!id) {
@@ -104,6 +111,11 @@ export async function PUT(req: Request) {
     }
 
     const payload: any = {};
+    if (employeeIdRaw) {
+      // immutable — backend will reject if already set to different value; allow fill if empty
+      payload.employee_id = employeeIdRaw;
+      payload.employeeId = employeeIdRaw;
+    }
     if (name) payload.name = name.trim();
     if (email) payload.email = email.toLowerCase().trim();
     if (role) payload.role = role;

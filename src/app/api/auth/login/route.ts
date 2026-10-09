@@ -4,11 +4,14 @@ import { signTempToken, TEMP_COOKIE_NAME } from '@/lib/auth';
 
 export async function POST(req: Request) {
   try {
-    const { email, password } = await req.json();
+    const body = await req.json();
+    // Employee ID primary (ITSP.004.02.16) — dual-mode fallback email/username 6 months
+    const raw: string = String(body.employee_id || body.employee_id_or_email || body.login || body.username || body.email || "").trim();
+    const password: string = String(body.password || "");
 
-    if (!email || !password) {
+    if (!raw || !password) {
       return NextResponse.json(
-        { error: 'Email and password are required.' },
+        { error: 'Employee ID / Email and password are required.' },
         { status: 400 }
       );
     }
@@ -17,7 +20,7 @@ export async function POST(req: Request) {
     try {
       authResult = await fetchFromBackend('/auth/cms-login', {
         method: 'POST',
-        body: JSON.stringify({ email: email.toLowerCase().trim(), password }),
+        body: JSON.stringify({ employee_id: raw, employee_id_or_email: raw, login: raw, username: raw, email: raw, password }),
       });
     } catch (err: any) {
       return NextResponse.json(

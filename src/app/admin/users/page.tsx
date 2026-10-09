@@ -52,6 +52,8 @@ interface UserItem {
   id: number;
   username?: string | null;
   email: string;
+  employeeId?: string | null; // immutable Employee ID e.g. ITSP.004.02.16
+  employee_id?: string | null;
   name: string;
   role: string;
   department?: string | null;
@@ -117,6 +119,7 @@ export default function AdminUsersPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<UserItem | null>(null);
   const [formData, setFormData] = useState({
+    employeeId: '', // immutable Employee ID e.g. ITSP.004.02.16 — email retained for audit, fallback 6 months
     name: '',
     email: '',
     password: '',
@@ -148,6 +151,8 @@ export default function AdminUsersPage() {
 
   const normalizeUser = (u: any): UserItem => ({
     ...u,
+    employeeId: u.employeeId ?? u.employee_id ?? u.employeeID ?? null,
+    employee_id: u.employee_id ?? u.employeeId ?? u.employeeID ?? null,
     isActive: u.isActive ?? u.is_active ?? true,
     portalAccess: u.portalAccess ?? u.portal_access ?? 'both',
     mfaEnabled: u.mfaEnabled ?? u.mfa_enabled ?? false,
@@ -238,6 +243,7 @@ export default function AdminUsersPage() {
     if (user) {
       setEditingUser(user);
       setFormData({
+        employeeId: user.employeeId ?? (user as any).employee_id ?? '',
         name: user.name,
         email: user.email,
         password: '',
@@ -249,6 +255,7 @@ export default function AdminUsersPage() {
     } else {
       setEditingUser(null);
       setFormData({
+        employeeId: '',
         name: '',
         email: '',
         password: `Itsp@${new Date().getFullYear()}`,
@@ -276,6 +283,8 @@ export default function AdminUsersPage() {
       const body = editingUser
         ? {
             id: editingUser.id,
+            employee_id: (formData.employeeId || '').trim(),
+            employeeId: (formData.employeeId || '').trim(),
             name: formData.name,
             email: formData.email,
             role: formData.role,
@@ -284,7 +293,11 @@ export default function AdminUsersPage() {
             isActive: formData.isActive,
             portalAccess: formData.portalAccess,
           }
-        : formData;
+        : {
+            ...formData,
+            employee_id: (formData.employeeId || '').trim(),
+            employeeId: (formData.employeeId || '').trim(),
+          };
 
       const res = await fetch('/api/cms/users', {
         method,
@@ -451,7 +464,7 @@ export default function AdminUsersPage() {
       {message && <Alert severity="success" onClose={() => setMessage('')} sx={{ mb: 3, borderRadius: 2 }}>{message}</Alert>}
       {error && <Alert severity="error" onClose={() => setError('')} sx={{ mb: 3, borderRadius: 2 }}>{error}</Alert>}
 
-      {/* Users Table */}
+      {/* Users Table — Employee ID immutable (ITSP.004.02.16), email retained for audit, fallback 6 months */}
       {(() => {
         const filteredUsers = users.filter((u) => {
           if (!searchQuery.trim()) return true;
@@ -459,6 +472,7 @@ export default function AdminUsersPage() {
           return (
             (u.name && u.name.toLowerCase().includes(q)) ||
             (u.email && u.email.toLowerCase().includes(q)) ||
+            ((u.employeeId || (u as any).employee_id) && String(u.employeeId || (u as any).employee_id).toLowerCase().includes(q)) ||
             (u.role && u.role.toLowerCase().includes(q))
           );
         });
@@ -473,7 +487,7 @@ export default function AdminUsersPage() {
                 setSearchQuery(val);
                 setPage(0);
               }}
-              placeholder="Cari nama, email, role pengguna..."
+              placeholder="Cari nama, Employee ID (ITSP.004.02.16), email, role…"
               totalCount={users.length}
               filteredCount={filteredUsers.length}
             />
@@ -484,10 +498,11 @@ export default function AdminUsersPage() {
             ) : (
               <>
                 <TableContainer>
-                  <Table>
+                  <Table sx={{ minWidth: 1050 }}>
                     <TableHead sx={{ bgcolor: '#F8FAFC' }}>
                       <TableRow>
                         <TableCell sx={{ fontWeight: 700 }}>Pengguna</TableCell>
+                        <TableCell sx={{ fontWeight: 700 }}>Employee ID</TableCell>
                         <TableCell sx={{ fontWeight: 700 }}>Email Login</TableCell>
                         <TableCell sx={{ fontWeight: 700 }}>Peran</TableCell>
                         <TableCell sx={{ fontWeight: 700 }}>MFA</TableCell>
@@ -500,7 +515,7 @@ export default function AdminUsersPage() {
                     <TableBody>
                       {filteredUsers.length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={8} sx={{ textAlign: 'center', py: 6, color: 'text.secondary' }}>
+                          <TableCell colSpan={9} sx={{ textAlign: 'center', py: 6, color: 'text.secondary' }}>
                             {searchQuery ? 'Tidak ada pengguna yang cocok dengan pencarian.' : 'Belum ada data pengguna.'}
                           </TableCell>
                         </TableRow>
@@ -525,6 +540,14 @@ export default function AdminUsersPage() {
                                     </Typography>
                                   </Box>
                                 </Box>
+                              </TableCell>
+                              <TableCell>
+                                <Typography variant="body2" sx={{ fontFamily: 'monospace', fontWeight: 800, color: '#018730', letterSpacing: '0.02em' }}>
+                                  {u.employeeId || (u as any).employee_id || '—'}
+                                </Typography>
+                                <Typography variant="caption" sx={{ color: '#94A3B8', fontSize: '0.68rem', display: 'block' }}>
+                                  {(u.employeeId || (u as any).employee_id) ? 'immutable' : '—'}
+                                </Typography>
                               </TableCell>
                               <TableCell sx={{ color: '#334155', fontWeight: 500 }}>
                                 {u.email}
@@ -619,7 +642,7 @@ export default function AdminUsersPage() {
                                 <IconButton size="small" sx={{ color: '#018730' }} onClick={() => handleOpenDialog(u)} title="Ubah data atau reset password">
                                   <EditIcon fontSize="small" />
                                 </IconButton>
-                                <IconButton size="small" color="error" onClick={() => handleDelete(u.id, u.name)} title="Delete user">
+                                <IconButton size="small" color="error" onClick={() => setDeleteTarget(u)} title="Delete user">
                                   <DeleteIcon fontSize="small" />
                                 </IconButton>
                               </TableCell>
@@ -654,6 +677,18 @@ export default function AdminUsersPage() {
           </DialogTitle>
           <DialogContent dividers>
             <Stack spacing={2.5} sx={{ pt: 1 }}>
+              <TextField
+                label="Employee ID *"
+                required
+                fullWidth
+                value={formData.employeeId}
+                onChange={(e) => setFormData({ ...formData, employeeId: e.target.value })}
+                placeholder="ITSP.004.02.16"
+                helperText={editingUser && (editingUser.employeeId || (editingUser as any).employee_id) ? 'immutable — tidak dapat diubah (hubungi HR jika salah)' : 'immutable — contoh: ITSP.004.02.16 • Email tetap tercatat untuk audit, fallback 6 bulan'}
+                disabled={Boolean(editingUser && (editingUser.employeeId || (editingUser as any).employee_id))}
+                slotProps={{ htmlInput: { style: { fontFamily: 'monospace', fontWeight: 700 } } }}
+              />
+
               <TextField
                 label="Nama Lengkap"
                 required

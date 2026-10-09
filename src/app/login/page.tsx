@@ -20,14 +20,14 @@ import {
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
-import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
+import BadgeOutlinedIcon from '@mui/icons-material/BadgeOutlined';
 import ShieldOutlinedIcon from '@mui/icons-material/ShieldOutlined';
 import Link from 'next/link';
 import BrandLogo from '@/components/BrandLogo';
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState(''); // Employee ID primary (ITSP.004.02.16), email/username fallback 6 months
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -42,7 +42,7 @@ export default function LoginPage() {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ employee_id: identifier.trim(), employee_id_or_email: identifier.trim(), login: identifier.trim(), email: identifier.trim(), username: identifier.trim(), password }),
       });
 
       const data = await res.json();
@@ -106,23 +106,23 @@ export default function LoginPage() {
             <Stack spacing={2.5}>
               <Box>
                 <Typography variant="caption" sx={{ fontWeight: 700, color: '#334155', display: 'block', mb: 0.75 }}>
-                  Email Address
+                  Employee ID
                 </Typography>
                 <TextField
                   variant="outlined"
                   fullWidth
                   required
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  autoComplete="email"
+                  value={identifier}
+                  onChange={(e) => setIdentifier(e.target.value)}
+                  autoComplete="username"
                   autoFocus
-                  placeholder="admin@portal.com"
+                  placeholder="ITSP.004.02.16"
+                  helperText="* Employee ID immutable. Email retained for audit. Email/username fallback 6 months"
                   slotProps={{
                     input: {
                       startAdornment: (
                         <InputAdornment position="start">
-                          <EmailOutlinedIcon sx={{ color: '#94A3B8' }} />
+                          <BadgeOutlinedIcon sx={{ color: '#94A3B8' }} />
                         </InputAdornment>
                       ),
                     },
