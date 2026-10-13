@@ -45,6 +45,7 @@ import CheckIcon from '@mui/icons-material/Check';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import PeopleIcon from '@mui/icons-material/People';
 import EngineeringIcon from '@mui/icons-material/Engineering';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import { CmsTablePagination, CmsTableToolbar } from '@/components/admin/CmsTablePagination';
 import ConfirmDeleteDialog from '@/components/admin/ConfirmDeleteDialog';
 import Autocomplete from '@mui/material/Autocomplete';
@@ -717,7 +718,7 @@ export default function AdminUsersPage() {
                 value={selectedKaryawan}
                 onChange={(_,val:any)=>{ setSelectedKaryawan(val); if(val){ const eid=String(val.employee_id||val.employeeId||'').trim(); const nm=String(val.full_name||val.name||'').trim(); const em=String(val.email||'').trim(); if(eid) setFormData((prev:any)=>({...prev, employeeId:eid})); if(nm) setFormData((prev:any)=>({...prev, name:nm})); if(em) setFormData((prev:any)=>({...prev, email:em})); } }}
                 noOptionsText={karyawanLoading?'Memuat...':'Tidak ada karyawan (coba kata kunci lain)'}
-                renderInput={(params)=>( <TextField {...params} label="Pilih Karyawan (anti-typo) *" placeholder="Ketik nama / Employee ID / email..." helperText="Pilih dari Data Karyawan \u2014 otomatis isi Employee ID, Nama, Email (tanpa prefix ITSP.)" InputProps={{...(params.InputProps||{}),endAdornment:(<>{karyawanLoading?<CircularProgress size={18}/>:null}{(params.InputProps as any)?.endAdornment}</>)}} slotProps={{input:{...(params.InputProps||{}),endAdornment:(<>{karyawanLoading?<CircularProgress size={18}/>:null}{(params.InputProps as any)?.endAdornment}</>)}}} /> )}
+                renderInput={(params: any)=>( <TextField {...params} label="Pilih Karyawan (anti-typo) *" placeholder="Ketik nama / Employee ID / email..." helperText="Pilih dari Data Karyawan — otomatis isi Employee ID, Nama, Email (tanpa prefix ITSP.)" InputProps={{...(params.InputProps||{}),endAdornment:(<>{karyawanLoading?<CircularProgress size={18}/>:null}{params.InputProps?.endAdornment}</>)}} slotProps={{input:{...(params.InputProps||{}),endAdornment:(<>{karyawanLoading?<CircularProgress size={18}/>:null}{params.InputProps?.endAdornment}</>)}}} /> )}
               />
               <TextField
                 label="Employee ID (otomatis) *"

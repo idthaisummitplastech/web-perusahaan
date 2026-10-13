@@ -200,8 +200,10 @@ export default function AdminLayoutClient({
                     primary={label}
                     slotProps={{
                       primary: {
-                        fontSize: '0.875rem',
-                        fontWeight: isActive ? 700 : 500,
+                        sx: {
+                          fontSize: '0.875rem',
+                          fontWeight: isActive ? 700 : 500,
+                        },
                       },
                     }}
                   />

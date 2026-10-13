@@ -337,7 +337,7 @@ export default function AdminFaqsPage() {
         open={Boolean(deleteTarget)}
         title="Konfirmasi Hapus Tanya Jawab (FAQ)"
         itemName={deleteTarget?.question}
-        itemSubtitle={deleteTarget?.category ? `Kategori: ${deleteTarget.category}` : undefined}
+        itemSubtitle={deleteTarget?.sortOrder ? `Urutan Tampil: ${deleteTarget.sortOrder}` : undefined}
         description="Apakah Anda yakin ingin menghapus butir FAQ ini?"
         warningText="Tindakan ini permanen. Pertanyaan ini tidak akan tampil lagi di halaman bantuan FAQ."
         loading={deleting}

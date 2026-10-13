@@ -994,6 +994,8 @@ export default function AdminNavMenusPage() {
                           parentId: '',
                           sortOrder: sectionItems.length + 1,
                           isActive: true,
+                          isMaintenance: false,
+                          allowedRoles: 'all',
                         });
                         setDialogOpen(true);
                       }}

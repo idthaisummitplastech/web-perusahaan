@@ -332,8 +332,8 @@ export default function AdminAnnouncementsPage() {
       <ConfirmDeleteDialog
         open={Boolean(deleteTarget)}
         title="Konfirmasi Hapus Pengumuman"
-        itemName={deleteTarget?.title}
-        itemSubtitle={deleteTarget?.badge ? `Kategori: ${deleteTarget.badge}` : undefined}
+        itemName={deleteTarget?.message}
+        itemSubtitle={deleteTarget?.btnText ? `Tautan Tombol: ${deleteTarget.btnText}` : undefined}
         description="Apakah Anda yakin ingin menghapus pengumuman ini?"
         warningText="Tindakan ini permanen. Bar notifikasi pengumuman tidak akan tampil lagi."
         loading={deleting}

@@ -602,7 +602,7 @@ export default function AdminFacilitiesPage() {
         open={Boolean(deleteTarget)}
         title="Konfirmasi Hapus Fasilitas Pabrik"
         itemName={deleteTarget?.title}
-        itemSubtitle={`Lokasi Plant: ${deleteTarget?.plant || "KIIC / GIIC"}`}
+        itemSubtitle={`Kategori: ${deleteTarget?.category || "Fasilitas Produksi"}`}
         description="Apakah Anda yakin ingin menghapus data fasilitas/mesin pabrik ini?"
         warningText="Tindakan ini permanen. Data fasilitas tidak akan tampil lagi di halaman fasilitas."
         loading={deleting}

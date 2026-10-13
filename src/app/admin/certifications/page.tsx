@@ -602,7 +602,7 @@ export default function AdminCertificationsPage() {
         open={Boolean(deleteTarget)}
         title="Konfirmasi Hapus Sertifikat Mutu"
         itemName={deleteTarget?.title}
-        itemSubtitle={`Penerbit: ${deleteTarget?.issuer || "-"} • Tahun: ${deleteTarget?.year || "-"}`}
+        itemSubtitle={`Penerbit: ${deleteTarget?.issuer || "-"} • Tanggal Terbit: ${deleteTarget?.issuedDate || "-"}`}
         description="Apakah Anda yakin ingin menghapus sertifikat ISO/mutu ini?"
         warningText="Tindakan ini permanen. Dokumen sertifikat tidak akan tampil lagi di halaman sertifikasi."
         loading={deleting}

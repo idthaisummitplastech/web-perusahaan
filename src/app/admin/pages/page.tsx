@@ -97,7 +97,7 @@ const TEMPLATE_OPTIONS = [
 
 export default function AdminCustomPagesPage() {
   const [items, setItems] = useState<CustomPageItem[]>([]); 
-  const [deleteTarget, setDeleteTarget] = useState<DynamicPage | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<CustomPageItem | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -356,7 +356,7 @@ export default function AdminCustomPagesPage() {
         <CmsTableToolbar
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
-          searchPlaceholder="Cari judul halaman atau slug URL..."
+          placeholder="Cari judul halaman atau slug URL..."
         />
 
         {loading ? (
@@ -445,7 +445,7 @@ export default function AdminCustomPagesPage() {
                             <IconButton size="small" sx={{ color: '#018730' }} onClick={() => handleOpenDialog(item)}>
                               <EditIcon fontSize="small" />
                             </IconButton>
-                            <IconButton size="small" color="error" onClick={() => handleDelete(item.id, item.slug)}>
+                            <IconButton size="small" color="error" onClick={() => setDeleteTarget(item)}>
                               <DeleteIcon fontSize="small" />
                             </IconButton>
                           </TableCell>

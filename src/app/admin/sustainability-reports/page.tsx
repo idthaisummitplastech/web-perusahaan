@@ -151,7 +151,7 @@ export default function AdminSustainabilityReportsPage() {
                       <TableCell><Chip label={catLabel(it.category)} size="small" sx={{ bgcolor: '#e8f6ed', color: '#018730', fontWeight: 700 }} /></TableCell>
                       <TableCell sx={{ fontSize: '0.75rem', color: '#475569', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{it.fileUrl}</TableCell>
                       <TableCell><Chip label={it.isActive ? 'Aktif' : 'Nonaktif'} size="small" sx={{ bgcolor: it.isActive ? '#e8f6ed' : '#F1F5F9', color: it.isActive ? '#018730' : '#64748B', fontWeight: 700 }} /></TableCell>
-                      <TableCell align="right"><IconButton size="small" sx={{ color: '#018730' }} onClick={() => handleOpenDialog(it)}><EditIcon fontSize="small" /></IconButton><IconButton size="small" color="error" onClick={() => setDeleteTarget(item)}><DeleteIcon fontSize="small" /></IconButton></TableCell>
+                      <TableCell align="right"><IconButton size="small" sx={{ color: '#018730' }} onClick={() => handleOpenDialog(it)}><EditIcon fontSize="small" /></IconButton><IconButton size="small" color="error" onClick={() => setDeleteTarget(it)}><DeleteIcon fontSize="small" /></IconButton></TableCell>
                     </TableRow>
                   )))}
                 </TableBody></Table></TableContainer>
@@ -200,7 +200,7 @@ export default function AdminSustainabilityReportsPage() {
         open={Boolean(deleteTarget)}
         title="Konfirmasi Hapus Sustainability Report"
         itemName={deleteTarget?.title}
-        itemSubtitle={`Tahun Laporan: ${deleteTarget?.year || "-"}`}
+        itemSubtitle={`Kategori: ${deleteTarget?.category || "-"} ${deleteTarget?.tag ? `• ${deleteTarget.tag}` : ""}`}
         description="Apakah Anda yakin ingin menghapus laporan keberlanjutan ini?"
         warningText="Tindakan ini permanen. File PDF laporan akan dihapus dari sistem."
         loading={deleting}

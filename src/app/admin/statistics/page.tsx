@@ -348,7 +348,7 @@ export default function AdminStatisticsPage() {
         open={Boolean(deleteTarget)}
         title="Konfirmasi Hapus Angka Statistik"
         itemName={`${deleteTarget?.label}: ${deleteTarget?.value}`}
-        itemSubtitle={`Urutan: ${deleteTarget?.order || 0}`}
+        itemSubtitle={`Urutan: ${deleteTarget?.sortOrder || 0}`}
         description="Apakah Anda yakin ingin menghapus angka statistik pencapaian ini?"
         warningText="Tindakan ini permanen. Angka statistik tidak akan tampil lagi di profil perusahaan."
         loading={deleting}
