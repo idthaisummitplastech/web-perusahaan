@@ -813,19 +813,12 @@ export default function AdminUsersPage() {
 
               {/* === EMPLOYEE ID (read from dropdown / manual) === */}
               <TextField
-                label="Employee ID (otomatis)"
+                label="Employee ID"
                 fullWidth
                 value={formData.employeeId}
                 onChange={(e) => setFormData({ ...formData, employeeId: e.target.value })}
                 placeholder="1526.08.26"
-                helperText={
-                  editingUser && (editingUser.employeeId || (editingUser as any).employee_id)
-                    ? 'immutable — tidak dapat diubah (hubungi HR jika salah)'
-                    : 'Otomatis dari dropdown di atas — tanpa prefix ITSP. (polos 1526.08.26). Bisa edit manual bila perlu.'
-                }
-                disabled={Boolean(
-                  editingUser && (editingUser.employeeId || (editingUser as any).employee_id)
-                )}
+                helperText="Otomatis dari dropdown di atas — tanpa prefix ITSP. (polos 1526.08.26). Bisa diubah manual bila perlu."
                 slotProps={{ htmlInput: { style: { fontFamily: 'monospace', fontWeight: 700 } } }}
               />
 
