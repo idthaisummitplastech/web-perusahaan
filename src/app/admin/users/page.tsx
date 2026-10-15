@@ -31,6 +31,7 @@ import {
   Switch,
   FormControlLabel,
   Tooltip,
+  InputAdornment,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
@@ -46,9 +47,14 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 import PeopleIcon from '@mui/icons-material/People';
 import EngineeringIcon from '@mui/icons-material/Engineering';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import { CmsTablePagination, CmsTableToolbar } from '@/components/admin/CmsTablePagination';
 import ConfirmDeleteDialog from '@/components/admin/ConfirmDeleteDialog';
 import Autocomplete from '@mui/material/Autocomplete';
+
+// Helper: default password berdasarkan tahun berjalan
+const getDefaultPassword = () => `Itsp@${new Date().getFullYear()}`;
 
 interface UserItem {
   id: number;
@@ -131,6 +137,7 @@ export default function AdminUsersPage() {
     portalAccess: 'both' as string,
   });
   const [saving, setSaving] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [karyawanOptions, setKaryawanOptions] = useState<any[]>([]);
   const [karyawanLoading, setKaryawanLoading] = useState(false);
   const [karyawanQuery, setKaryawanQuery] = useState('');
@@ -183,26 +190,25 @@ export default function AdminUsersPage() {
     }
   };
 
-  // Pilih Karyawan dropdown - searchable Data Karyawan polos 1526.08.26 tanpa prefix ITSP. (Add + Edit tanpa Employee ID)
+  // Pilih Karyawan — fetch semua (atau filtered) untuk dropdown Employee ID
   React.useEffect(() => {
     if (!dialogOpen) return;
-    if (editingUser && (editingUser.employeeId || (editingUser as any).employee_id)) return;
-    let active=true;
-    const fetchKaryawanOptions=async()=>{
+    let active = true;
+    const fetchKaryawanOptions = async () => {
       setKaryawanLoading(true);
-      try{
-        let res=await fetch('/api/cms/employees?search='+encodeURIComponent(karyawanQuery)+'&employee_status=all',{cache:'no-store'});
-        if(!res.ok) res=await fetch('/api/admin/employees?search='+encodeURIComponent(karyawanQuery)+'&employee_status=all',{cache:'no-store'});
-        const data=await res.json().catch(()=>({}));
-        if(!active) return;
-        const list=Array.isArray(data.employees)?data.employees:Array.isArray(data)?data:[];
+      try {
+        let res = await fetch('/api/cms/employees?search=' + encodeURIComponent(karyawanQuery) + '&employee_status=all', { cache: 'no-store' });
+        if (!res.ok) res = await fetch('/api/admin/employees?search=' + encodeURIComponent(karyawanQuery) + '&employee_status=all', { cache: 'no-store' });
+        const data = await res.json().catch(() => ({}));
+        if (!active) return;
+        const list = Array.isArray(data.employees) ? data.employees : Array.isArray(data) ? data : [];
         setKaryawanOptions(list);
-      }catch{ if(active) setKaryawanOptions([]);}
-      finally{ if(active) setKaryawanLoading(false);}
+      } catch { if (active) setKaryawanOptions([]); }
+      finally { if (active) setKaryawanLoading(false); }
     };
-    const tm=setTimeout(fetchKaryawanOptions,300);
-    return()=>{active=false;clearTimeout(tm);};
-  },[karyawanQuery,dialogOpen,editingUser]);
+    const tm = setTimeout(fetchKaryawanOptions, 300);
+    return () => { active = false; clearTimeout(tm); };
+  }, [karyawanQuery, dialogOpen]);
 
   const handleToggleMfa = async (user: UserItem) => {
     const nextStatus = !user.mfaEnabled;
@@ -267,25 +273,29 @@ export default function AdminUsersPage() {
   };
 
   const handleOpenDialog = (user?: UserItem) => {
+    setShowPassword(false);
     if (user) {
       setEditingUser(user);
       setFormData({
         employeeId: user.employeeId ?? (user as any).employee_id ?? '',
         name: user.name,
-        email: user.email,
+        email: user.email ?? '',
         password: '',
         role: user.role,
         mfaEnabled: Boolean(user.mfaEnabled),
         isActive: Boolean(user.isActive),
         portalAccess: user.portalAccess || 'both',
       });
+      // Pre-select karyawan jika ada employee id
+      setSelectedKaryawan(null);
+      setKaryawanQuery('');
     } else {
       setEditingUser(null);
       setFormData({
         employeeId: '',
         name: '',
         email: '',
-        password: `Itsp@${new Date().getFullYear()}`,
+        password: getDefaultPassword(),
         role: 'marketing',
         mfaEnabled: false,
         isActive: true,
@@ -309,6 +319,16 @@ export default function AdminUsersPage() {
     setSaving(true);
     setError('');
 
+    // Validasi: email wajib ada sebelum membuat/update akun
+    const emailTrimmed = (formData.email || '').trim();
+    if (!emailTrimmed) {
+      setError(
+        'Email karyawan belum tersedia. Silakan lengkapi data email di halaman Employee Data terlebih dahulu, kemudian kembali ke sini untuk membuat akun.'
+      );
+      setSaving(false);
+      return;
+    }
+
     try {
       const method = editingUser ? 'PUT' : 'POST';
       const body = editingUser
@@ -317,7 +337,7 @@ export default function AdminUsersPage() {
             employee_id: (formData.employeeId || '').trim(),
             employeeId: (formData.employeeId || '').trim(),
             name: formData.name,
-            email: formData.email,
+            email: emailTrimmed,
             role: formData.role,
             newPassword: formData.password,
             mfaEnabled: formData.mfaEnabled,
@@ -326,6 +346,7 @@ export default function AdminUsersPage() {
           }
         : {
             ...formData,
+            email: emailTrimmed,
             employee_id: (formData.employeeId || '').trim(),
             employeeId: (formData.employeeId || '').trim(),
           };
@@ -704,57 +725,145 @@ export default function AdminUsersPage() {
       <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
         <Box component="form" onSubmit={handleSubmit}>
           <DialogTitle sx={{ fontWeight: 800 }}>
-            {editingUser ? `Edit Pengguna: ${editingUser.name}` : 'Tambah Pengguna CMS Baru'}
+            {editingUser
+              ? `Edit HR / Department User Account`
+              : 'Add HR / Department User Account'}
           </DialogTitle>
+          {editingUser && (
+            <Typography variant="body2" color="text.secondary" sx={{ px: 3, pb: 1, mt: -1 }}>
+              Update profile details, role, department, or password for:{' '}
+              <strong>{editingUser.name}</strong>
+            </Typography>
+          )}
           <DialogContent dividers>
             <Stack spacing={2.5} sx={{ pt: 1 }}>
-                            <Autocomplete
+
+              {/* === DROPDOWN EMPLOYEE ID === */}
+              <Autocomplete
                 options={karyawanOptions}
                 loading={karyawanLoading}
-                disabled={Boolean(editingUser && (editingUser.employeeId || (editingUser as any).employee_id))}
-                getOptionLabel={(opt:any)=>`${opt.employee_id||opt.employeeId||''} \u2014 ${opt.full_name||opt.name||''} ${opt.email?'('+opt.email+')':''} `}
+                getOptionLabel={(opt: any) => {
+                  const eid = opt.employee_id || opt.employeeId || '';
+                  return eid;
+                }}
+                filterOptions={(opts, state) => {
+                  const q = state.inputValue.toLowerCase();
+                  return opts.filter((o: any) => {
+                    const eid = String(o.employee_id || o.employeeId || '').toLowerCase();
+                    const nm = String(o.full_name || o.name || '').toLowerCase();
+                    return eid.includes(q) || nm.includes(q);
+                  });
+                }}
                 inputValue={karyawanQuery}
-                onInputChange={(_,v)=>setKaryawanQuery(v)}
+                onInputChange={(_, v) => setKaryawanQuery(v)}
                 value={selectedKaryawan}
-                onChange={(_,val:any)=>{ setSelectedKaryawan(val); if(val){ const eid=String(val.employee_id||val.employeeId||'').trim(); const nm=String(val.full_name||val.name||'').trim(); const em=String(val.email||'').trim(); if(eid) setFormData((prev:any)=>({...prev, employeeId:eid})); if(nm) setFormData((prev:any)=>({...prev, name:nm})); if(em) setFormData((prev:any)=>({...prev, email:em})); } }}
-                noOptionsText={karyawanLoading?'Memuat...':'Tidak ada karyawan (coba kata kunci lain)'}
-                renderInput={(params: any)=>( <TextField {...params} label="Pilih Karyawan (anti-typo) *" placeholder="Ketik nama / Employee ID / email..." helperText="Pilih dari Data Karyawan — otomatis isi Employee ID, Nama, Email (tanpa prefix ITSP.)" InputProps={{...(params.InputProps||{}),endAdornment:(<>{karyawanLoading?<CircularProgress size={18}/>:null}{params.InputProps?.endAdornment}</>)}} slotProps={{input:{...(params.InputProps||{}),endAdornment:(<>{karyawanLoading?<CircularProgress size={18}/>:null}{params.InputProps?.endAdornment}</>)}}} /> )}
+                onChange={(_, val: any) => {
+                  setSelectedKaryawan(val);
+                  if (val) {
+                    const eid = String(val.employee_id || val.employeeId || '').trim();
+                    const nm = String(val.full_name || val.name || '').trim();
+                    const em = String(val.email || '').trim();
+                    setFormData((prev: any) => ({
+                      ...prev,
+                      employeeId: eid || prev.employeeId,
+                      name: nm || prev.name,
+                      email: em || prev.email,
+                    }));
+                    setKaryawanQuery(eid);
+                  } else {
+                    setFormData((prev: any) => ({ ...prev, employeeId: '', name: '', email: '' }));
+                  }
+                }}
+                noOptionsText={karyawanLoading ? 'Memuat data karyawan...' : 'Tidak ada karyawan ditemukan'}
+                renderOption={(props, opt: any) => {
+                  const eid = opt.employee_id || opt.employeeId || '';
+                  const nm = opt.full_name || opt.name || '';
+                  const em = opt.email || '';
+                  return (
+                    <Box component="li" {...props} key={eid}>
+                      <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                        <Typography variant="body2" fontWeight={700} sx={{ fontFamily: 'monospace', color: '#018730' }}>
+                          {eid}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {nm}{em ? ` · ${em}` : ' · (belum ada email)'}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  );
+                }}
+                renderInput={(params: any) => (
+                  <TextField
+                    {...params}
+                    label="Pilih Employee ID *"
+                    placeholder="Ketik Employee ID atau nama karyawan..."
+                    helperText="Pilih Employee ID — Nama & Email karyawan akan otomatis terisi"
+                    InputProps={{
+                      ...(params.InputProps || {}),
+                      endAdornment: (
+                        <>
+                          {karyawanLoading ? <CircularProgress size={18} /> : null}
+                          {params.InputProps?.endAdornment}
+                        </>
+                      ),
+                    }}
+                  />
+                )}
               />
+
+              {/* === EMPLOYEE ID (read from dropdown / manual) === */}
               <TextField
-                label="Employee ID (otomatis) *"
-                required
+                label="Employee ID (otomatis)"
                 fullWidth
                 value={formData.employeeId}
                 onChange={(e) => setFormData({ ...formData, employeeId: e.target.value })}
                 placeholder="1526.08.26"
-                helperText={editingUser && (editingUser.employeeId || (editingUser as any).employee_id) ? 'immutable \u2014 tidak dapat diubah (hubungi HR jika salah)' : 'Otomatis dari dropdown di atas \u2014 tanpa prefix ITSP. (polos 1526.08.26). Bisa edit manual bila perlu.'}
-                disabled={Boolean(editingUser && (editingUser.employeeId || (editingUser as any).employee_id))}
+                helperText={
+                  editingUser && (editingUser.employeeId || (editingUser as any).employee_id)
+                    ? 'immutable — tidak dapat diubah (hubungi HR jika salah)'
+                    : 'Otomatis dari dropdown di atas — tanpa prefix ITSP. (polos 1526.08.26). Bisa edit manual bila perlu.'
+                }
+                disabled={Boolean(
+                  editingUser && (editingUser.employeeId || (editingUser as any).employee_id)
+                )}
                 slotProps={{ htmlInput: { style: { fontFamily: 'monospace', fontWeight: 700 } } }}
               />
 
+              {/* === NAMA LENGKAP (auto-fill dari dropdown, bisa edit) === */}
               <TextField
-                label="Nama Lengkap"
+                label="Nama Lengkap & Jabatan"
                 required
                 fullWidth
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 placeholder="Contoh: Budi Santoso (Tim Marketing)"
+                helperText="Otomatis terisi dari pilihan Employee ID di atas"
               />
 
+              {/* === EMAIL (opsional dari data karyawan, wajib ada sebelum simpan) === */}
               <TextField
-                label="Email Address"
-                required
+                label={`Official Email${formData.email ? '' : ' (belum ada — isi manual atau lengkapi di Employee Data)'}`}
                 fullWidth
                 type="email"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                placeholder="nama@itsp.co.id"
-                helperText={editingUser ? 'Perubahan email akan menjadi alamat login baru pengguna di CMS & Portal Karir' : 'Digunakan untuk login ke panel sistem'}
+                placeholder="nama@thaisummitplastech.co.id"
+                helperText={
+                  !formData.email
+                    ? '⚠️ Email belum tersedia. Lengkapi di halaman Employee Data dahulu, atau isi manual di sini.'
+                    : editingUser
+                    ? 'Perubahan email akan menjadi alamat login baru pengguna di CMS & Portal Karir'
+                    : 'Digunakan untuk login ke panel sistem'
+                }
+                slotProps={{
+                  formHelperText: { sx: { color: !formData.email ? '#dc2626' : undefined } },
+                }}
               />
 
+              {/* === ROLE === */}
               <TextField
                 select
-                label="Peran / Hak Akses"
+                label="Account Role"
                 required
                 fullWidth
                 value={formData.role}
@@ -774,39 +883,103 @@ export default function AdminUsersPage() {
                 ))}
               </TextField>
 
+              {/* === PASSWORD dengan show/hide === */}
               <TextField
-                label={editingUser ? 'Reset Password Baru (Opsional)' : 'Password Awal'}
+                label={editingUser ? 'Reset Password Baru (Opsional)' : 'Initial Password'}
                 required={!editingUser}
                 fullWidth
-                type="text"
+                type={showPassword ? 'text' : 'password'}
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                placeholder={editingUser ? 'Kosongkan jika tidak ingin mengubah kata sandi' : `Default: Itsp@${new Date().getFullYear()}`}
-                helperText={!editingUser ? `Kata sandi awal standar tahun: Itsp@${new Date().getFullYear()}` : ''}
+                placeholder={editingUser ? 'Kosongkan jika tidak ingin mengubah kata sandi' : getDefaultPassword()}
+                helperText={
+                  !editingUser
+                    ? `Default kata sandi standar tahun ini: ${getDefaultPassword()}`
+                    : 'Kosongkan jika tidak ingin mengubah kata sandi'
+                }
                 slotProps={{
                   input: {
-                    startAdornment: <KeyIcon sx={{ color: '#94A3B8', mr: 1, fontSize: 20 }} />,
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <KeyIcon sx={{ color: '#94A3B8', fontSize: 20 }} />
+                      </InputAdornment>
+                    ),
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          onClick={() => setShowPassword((p) => !p)}
+                          edge="end"
+                          size="small"
+                          title={showPassword ? 'Sembunyikan password' : 'Tampilkan password'}
+                        >
+                          {showPassword ? (
+                            <VisibilityOffIcon sx={{ fontSize: 20, color: '#64748B' }} />
+                          ) : (
+                            <VisibilityIcon sx={{ fontSize: 20, color: '#64748B' }} />
+                          )}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
                   },
                 }}
               />
 
               <Stack direction="row" spacing={2}>
-                <FormControlLabel control={<Switch checked={formData.isActive} onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })} />} label={<Typography variant="body2" fontWeight={800}>{formData.isActive ? 'Active Account' : 'Inactive Account'}</Typography>} />
-                <TextField select label="Portal Access" value={formData.portalAccess} onChange={(e) => setFormData({ ...formData, portalAccess: e.target.value })} sx={{ minWidth: 180 }}><MenuItem value="perusahaan">Web Company</MenuItem><MenuItem value="karir">Web Karir</MenuItem><MenuItem value="both">Keduanya</MenuItem></TextField>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={formData.isActive}
+                      onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+                    />
+                  }
+                  label={
+                    <Typography variant="body2" fontWeight={800}>
+                      {formData.isActive ? 'Active Account' : 'Inactive Account'}
+                    </Typography>
+                  }
+                />
+                <TextField
+                  select
+                  label="Portal Access"
+                  value={formData.portalAccess}
+                  onChange={(e) => setFormData({ ...formData, portalAccess: e.target.value })}
+                  sx={{ minWidth: 180 }}
+                >
+                  <MenuItem value="perusahaan">Company</MenuItem>
+                  <MenuItem value="karir">Career</MenuItem>
+                  <MenuItem value="both">Both</MenuItem>
+                </TextField>
               </Stack>
-              <Box sx={{ p: 2, bgcolor: formData.mfaEnabled ? '#e8f6ed' : '#F8FAFC', borderRadius: 2.5, border: `1px solid ${formData.mfaEnabled ? '#01873044' : '#E2E8F0'}` }}>
+
+              <Box
+                sx={{
+                  p: 2,
+                  bgcolor: formData.mfaEnabled ? '#e8f6ed' : '#F8FAFC',
+                  borderRadius: 2.5,
+                  border: `1px solid ${formData.mfaEnabled ? '#01873044' : '#E2E8F0'}`,
+                }}
+              >
                 <FormControlLabel
                   control={
                     <Switch
                       checked={formData.mfaEnabled}
                       onChange={(e) => setFormData({ ...formData, mfaEnabled: e.target.checked })}
-                      sx={{ '& .MuiSwitch-switchBase.Mui-checked': { color: '#018730' }, '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { backgroundColor: '#018730' } }}
+                      sx={{
+                        '& .MuiSwitch-switchBase.Mui-checked': { color: '#018730' },
+                        '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { backgroundColor: '#018730' },
+                      }}
                     />
                   }
                   label={
                     <Box>
-                      <Typography variant="subtitle2" fontWeight={800} color="#0F172A">{formData.mfaEnabled ? 'MFA Diaktifkan' : 'MFA Dinonaktifkan'}</Typography>
-                      <Typography variant="caption" color="text.secondary">{formData.mfaEnabled ? 'Perlu kode Authenticator saat login.' : 'Login hanya email + password.'}</Typography>
+                      <Typography variant="subtitle2" fontWeight={800} color="#0F172A">
+                        {formData.mfaEnabled ? 'MFA Diaktifkan' : 'MFA Dinonaktifkan'}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {formData.mfaEnabled
+                          ? 'Perlu kode Authenticator saat login.'
+                          : 'Login hanya email + password.'}
+                      </Typography>
                     </Box>
                   }
                 />
@@ -823,7 +996,7 @@ export default function AdminUsersPage() {
               disabled={saving}
               sx={{ bgcolor: '#018730', fontWeight: 700, px: 3, '&:hover': { bgcolor: '#016f27' } }}
             >
-              {saving ? 'Saving...' : editingUser ? 'Perbarui Pengguna' : 'Buat Pengguna'}
+              {saving ? 'Saving...' : editingUser ? 'Update Account' : 'Create Account'}
             </Button>
           </DialogActions>
         </Box>
