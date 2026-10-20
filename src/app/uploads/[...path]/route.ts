@@ -56,13 +56,25 @@ export async function GET(
     const ext = path.extname(requestedPath).toLowerCase();
     const contentType = MIME_TYPES[ext] || 'application/octet-stream';
 
+    const searchParams = req.nextUrl.searchParams;
+    const isDownload = searchParams.get('download') === '1' || searchParams.has('download');
+    const customFilename = searchParams.get('filename');
+
+    const headers: Record<string, string> = {
+      'Content-Type': contentType,
+      'Content-Length': fileBuffer.byteLength.toString(),
+      'Cache-Control': isDownload ? 'no-cache, must-revalidate' : 'public, max-age=31536000, immutable',
+    };
+
+    if (isDownload) {
+      const fallbackName = path.basename(requestedPath);
+      const safeFilename = (customFilename || fallbackName).replace(/["\r\n]/g, '_');
+      headers['Content-Disposition'] = `attachment; filename="${safeFilename}"`;
+    }
+
     return new NextResponse(fileBuffer, {
       status: 200,
-      headers: {
-        'Content-Type': contentType,
-        'Content-Length': fileBuffer.byteLength.toString(),
-        'Cache-Control': 'public, max-age=31536000, immutable',
-      },
+      headers,
     });
   } catch (error: any) {
     console.error('Error serving upload file:', error);

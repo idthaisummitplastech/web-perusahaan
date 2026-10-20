@@ -22,6 +22,7 @@ import EnergySavingsLeafIcon from '@mui/icons-material/EnergySavingsLeaf';
 import TrendingDownIcon from '@mui/icons-material/TrendingDown';
 import AssuredWorkloadIcon from '@mui/icons-material/AssuredWorkload';
 import { useLanguage } from '@/lib/LanguageContext';
+import { downloadFile } from '@/lib/download-helper';
 
 export interface NewsFile { label: string; file: string; type: 'PDF'|'XLSX'; size: string; tag?: string; }
 export interface NewsCategory { id: string; icon: React.ReactNode; accent: string; soft: string; badge: string; titleEn: string; titleId: string; descEn: string; descId: string; pitchEn: string; pitchId: string; files: NewsFile[]; }
@@ -257,14 +258,25 @@ return (<>
 <Box sx={{flex:1,minWidth:0}}><Typography variant="body2"  color="#0F172A" sx={{fontWeight:800}}>{f.label}</Typography><Box sx={{display:'flex',gap:1,mt:0.5,alignItems:'center',flexWrap:'wrap'}}><Chip label={f.type} size="small" sx={{height:20,fontSize:'0.65rem',fontWeight:800,bgcolor:f.type==='PDF'?'#dc2626':'#018730',color:'#fff'}}/><Typography variant="caption" color="text.secondary"  sx={{fontWeight:600}}>{f.size}</Typography>{f.tag&&<Chip label={f.tag} size="small" variant="outlined" sx={{height:20,fontSize:'0.65rem',fontWeight:700}}/>}</Box></Box>
 <Stack direction="row" spacing={1}>
 {f.type==='PDF'&&<IconButton size="small" onClick={()=>setPreview(f)} sx={{border:'1px solid #CBD5E1',color:'#018730','&:hover':{borderColor:'#018730',bgcolor:'#e8f6ed'}}}><VisibilityIcon fontSize="small"/></IconButton>}
-<IconButton size="small" component="a" href={f.file} download sx={{bgcolor:'#018730',color:'#fff','&:hover':{bgcolor:'#016f27'}}}><DownloadIcon fontSize="small"/></IconButton>
+<IconButton size="small" onClick={() => {
+  const ext = f.type === 'XLSX' ? 'xlsx' : 'pdf';
+  const cleanName = `${f.label.replace(/[^a-zA-Z0-9_-]/g, '_')}.${ext}`;
+  downloadFile(f.file, cleanName);
+}} sx={{bgcolor:'#018730',color:'#fff','&:hover':{bgcolor:'#016f27'}}}><DownloadIcon fontSize="small"/></IconButton>
 </Stack>
 </Paper>))}
 </Stack>
 <Divider sx={{my:2.5}}/>
 <Stack direction="row" spacing={1.5}>
 {cat.files[0]?.type==='PDF'&&<Button variant="outlined" size="small" startIcon={<VisibilityIcon/>} onClick={()=>setPreview(cat.files[0])} sx={{flex:1,borderColor:'#CBD5E1',color:'#334155',fontWeight:700,borderRadius:25,'&:hover':{borderColor:'#018730',color:'#018730'}}}>{isEn?'Quick Preview':'Pratinjau'}</Button>}
-<Button variant="contained" size="small" startIcon={<DownloadIcon/>} component="a" href={cat.files[0]?.file} download sx={{flex:1,bgcolor:'#0F172A',fontWeight:700,borderRadius:25,'&:hover':{bgcolor:'#018730'}}}>{isEn?'Download File':'Unduh File'}</Button>
+<Button variant="contained" size="small" startIcon={<DownloadIcon/>} onClick={() => {
+  const firstFile = cat.files[0];
+  if (firstFile) {
+    const ext = firstFile.type === 'XLSX' ? 'xlsx' : 'pdf';
+    const cleanName = `${firstFile.label.replace(/[^a-zA-Z0-9_-]/g, '_')}.${ext}`;
+    downloadFile(firstFile.file, cleanName);
+  }
+}} sx={{flex:1,bgcolor:'#0F172A',fontWeight:700,borderRadius:25,'&:hover':{bgcolor:'#018730'}}}>{isEn?'Download File':'Unduh File'}</Button>
 </Stack>
 </Box>
 </Card>
@@ -536,9 +548,11 @@ return (<>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexShrink: 0 }}>
             {preview && (
               <Button
-                component="a"
-                href={preview.file}
-                download
+                onClick={() => {
+                  const ext = preview.type === 'XLSX' ? 'xlsx' : 'pdf';
+                  const cleanName = `${preview.label.replace(/[^a-zA-Z0-9_-]/g, '_')}.${ext}`;
+                  downloadFile(preview.file, cleanName);
+                }}
                 size="small"
                 startIcon={<DownloadIcon sx={{ fontSize: 18 }} />}
                 variant="contained"
