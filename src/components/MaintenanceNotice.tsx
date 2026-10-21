@@ -160,7 +160,7 @@ export default function MaintenanceNotice({
 
           {/* Status Highlights */}
           <Grid container spacing={2} sx={{ mb: 4, textAlign: 'left' }}>
-            <Grid item xs={12} sm={4}>
+            <Grid size={{ xs: 12, sm: 4 }}>
               <Box
                 sx={{
                   p: 2,
@@ -170,7 +170,7 @@ export default function MaintenanceNotice({
                   height: '100%',
                 }}
               >
-                <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 0.5 }}>
+                <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center', mb: 0.5 }}>
                   <SpeedIcon sx={{ color: '#018730', fontSize: 20 }} />
                   <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#1E293B' }}>
                     Status Pembaruan
@@ -181,7 +181,7 @@ export default function MaintenanceNotice({
                 </Typography>
               </Box>
             </Grid>
-            <Grid item xs={12} sm={4}>
+            <Grid size={{ xs: 12, sm: 4 }}>
               <Box
                 sx={{
                   p: 2,
@@ -191,7 +191,7 @@ export default function MaintenanceNotice({
                   height: '100%',
                 }}
               >
-                <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 0.5 }}>
+                <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center', mb: 0.5 }}>
                   <VerifiedUserIcon sx={{ color: '#018730', fontSize: 20 }} />
                   <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#1E293B' }}>
                     Standar Mutu
@@ -202,7 +202,7 @@ export default function MaintenanceNotice({
                 </Typography>
               </Box>
             </Grid>
-            <Grid item xs={12} sm={4}>
+            <Grid size={{ xs: 12, sm: 4 }}>
               <Box
                 sx={{
                   p: 2,
@@ -212,7 +212,7 @@ export default function MaintenanceNotice({
                   height: '100%',
                 }}
               >
-                <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 0.5 }}>
+                <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center', mb: 0.5 }}>
                   <ContactSupportIcon sx={{ color: '#018730', fontSize: 20 }} />
                   <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#1E293B' }}>
                     Dukungan Langsung
@@ -229,8 +229,7 @@ export default function MaintenanceNotice({
           <Stack
             direction={{ xs: 'column', sm: 'row' }}
             spacing={2}
-            justifyContent="center"
-            sx={{ mb: 4 }}
+            sx={{ justifyContent: 'center', mb: 4 }}
           >
             <Button
               component={Link}
@@ -303,9 +302,7 @@ export default function MaintenanceNotice({
           <Stack
             direction={{ xs: 'column', sm: 'row' }}
             spacing={{ xs: 1.5, sm: 4 }}
-            justifyContent="center"
-            alignItems="center"
-            sx={{ color: '#64748B', fontSize: 13 }}
+            sx={{ justifyContent: 'center', alignItems: 'center', color: '#64748B', fontSize: 13 }}
           >
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <PhoneInTalkIcon sx={{ fontSize: 16, color: '#018730' }} />
