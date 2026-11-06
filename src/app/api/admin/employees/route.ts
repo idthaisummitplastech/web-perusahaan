@@ -42,6 +42,6 @@ export async function GET(req: Request) {
     );
   } catch (error: any) {
     console.error('Fetch admin employees error:', error);
-    return NextResponse.json({ error: error.message || 'Failed to load employee data.' }, { status: 500, headers: ANTI_CACHE_HEADERS });
+    return NextResponse.json({ error: 'Failed to load employee data.' }, { status: 500, headers: ANTI_CACHE_HEADERS });
   }
 }

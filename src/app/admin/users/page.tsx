@@ -53,8 +53,21 @@ import { CmsTablePagination, CmsTableToolbar } from '@/components/admin/CmsTable
 import ConfirmDeleteDialog from '@/components/admin/ConfirmDeleteDialog';
 import Autocomplete from '@mui/material/Autocomplete';
 
-// Helper: default password berdasarkan tahun berjalan
-const getDefaultPassword = () => `Itsp@${new Date().getFullYear()}`;
+// Helper: password awal acak (16 karakter) untuk akun baru. Tidak ada pola default yang bisa ditebak.
+// Dipanggil hanya dari event handler (client), bukan saat render, agar tidak memicu hydration mismatch.
+const generateInitialPassword = (): string => {
+  const charset = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%&*?';
+  const limit = 256 - (256 % charset.length);
+  const out: string[] = [];
+  while (out.length < 16) {
+    const bytes = new Uint8Array(32);
+    crypto.getRandomValues(bytes);
+    for (const b of bytes) {
+      if (b < limit && out.length < 16) out.push(charset[b % charset.length]);
+    }
+  }
+  return out.join('');
+};
 
 interface UserItem {
   id: number;
@@ -295,7 +308,7 @@ export default function AdminUsersPage() {
         employeeId: '',
         name: '',
         email: '',
-        password: getDefaultPassword(),
+        password: generateInitialPassword(),
         role: 'marketing',
         mfaEnabled: false,
         isActive: true,
@@ -884,11 +897,11 @@ export default function AdminUsersPage() {
                 type={showPassword ? 'text' : 'password'}
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                placeholder={editingUser ? 'Kosongkan jika tidak ingin mengubah kata sandi' : getDefaultPassword()}
+                placeholder={editingUser ? 'Kosongkan jika tidak ingin mengubah kata sandi' : 'Minimal 12 karakter'}
                 helperText={
                   !editingUser
-                    ? `Default kata sandi standar tahun ini: ${getDefaultPassword()}`
-                    : 'Kosongkan jika tidak ingin mengubah kata sandi'
+                    ? 'Password awal dibuat acak (16 karakter). Klik ikon mata untuk melihatnya, lalu sampaikan ke pengguna lewat jalur aman. Minimal 12 karakter.'
+                    : 'Kosongkan jika tidak ingin mengubah kata sandi (minimal 12 karakter)'
                 }
                 slotProps={{
                   input: {
