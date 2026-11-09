@@ -84,7 +84,11 @@ export async function POST(req: Request) {
       }),
     });
 
-    return NextResponse.json({ success: true, user: newUser });
+    return NextResponse.json({
+      success: true,
+      user: newUser,
+      temp_password: (newUser as any)?.temp_password || undefined,
+    });
   } catch (error: any) {
     console.error('Error POST /api/cms/users:', error);
     return errorResponse(error, 'Gagal membuat pengguna baru.');
@@ -146,7 +150,11 @@ export async function PUT(req: Request) {
       body: JSON.stringify(payload),
     });
 
-    return NextResponse.json({ success: true, user: updated });
+    return NextResponse.json({
+      success: true,
+      user: updated,
+      temp_password: (updated as any)?.temp_password || undefined,
+    });
   } catch (error: any) {
     console.error('Error PUT /api/cms/users:', error);
     return errorResponse(error, 'Gagal memperbarui pengguna.');
