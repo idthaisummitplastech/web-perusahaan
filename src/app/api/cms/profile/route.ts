@@ -10,7 +10,9 @@ export async function GET() {
   }
 
   try {
-    const data = await fetchFromBackend(`/cms/profile?user_id=${sessionUser.id}`);
+    const data = await fetchFromBackend(`/cms/profile?user_id=${sessionUser.id}`, {
+      headers: { 'X-Admin-Role': sessionUser.role },
+    });
     return NextResponse.json({
       id: data.id,
       name: data.name,
@@ -39,6 +41,7 @@ export async function POST(req: Request) {
     const { user_id: _ignoredUserId, userId: _ignoredUserIdCamel, ...safeBody } = body ?? {};
     const result = await fetchFromBackend('/cms/profile', {
       method: 'POST',
+      headers: { 'X-Admin-Role': sessionUser.role },
       body: JSON.stringify({
         ...safeBody,
         user_id: sessionUser.id,

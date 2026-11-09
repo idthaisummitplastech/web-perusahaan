@@ -21,19 +21,60 @@ export async function GET(req: Request) {
     if (location) qs.set('location', location);
     if (role) qs.set('role', role);
     const suffix = qs.toString() ? `?${qs.toString()}` : '';
-    const data = await fetchFromBackend(`/cms/admin-menus${suffix}`, { headers: { 'X-Internal-Secret': getInternalSecret() } });
+    const data = await fetchFromBackend(`/cms/admin-menus${suffix}`, {
+      headers: {
+        'X-Internal-Secret': getInternalSecret(),
+        'X-Admin-Role': sessionUser.role,
+      },
+    });
     return NextResponse.json(data);
   } catch (e: any) { console.error('Error GET /api/cms/admin-menus:', e); return errorResponse(e, 'Gagal memuat admin menus'); }
 }
 export async function POST(req: Request) {
   const user = await getCurrentUser(); if (!user || user.role !== 'admin') return NextResponse.json({ error: 'Hanya admin' }, { status: 403 });
-  try { const body = await req.json(); const data = await fetchFromBackend('/cms/admin-menus', { method: 'POST', headers: { 'X-Internal-Secret': getInternalSecret() }, body: JSON.stringify(body) }); return NextResponse.json(data); } catch (e: any) { console.error('Error POST /api/cms/admin-menus:', e); return errorResponse(e, 'Gagal simpan'); }
+  try {
+    const body = await req.json();
+    const data = await fetchFromBackend('/cms/admin-menus', {
+      method: 'POST',
+      headers: {
+        'X-Internal-Secret': getInternalSecret(),
+        'X-Admin-Role': user.role,
+      },
+      body: JSON.stringify(body),
+    });
+    return NextResponse.json(data);
+  } catch (e: any) { console.error('Error POST /api/cms/admin-menus:', e); return errorResponse(e, 'Gagal simpan'); }
 }
 export async function PUT(req: Request) {
   const user = await getCurrentUser(); if (!user || user.role !== 'admin') return NextResponse.json({ error: 'Hanya admin' }, { status: 403 });
-  try { const body = await req.json(); const id = parseRecordId(body.id); if (!id) return NextResponse.json({ error: 'ID wajib' }, { status: 400 }); const data = await fetchFromBackend(`/cms/admin-menus/${id}`, { method: 'PUT', headers: { 'X-Internal-Secret': getInternalSecret() }, body: JSON.stringify(body) }); return NextResponse.json(data); } catch (e: any) { console.error('Error PUT /api/cms/admin-menus:', e); return errorResponse(e, 'Gagal update'); }
+  try {
+    const body = await req.json();
+    const id = parseRecordId(body.id);
+    if (!id) return NextResponse.json({ error: 'ID wajib' }, { status: 400 });
+    const data = await fetchFromBackend(`/cms/admin-menus/${id}`, {
+      method: 'PUT',
+      headers: {
+        'X-Internal-Secret': getInternalSecret(),
+        'X-Admin-Role': user.role,
+      },
+      body: JSON.stringify(body),
+    });
+    return NextResponse.json(data);
+  } catch (e: any) { console.error('Error PUT /api/cms/admin-menus:', e); return errorResponse(e, 'Gagal update'); }
 }
 export async function DELETE(req: Request) {
   const user = await getCurrentUser(); if (!user || user.role !== 'admin') return NextResponse.json({ error: 'Hanya admin' }, { status: 403 });
-  try { const { searchParams } = new URL(req.url); const id = parseRecordId(searchParams.get('id')); if (!id) return NextResponse.json({ error: 'ID wajib' }, { status: 400 }); await fetchFromBackend(`/cms/admin-menus/${id}`, { method: 'DELETE', headers: { 'X-Internal-Secret': getInternalSecret() } }); return NextResponse.json({ success: true }); } catch (e: any) { console.error('Error DELETE /api/cms/admin-menus:', e); return errorResponse(e, 'Gagal hapus'); }
+  try {
+    const { searchParams } = new URL(req.url);
+    const id = parseRecordId(searchParams.get('id'));
+    if (!id) return NextResponse.json({ error: 'ID wajib' }, { status: 400 });
+    await fetchFromBackend(`/cms/admin-menus/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'X-Internal-Secret': getInternalSecret(),
+        'X-Admin-Role': user.role,
+      },
+    });
+    return NextResponse.json({ success: true });
+  } catch (e: any) { console.error('Error DELETE /api/cms/admin-menus:', e); return errorResponse(e, 'Gagal hapus'); }
 }

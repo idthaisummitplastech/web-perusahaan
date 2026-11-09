@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { fetchFromBackend } from '@/lib/api-client';
 import {
-  canWriteCmsContent,
+  canWriteCmsModel,
   errorResponse,
   isAllowedCmsModel,
   parseRecordId,
@@ -30,7 +30,10 @@ export async function GET(
 
   try {
     const items = await fetchFromBackend(`/cms/${model}`, {
-      headers: { 'X-Internal-Secret': getInternalSecret() },
+      headers: {
+        'X-Internal-Secret': getInternalSecret(),
+        'X-Admin-Role': user.role,
+      },
     });
     return NextResponse.json(items);
   } catch (error: any) {
@@ -45,16 +48,19 @@ export async function POST(
 ) {
   const user = await getCurrentUser();
   if (!user) return UNAUTHORIZED();
-  if (!canWriteCmsContent(user)) return FORBIDDEN();
 
   const { model } = await params;
   if (!isAllowedCmsModel(model)) return MODEL_NOT_FOUND();
+  if (!canWriteCmsModel(user, model)) return FORBIDDEN();
 
   try {
     const data = await req.json();
     const created = await fetchFromBackend(`/cms/${model}`, {
       method: 'POST',
-      headers: { 'X-Internal-Secret': getInternalSecret() },
+      headers: {
+        'X-Internal-Secret': getInternalSecret(),
+        'X-Admin-Role': user.role,
+      },
       body: JSON.stringify(data),
     });
     return NextResponse.json(created);
@@ -70,10 +76,10 @@ export async function PUT(
 ) {
   const user = await getCurrentUser();
   if (!user) return UNAUTHORIZED();
-  if (!canWriteCmsContent(user)) return FORBIDDEN();
 
   const { model } = await params;
   if (!isAllowedCmsModel(model)) return MODEL_NOT_FOUND();
+  if (!canWriteCmsModel(user, model)) return FORBIDDEN();
 
   try {
     const data = await req.json();
@@ -84,7 +90,10 @@ export async function PUT(
     }
     const updated = await fetchFromBackend(`/cms/${model}/${id}`, {
       method: 'PUT',
-      headers: { 'X-Internal-Secret': getInternalSecret() },
+      headers: {
+        'X-Internal-Secret': getInternalSecret(),
+        'X-Admin-Role': user.role,
+      },
       body: JSON.stringify(data),
     });
     return NextResponse.json(updated);
@@ -100,10 +109,10 @@ export async function DELETE(
 ) {
   const user = await getCurrentUser();
   if (!user) return UNAUTHORIZED();
-  if (!canWriteCmsContent(user)) return FORBIDDEN();
 
   const { model } = await params;
   if (!isAllowedCmsModel(model)) return MODEL_NOT_FOUND();
+  if (!canWriteCmsModel(user, model)) return FORBIDDEN();
 
   try {
     const { searchParams } = new URL(req.url);
@@ -113,7 +122,10 @@ export async function DELETE(
     }
     await fetchFromBackend(`/cms/${model}/${id}`, {
       method: 'DELETE',
-      headers: { 'X-Internal-Secret': getInternalSecret() },
+      headers: {
+        'X-Internal-Secret': getInternalSecret(),
+        'X-Admin-Role': user.role,
+      },
     });
     return NextResponse.json({ success: true });
   } catch (error: any) {

@@ -28,7 +28,10 @@ export async function POST(req: Request) {
 
     const res = await fetchFromBackend('/cms/nav-menus/reorder', {
       method: 'POST',
-      headers: { 'X-Internal-Secret': getInternalSecret() },
+      headers: {
+        'X-Internal-Secret': getInternalSecret(),
+        'X-Admin-Role': user.role,
+      },
       body: JSON.stringify(items),
     });
 

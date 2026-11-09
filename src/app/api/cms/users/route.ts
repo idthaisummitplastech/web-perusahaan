@@ -21,7 +21,9 @@ export async function GET() {
   }
 
   try {
-    const users = await fetchFromBackend('/cms/users');
+    const users = await fetchFromBackend('/cms/users', {
+      headers: { 'X-Admin-Role': currentUser.role },
+    });
     return NextResponse.json(users);
   } catch (error: any) {
     console.error('Error GET /api/cms/users:', error);
@@ -69,6 +71,7 @@ export async function POST(req: Request) {
     const validPA = ['perusahaan','karir','both'].includes(pa) ? pa : 'both';
     const newUser = await fetchFromBackend('/cms/users', {
       method: 'POST',
+      headers: { 'X-Admin-Role': currentUser.role },
       body: JSON.stringify({
         employee_id: employeeIdRaw,
         employeeId: employeeIdRaw,
@@ -147,6 +150,7 @@ export async function PUT(req: Request) {
 
     const updated = await fetchFromBackend(`/cms/users/${id}`, {
       method: 'PUT',
+      headers: { 'X-Admin-Role': currentUser.role },
       body: JSON.stringify(payload),
     });
 
@@ -192,6 +196,7 @@ export async function DELETE(req: Request) {
 
     await fetchFromBackend(`/cms/users/${id}`, {
       method: 'DELETE',
+      headers: { 'X-Admin-Role': currentUser.role },
     });
 
     return NextResponse.json({ success: true });

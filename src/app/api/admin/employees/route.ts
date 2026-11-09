@@ -34,7 +34,8 @@ export async function GET(req: Request) {
     if (contractStatus) params.set('contract_status', contractStatus);
     if (sort) params.set('sort', sort);
     const data = await fetchFromBackend<{ success: boolean; total: number; employees: any[] }>(
-      `/recruitment/employees?${params.toString()}`
+      `/recruitment/employees?${params.toString()}`,
+      { headers: { 'X-Admin-Role': user.role } }
     );
     return NextResponse.json(
       { success: true, total: data?.total || 0, employees: data?.employees || [] },
