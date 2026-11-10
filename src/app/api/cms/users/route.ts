@@ -68,7 +68,7 @@ export async function POST(req: Request) {
     }
 
     const pa = (portalAccess || 'both').toLowerCase();
-    const validPA = ['perusahaan','karir','both'].includes(pa) ? pa : 'both';
+    const validPA = ['perusahaan', 'karir', 'both'].includes(pa) ? pa : 'both';
     const newUser = await fetchFromBackend('/cms/users', {
       method: 'POST',
       headers: { 'X-Admin-Role': currentUser.role },
@@ -136,7 +136,7 @@ export async function PUT(req: Request) {
     if (typeof isActive === 'boolean') payload.is_active = isActive;
     if (portalAccess) {
       const pa = String(portalAccess).toLowerCase().trim();
-      if (['perusahaan','karir','both'].includes(pa)) payload.portal_access = pa;
+      if (['perusahaan', 'karir', 'both'].includes(pa)) payload.portal_access = pa;
     }
     if (newPassword) {
       if (typeof newPassword !== 'string' || newPassword.trim().length < MIN_PASSWORD_LENGTH) {
