@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { fetchFromBackend } from '@/lib/api-client';
+import { errorResponse } from '@/lib/cms-guard';
+
+// Kebijakan kata sandi akun CMS (administratif): minimal 12 karakter.
+const MIN_PASSWORD_LENGTH = 12;
 
 // GET /api/cms/users - Ambil daftar semua pengguna CMS
 export async function GET() {
@@ -17,7 +21,9 @@ export async function GET() {
   }
 
   try {
-    const users = await fetchFromBackend('/cms/users');
+    const users = await fetchFromBackend('/cms/users', {
+      headers: { 'X-Admin-Role': currentUser.role },
+    });
     return NextResponse.json(users);
   } catch (error: any) {
     console.error('Error GET /api/cms/users:', error);
@@ -54,17 +60,18 @@ export async function POST(req: Request) {
       );
     }
 
-    if (password.length < 6) {
+    if (typeof password !== 'string' || password.length < MIN_PASSWORD_LENGTH) {
       return NextResponse.json(
-        { error: 'Kata sandi minimal terdiri dari 6 karakter.' },
+        { error: `Kata sandi minimal terdiri dari ${MIN_PASSWORD_LENGTH} karakter.` },
         { status: 400 }
       );
     }
 
     const pa = (portalAccess || 'both').toLowerCase();
-    const validPA = ['perusahaan','karir','both'].includes(pa) ? pa : 'both';
+    const validPA = ['perusahaan', 'karir', 'both'].includes(pa) ? pa : 'both';
     const newUser = await fetchFromBackend('/cms/users', {
       method: 'POST',
+      headers: { 'X-Admin-Role': currentUser.role },
       body: JSON.stringify({
         employee_id: employeeIdRaw,
         employeeId: employeeIdRaw,
@@ -80,10 +87,14 @@ export async function POST(req: Request) {
       }),
     });
 
-    return NextResponse.json({ success: true, user: newUser });
+    return NextResponse.json({
+      success: true,
+      user: newUser,
+      temp_password: (newUser as any)?.temp_password || undefined,
+    });
   } catch (error: any) {
     console.error('Error POST /api/cms/users:', error);
-    return NextResponse.json({ error: error.message || 'Gagal membuat pengguna baru.' }, { status: 500 });
+    return errorResponse(error, 'Gagal membuat pengguna baru.');
   }
 }
 
@@ -125,21 +136,32 @@ export async function PUT(req: Request) {
     if (typeof isActive === 'boolean') payload.is_active = isActive;
     if (portalAccess) {
       const pa = String(portalAccess).toLowerCase().trim();
-      if (['perusahaan','karir','both'].includes(pa)) payload.portal_access = pa;
+      if (['perusahaan', 'karir', 'both'].includes(pa)) payload.portal_access = pa;
     }
-    if (newPassword && newPassword.trim().length >= 6) {
+    if (newPassword) {
+      if (typeof newPassword !== 'string' || newPassword.trim().length < MIN_PASSWORD_LENGTH) {
+        return NextResponse.json(
+          { error: `Kata sandi baru minimal terdiri dari ${MIN_PASSWORD_LENGTH} karakter.` },
+          { status: 400 }
+        );
+      }
       payload.password = newPassword.trim();
     }
 
     const updated = await fetchFromBackend(`/cms/users/${id}`, {
       method: 'PUT',
+      headers: { 'X-Admin-Role': currentUser.role },
       body: JSON.stringify(payload),
     });
 
-    return NextResponse.json({ success: true, user: updated });
+    return NextResponse.json({
+      success: true,
+      user: updated,
+      temp_password: (updated as any)?.temp_password || undefined,
+    });
   } catch (error: any) {
     console.error('Error PUT /api/cms/users:', error);
-    return NextResponse.json({ error: error.message || 'Gagal memperbarui pengguna.' }, { status: 500 });
+    return errorResponse(error, 'Gagal memperbarui pengguna.');
   }
 }
 
@@ -174,6 +196,7 @@ export async function DELETE(req: Request) {
 
     await fetchFromBackend(`/cms/users/${id}`, {
       method: 'DELETE',
+      headers: { 'X-Admin-Role': currentUser.role },
     });
 
     return NextResponse.json({ success: true });

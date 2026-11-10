@@ -53,8 +53,21 @@ import { CmsTablePagination, CmsTableToolbar } from '@/components/admin/CmsTable
 import ConfirmDeleteDialog from '@/components/admin/ConfirmDeleteDialog';
 import Autocomplete from '@mui/material/Autocomplete';
 
-// Helper: default password berdasarkan tahun berjalan
-const getDefaultPassword = () => `Itsp@${new Date().getFullYear()}`;
+// Helper: password awal acak (16 karakter) untuk akun baru. Tidak ada pola default yang bisa ditebak.
+// Dipanggil hanya dari event handler (client), bukan saat render, agar tidak memicu hydration mismatch.
+const generateInitialPassword = (): string => {
+  const charset = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%&*?';
+  const limit = 256 - (256 % charset.length);
+  const out: string[] = [];
+  while (out.length < 16) {
+    const bytes = new Uint8Array(32);
+    crypto.getRandomValues(bytes);
+    for (const b of bytes) {
+      if (b < limit && out.length < 16) out.push(charset[b % charset.length]);
+    }
+  }
+  return out.join('');
+};
 
 interface UserItem {
   id: number;
@@ -157,6 +170,14 @@ export default function AdminUsersPage() {
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const [copiedAll, setCopiedAll] = useState(false);
   const [regeneratingCodes, setRegeneratingCodes] = useState(false);
+
+  // Modal Peringatan Kata Sandi Sementara Sekali Tampil
+  const [tempPasswordModal, setTempPasswordModal] = useState<{ open: boolean; password: string; username: string }>({
+    open: false,
+    password: '',
+    username: '',
+  });
+  const [copiedTemp, setCopiedTemp] = useState(false);
 
   useEffect(() => {
     fetchUsers();
@@ -295,7 +316,7 @@ export default function AdminUsersPage() {
         employeeId: '',
         name: '',
         email: '',
-        password: getDefaultPassword(),
+        password: generateInitialPassword(),
         role: 'marketing',
         mfaEnabled: false,
         isActive: true,
@@ -362,8 +383,16 @@ export default function AdminUsersPage() {
         throw new Error(data.error || 'Failed to save user.');
       }
 
-      setMessage(editingUser ? 'Data pengguna berhasil diperbarui!' : 'Pengguna baru berhasil dibuat!');
       handleCloseDialog();
+      if (data.temp_password) {
+        setTempPasswordModal({
+          open: true,
+          password: data.temp_password,
+          username: formData.name || formData.email || 'Pengguna',
+        });
+      } else {
+        setMessage(editingUser ? 'Data pengguna berhasil diperbarui!' : 'Pengguna baru berhasil dibuat!');
+      }
       fetchUsers();
     } catch (err: any) {
       setError(err.message || 'Failed to save data.');
@@ -884,11 +913,11 @@ export default function AdminUsersPage() {
                 type={showPassword ? 'text' : 'password'}
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                placeholder={editingUser ? 'Kosongkan jika tidak ingin mengubah kata sandi' : getDefaultPassword()}
+                placeholder={editingUser ? 'Kosongkan jika tidak ingin mengubah kata sandi' : 'Minimal 12 karakter'}
                 helperText={
                   !editingUser
-                    ? `Default kata sandi standar tahun ini: ${getDefaultPassword()}`
-                    : 'Kosongkan jika tidak ingin mengubah kata sandi'
+                    ? 'Password awal dibuat acak (16 karakter). Klik ikon mata untuk melihatnya, lalu sampaikan ke pengguna lewat jalur aman. Minimal 12 karakter.'
+                    : 'Kosongkan jika tidak ingin mengubah kata sandi (minimal 12 karakter)'
                 }
                 slotProps={{
                   input: {
@@ -1140,6 +1169,48 @@ export default function AdminUsersPage() {
           await handleRegenerateCodes();
         }}
       />
+
+      {/* Modal Peringatan Kata Sandi Sementara (One-Time Display) */}
+      <Dialog
+        open={tempPasswordModal.open}
+        onClose={() => setTempPasswordModal({ open: false, password: '', username: '' })}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle sx={{ fontWeight: 800, color: '#D97706' }}>
+          ⚠️ Kata Sandi Sementara
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" sx={{ mb: 2, color: '#4B5563' }}>
+            Kata sandi sementara untuk akun <strong>{tempPasswordModal.username}</strong> berhasil dibuat. Kata sandi ini hanya ditampilkan <strong>SEKALI</strong>. Harap segera salin dan kirimkan ke pengguna bersangkutan.
+          </Typography>
+          <Box sx={{ p: 2, bgcolor: '#F3F4F6', borderRadius: 2, border: '1px dashed #D1D5DB', textAlign: 'center', mb: 2 }}>
+            <Typography variant="h6" sx={{ fontFamily: 'monospace', fontWeight: 700, letterSpacing: 1.5, wordBreak: 'break-all' }}>
+              {tempPasswordModal.password}
+            </Typography>
+          </Box>
+          <Button
+            fullWidth
+            variant="contained"
+            onClick={() => {
+              navigator.clipboard.writeText(tempPasswordModal.password);
+              setCopiedTemp(true);
+              setTimeout(() => setCopiedTemp(false), 2000);
+            }}
+            sx={{ bgcolor: copiedTemp ? '#059669' : '#018730', fontWeight: 700, '&:hover': { bgcolor: copiedTemp ? '#047857' : '#005c21' } }}
+          >
+            {copiedTemp ? 'Tersalin ke Clipboard!' : 'Salin Kata Sandi'}
+          </Button>
+        </DialogContent>
+        <DialogActions sx={{ p: 2, pt: 0 }}>
+          <Button
+            onClick={() => setTempPasswordModal({ open: false, password: '', username: '' })}
+            sx={{ color: '#6B7280', fontWeight: 600 }}
+          >
+            Tutup
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

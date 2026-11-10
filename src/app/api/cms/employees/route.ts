@@ -34,7 +34,8 @@ export async function GET(req: Request) {
     if (contractStatus) params.set('contract_status', contractStatus);
     if (sort) params.set('sort', sort);
     const data = await fetchFromBackend<{ success: boolean; total: number; employees: any[] }>(
-      `/recruitment/employees?${params.toString()}`
+      `/recruitment/employees?${params.toString()}`,
+      { headers: { 'X-Admin-Role': user.role } }
     );
     return NextResponse.json(
       { success: true, total: data?.total || 0, employees: data?.employees || [] },
@@ -42,6 +43,6 @@ export async function GET(req: Request) {
     );
   } catch (error: any) {
     console.error('Fetch cms employees error:', error);
-    return NextResponse.json({ error: error.message || 'Failed to load employee data.' }, { status: 500, headers: ANTI_CACHE_HEADERS });
+    return NextResponse.json({ error: 'Failed to load employee data.' }, { status: 500, headers: ANTI_CACHE_HEADERS });
   }
 }

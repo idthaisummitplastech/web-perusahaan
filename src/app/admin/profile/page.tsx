@@ -379,7 +379,7 @@ export default function AdminProfilePage() {
                   fullWidth
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  helperText="Minimal 6 karakter kombinasi."
+                  helperText="Minimal 12 karakter kombinasi."
                 />
 
                 <TextField

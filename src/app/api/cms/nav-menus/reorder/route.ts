@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { fetchFromBackend } from '@/lib/api-client';
+import { canWriteCmsContent, errorResponse } from '@/lib/cms-guard';
 
 function getInternalSecret(): string {
   const s = process.env.BACKEND_INTERNAL_SECRET;
@@ -13,6 +14,9 @@ export async function POST(req: Request) {
   if (!user) {
     return NextResponse.json({ error: 'Tidak memiliki hak akses.' }, { status: 401 });
   }
+  if (!canWriteCmsContent(user)) {
+    return NextResponse.json({ error: 'Akses ditolak.' }, { status: 403 });
+  }
 
   try {
     const body = await req.json();
@@ -24,13 +28,16 @@ export async function POST(req: Request) {
 
     const res = await fetchFromBackend('/cms/nav-menus/reorder', {
       method: 'POST',
-      headers: { 'X-Internal-Secret': getInternalSecret() },
+      headers: {
+        'X-Internal-Secret': getInternalSecret(),
+        'X-Admin-Role': user.role,
+      },
       body: JSON.stringify(items),
     });
 
     return NextResponse.json({ success: true, message: 'Urutan menu berhasil diperbarui.', data: res });
   } catch (error: any) {
     console.error('Error POST /api/cms/nav-menus/reorder:', error);
-    return NextResponse.json({ error: error.message || 'Gagal memperbarui urutan menu.' }, { status: 500 });
+    return errorResponse(error, 'Gagal memperbarui urutan menu.');
   }
 }

@@ -1,11 +1,17 @@
 import * as React from 'react';
 import { fetchFromBackend } from '@/lib/api-client';
+import { getCurrentUser } from '@/lib/auth';
 import AdminDashboardClient from '@/components/admin/AdminDashboardClient';
 
 export const dynamic = 'force-dynamic';
 
 export default async function AdminDashboardPage() {
-  const stats = await fetchFromBackend('/cms/dashboard-stats').catch((err) => {
+  const session = await getCurrentUser();
+  const stats = await fetchFromBackend('/cms/dashboard-stats', {
+    headers: {
+      'X-Admin-Role': session?.role || 'admin',
+    },
+  }).catch((err) => {
     console.error('Failed to fetch dashboard stats:', err);
     return {
       productCount: 0,
