@@ -3,7 +3,10 @@ import path from 'path';
 import fs from 'fs/promises';
 import { existsSync } from 'fs';
 
-const ALLOWED_MIME_TYPES: Record<string, string> = {
+// Allowlist ekstensi berkas sah yang diizinkan untuk disajikan secara publik.
+// Dilarang keras membuka: .html, .htm, .js, .mjs, .php, .sh, .env, .exe, .bat, .cmd
+export const ALLOWED_MIME_TYPES: Record<string, string> = {
+  // Images
   '.jpg': 'image/jpeg',
   '.jpeg': 'image/jpeg',
   '.png': 'image/png',
@@ -12,13 +15,19 @@ const ALLOWED_MIME_TYPES: Record<string, string> = {
   '.svg': 'image/svg+xml',
   '.avif': 'image/avif',
   '.ico': 'image/x-icon',
+  // Documents & Office Formats
   '.pdf': 'application/pdf',
   '.txt': 'text/plain; charset=utf-8',
   '.csv': 'text/csv; charset=utf-8',
   '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   '.xls': 'application/vnd.ms-excel',
   '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  '.doc': 'application/msword',
   '.pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  '.ppt': 'application/vnd.ms-powerpoint',
+  // Corporate Media / Video
+  '.mp4': 'video/mp4',
+  '.webm': 'video/webm',
 };
 
 /**
@@ -52,7 +61,7 @@ export async function GET(
     // 2. Strict boundary check: path ter-resolve WAJIB berada di dalam root direktori uploads
     const uploadsDirWithSep = uploadsDir.endsWith(path.sep) ? uploadsDir : uploadsDir + path.sep;
     if (!requestedPath.startsWith(uploadsDirWithSep)) {
-      return new NextResponse('Forbidden', { status: 403 });
+      return new NextResponse('Forbidden: Path Traversal Detected', { status: 403 });
     }
 
     // 3. Allowlist ekstensi: tolak berkas tanpa ekstensi atau ekstensi berbahaya
