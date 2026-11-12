@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { fetchFromBackend } from '@/lib/api-client';
-import { signTempToken, TEMP_COOKIE_NAME } from '@/lib/auth';
+import { signTempToken, signSessionToken, COOKIE_NAME, TEMP_COOKIE_NAME, getCmsCookieOptions } from '@/lib/auth';
 
 export async function POST(req: Request) {
   try {
@@ -31,31 +31,31 @@ export async function POST(req: Request) {
 
     const { user, requires_mfa, has_mfa_secret } = authResult;
     const isMfaEnabled = requires_mfa ?? user.mfa_enabled ?? user.mfaEnabled;
+    const isFirstLogin = !!(user.is_first_login ?? user.isFirstLogin);
+    const sessionVersion = user.session_version ?? user.sessionVersion ?? 1;
 
     if (!isMfaEnabled) {
       // Direct login if MFA is not enabled
-      const { signSessionToken, COOKIE_NAME } = await import('@/lib/auth');
       const sessionToken = await signSessionToken({
         id: user.id,
         email: user.email,
         name: user.name,
         role: user.role,
         mfaVerified: true,
+        mustChangePassword: isFirstLogin,
+        mfaRequired: false,
+        sessionVersion,
       });
 
       const response = NextResponse.json({
         success: true,
-        redirect: '/admin',
+        redirect: isFirstLogin ? '/admin/change-password' : '/admin',
       });
 
+      const cookieOpts = getCmsCookieOptions();
       response.cookies.set({
-        name: COOKIE_NAME,
+        ...cookieOpts,
         value: sessionToken,
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        path: '/',
-        maxAge: 7 * 24 * 60 * 60, // 7 days
       });
 
       return response;
@@ -69,6 +69,18 @@ export async function POST(req: Request) {
         id: user.id,
         email: user.email,
         purpose: 'mfa_setup',
+      });
+
+      // Juga set cms_session dengan sesi belum lengkap agar proxy bisa membaca klaim
+      const sessionToken = await signSessionToken({
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        mfaVerified: false,
+        mustChangePassword: isFirstLogin,
+        mfaRequired: true,
+        sessionVersion,
       });
 
       const response = NextResponse.json({
@@ -86,6 +98,12 @@ export async function POST(req: Request) {
         sameSite: 'lax',
         path: '/',
         maxAge: 15 * 60,
+      });
+
+      const cookieOpts = getCmsCookieOptions();
+      response.cookies.set({
+        ...cookieOpts,
+        value: sessionToken,
       });
 
       return response;

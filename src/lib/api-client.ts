@@ -4,6 +4,7 @@
  * URL 100% via env (lihat src/lib/urls.ts) — tanpa hardcoded localhost/domain.
  */
 import { getBackendBaseUrl } from './urls';
+import { getCurrentUser } from './auth';
 
 function getInternalSecret(): string {
   const s = process.env.BACKEND_INTERNAL_SECRET;
@@ -65,27 +66,148 @@ function dualCaseObject(obj: any): any {
   return obj;
 }
 
+// ---------------------------------------------------------------------------
+// Session enforcement — penegakan sesi first-login & MFA di level helper
+// ---------------------------------------------------------------------------
+
+/**
+ * Error khusus saat sesi belum lengkap (first-login belum selesai / MFA belum
+ * terverifikasi). Dilempar oleh enforceSessionCompleteness() sehingga caller
+ * (route handler) bisa mengembalikan SESSION_INCOMPLETE ke klien.
+ */
+export class SessionIncompleteError extends Error {
+  public readonly code: string;
+  constructor(code: string, message: string) {
+    super(message);
+    this.name = 'SessionIncompleteError';
+    this.code = code;
+  }
+}
+
+/**
+ * Cek klaim sesi CMS sebelum menghubungi backend. Jika sesi belum lengkap
+ * (mustChangePassword=true atau mfaVerified=false dengan mfaRequired=true),
+ * lempar SessionIncompleteError.
+ *
+ * Route penyelesaian sesi (change-password, MFA, logout, session) memanggil
+ * fetchFromBackend / fetchCmsBackend dengan bypassEnforcement: true.
+ */
+export function enforceSessionCompleteness(session: {
+  mustChangePassword?: boolean;
+  mfaRequired?: boolean;
+  mfaVerified?: boolean;
+} | null): void {
+  if (!session) return; // no session = handled by auth check elsewhere
+  if (session.mustChangePassword) {
+    throw new SessionIncompleteError(
+      'FIRST_LOGIN_REQUIRED',
+      'Sesi belum lengkap: harus mengganti password terlebih dahulu.'
+    );
+  }
+  if (session.mfaRequired && !session.mfaVerified) {
+    throw new SessionIncompleteError(
+      'MFA_VERIFICATION_REQUIRED',
+      'Sesi belum lengkap: verifikasi MFA diperlukan.'
+    );
+  }
+}
+
+/**
+ * Tangani kode error sesi dari backend (403). Kembalikan kode yang sesuai
+ * agar proxy / UI bisa redirect ke halaman yang tepat.
+ */
+export function handleBackendSessionErrors(
+  status: number,
+  errorJson: any
+): SessionIncompleteError | null {
+  if (status !== 403) return null;
+  const code = errorJson?.code || errorJson?.detail?.code || '';
+  const sessionCodes = [
+    'FIRST_LOGIN_REQUIRED',
+    'MFA_SETUP_REQUIRED',
+    'MFA_VERIFICATION_REQUIRED',
+    'MFA_SESSION_EXPIRED',
+  ];
+  if (sessionCodes.includes(code)) {
+    return new SessionIncompleteError(code, errorJson?.detail?.message || errorJson?.detail || code);
+  }
+  return null;
+}
+
+// ---------------------------------------------------------------------------
+// Core fetch helpers
+// ---------------------------------------------------------------------------
+
+export interface FetchCmsOptions extends RequestInit {
+  /** Skip session completeness enforcement (untuk route penyelesaian sesi). */
+  bypassEnforcement?: boolean;
+  /** Klaim sesi CMS dari cookie (diisi oleh caller route handler). */
+  session?: {
+    id?: number;
+    mustChangePassword?: boolean;
+    mfaRequired?: boolean;
+    mfaVerified?: boolean;
+    sessionVersion?: number;
+  } | null;
+}
+
 export async function fetchFromBackend<T = any>(
   endpoint: string,
-  options?: RequestInit
+  options?: FetchCmsOptions
 ): Promise<T> {
   const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
   const url = buildBackendUrl(cleanEndpoint);
 
+  // Ambil sesi secara otomatis dari cookie jika tidak dilewatkan eksplisit
+  let activeSession = options?.session;
+  if (activeSession === undefined) {
+    try {
+      activeSession = await getCurrentUser();
+    } catch {
+      activeSession = null;
+    }
+  }
+
+  // Enforce session completeness (kecuali bypass)
+  if (activeSession && !options?.bypassEnforcement) {
+    enforceSessionCompleteness(activeSession);
+  }
+
   try {
     const internalSecret = getInternalSecret();
+    const extraHeaders: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'X-Internal-Secret': internalSecret,
+    };
+
+    // Kirim X-CMS-User-Id dari session (BUKAN X-Admin-Id)
+    if (activeSession?.id) {
+      extraHeaders['X-CMS-User-Id'] = String(activeSession.id);
+    }
+
+    // Kirim X-Session-Version untuk validasi pencabutan sesi
+    if (activeSession?.sessionVersion != null) {
+      extraHeaders['X-Session-Version'] = String(activeSession.sessionVersion);
+    }
+
+    const { bypassEnforcement, session, ...fetchOptions } = options || {};
+
     const res = await fetch(url, {
-      ...options,
+      ...fetchOptions,
       headers: {
-        'Content-Type': 'application/json',
-        'X-Internal-Secret': internalSecret,
-        ...options?.headers,
+        ...extraHeaders,
+        ...fetchOptions?.headers,
       },
       cache: 'no-store',
     });
 
     if (!res.ok) {
       const errorJson = await res.json().catch(() => ({}));
+
+      // Cek error sesi dari backend
+      const sessionErr = handleBackendSessionErrors(res.status, errorJson);
+      if (sessionErr) throw sessionErr;
+
       const apiError: any = new Error(errorJson.detail || errorJson.error || errorJson.message || `Backend API error (HTTP ${res.status})`);
       apiError.status = res.status;
       throw apiError;
@@ -95,6 +217,8 @@ export async function fetchFromBackend<T = any>(
     const data = json.data !== undefined ? json.data : json;
     return dualCaseObject(data) as T;
   } catch (err: any) {
+    // Re-throw SessionIncompleteError tanpa log noise
+    if (err instanceof SessionIncompleteError) throw err;
     console.error(`[API-CLIENT ERROR] ${cleanEndpoint}:`, err.message);
     throw err;
   }
@@ -126,4 +250,3 @@ export const cmsApi = {
       body: JSON.stringify(data),
     }),
 };
-

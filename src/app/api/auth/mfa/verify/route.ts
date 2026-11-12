@@ -4,6 +4,7 @@ import {
   signSessionToken,
   COOKIE_NAME,
   TEMP_COOKIE_NAME,
+  getCmsCookieOptions,
 } from '@/lib/auth';
 import { fetchFromBackend } from '@/lib/api-client';
 
@@ -36,6 +37,8 @@ export async function POST(req: Request) {
     });
 
     const user = verifyResult.user;
+    const isFirstLogin = !!(user.is_first_login ?? user.isFirstLogin);
+    const sessionVersion = user.session_version ?? user.sessionVersion ?? 1;
 
     const sessionToken = await signSessionToken({
       id: user.id,
@@ -43,22 +46,21 @@ export async function POST(req: Request) {
       name: user.name,
       role: user.role,
       mfaVerified: true,
+      mustChangePassword: isFirstLogin,
+      mfaRequired: false,
+      sessionVersion,
     });
 
     const response = NextResponse.json({
       success: true,
       usedBackup: verifyResult.used_backup ?? false,
-      redirect: '/admin',
+      redirect: isFirstLogin ? '/admin/change-password' : '/admin',
     });
 
+    const cookieOpts = getCmsCookieOptions();
     response.cookies.set({
-      name: COOKIE_NAME,
+      ...cookieOpts,
       value: sessionToken,
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/',
-      maxAge: 7 * 24 * 60 * 60,
     });
 
     response.cookies.delete(TEMP_COOKIE_NAME);

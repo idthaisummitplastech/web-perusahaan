@@ -12,12 +12,24 @@ function getSecretKey(): Uint8Array {
 export const COOKIE_NAME = 'cms_session';
 export const TEMP_COOKIE_NAME = 'cms_temp_mfa';
 
+/**
+ * TTL sesi CMS = 8 jam, sinkron dengan ACCESS_TOKEN_EXPIRE_MINUTES=480 di backend.
+ * Satu sumber kebenaran untuk maxAge cookie dan JWT expiration.
+ */
+export const CMS_SESSION_TTL_SECONDS = 8 * 60 * 60; // 28800
+
 export interface UserSessionPayload {
   id: number;
   email: string;
   name: string;
   role: string;
   mfaVerified: boolean;
+  /** First-login enforcement: user harus ganti password dulu. */
+  mustChangePassword?: boolean;
+  /** First-login enforcement: MFA wajib tapi belum di-setup/verifikasi. */
+  mfaRequired?: boolean;
+  /** Session version untuk deteksi pencabutan (password change, admin reset). */
+  sessionVersion?: number;
 }
 
 export interface TempMfaPayload {
@@ -26,11 +38,26 @@ export interface TempMfaPayload {
   purpose: 'mfa_verify' | 'mfa_setup';
 }
 
+/**
+ * Cookie options standar untuk cms_session. Konsisten di seluruh codebase.
+ * maxAge = CMS_SESSION_TTL_SECONDS = 8 jam.
+ */
+export function getCmsCookieOptions() {
+  return {
+    name: COOKIE_NAME,
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax' as const,
+    path: '/',
+    maxAge: CMS_SESSION_TTL_SECONDS,
+  };
+}
+
 export async function signSessionToken(payload: UserSessionPayload): Promise<string> {
   return new SignJWT({ ...payload })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
-    .setExpirationTime('7d')
+    .setExpirationTime(`${CMS_SESSION_TTL_SECONDS}s`)
     .sign(getSecretKey());
 }
 
