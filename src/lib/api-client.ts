@@ -4,6 +4,7 @@
  * URL 100% via env (lihat src/lib/urls.ts) — tanpa hardcoded localhost/domain.
  */
 import { getBackendBaseUrl } from './urls';
+import { getCurrentUser } from './auth';
 
 function getInternalSecret(): string {
   const s = process.env.BACKEND_INTERNAL_SECRET;
@@ -157,9 +158,19 @@ export async function fetchFromBackend<T = any>(
   const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
   const url = buildBackendUrl(cleanEndpoint);
 
+  // Ambil sesi secara otomatis dari cookie jika tidak dilewatkan eksplisit
+  let activeSession = options?.session;
+  if (activeSession === undefined) {
+    try {
+      activeSession = await getCurrentUser();
+    } catch {
+      activeSession = null;
+    }
+  }
+
   // Enforce session completeness (kecuali bypass)
-  if (options?.session && !options.bypassEnforcement) {
-    enforceSessionCompleteness(options.session);
+  if (activeSession && !options?.bypassEnforcement) {
+    enforceSessionCompleteness(activeSession);
   }
 
   try {
@@ -170,13 +181,13 @@ export async function fetchFromBackend<T = any>(
     };
 
     // Kirim X-CMS-User-Id dari session (BUKAN X-Admin-Id)
-    if (options?.session?.id) {
-      extraHeaders['X-CMS-User-Id'] = String(options.session.id);
+    if (activeSession?.id) {
+      extraHeaders['X-CMS-User-Id'] = String(activeSession.id);
     }
 
     // Kirim X-Session-Version untuk validasi pencabutan sesi
-    if (options?.session?.sessionVersion != null) {
-      extraHeaders['X-Session-Version'] = String(options.session.sessionVersion);
+    if (activeSession?.sessionVersion != null) {
+      extraHeaders['X-Session-Version'] = String(activeSession.sessionVersion);
     }
 
     const { bypassEnforcement, session, ...fetchOptions } = options || {};

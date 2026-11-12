@@ -212,6 +212,35 @@ async function runTests() {
     assert(res.status === 200, '14. marketing → /admin/blog-posts allowed (200)');
   }
 
+  // 14b. Paritas Middleware Lama: Non-admin role blocked from /admin/settings
+  {
+    process.env.FIRST_LOGIN_ENFORCE = 'false';
+    const token = await makeToken({ id: 2, email: 'mk@b.com', name: 'MK', role: 'marketing', mfaVerified: true, mustChangePassword: false, mfaRequired: false, sessionVersion: 1 });
+    const req = makeRequest('http://localhost:3008/admin/settings', { cms_session: token });
+    const res = await proxy(req);
+    const loc = res.headers.get('location') || '';
+    assert(loc.includes('/admin') && !loc.includes('/admin/settings'), '14b. paritas: marketing → redirect dari /admin/settings');
+  }
+
+  // 14c. Paritas Middleware Lama: /login/verify-mfa dengan auth lengkap -> redirect /admin
+  {
+    process.env.FIRST_LOGIN_ENFORCE = 'false';
+    const token = await makeToken({ id: 1, email: 'a@b.com', name: 'A', role: 'admin', mfaVerified: true, mustChangePassword: false, mfaRequired: false, sessionVersion: 1 });
+    const req = makeRequest('http://localhost:3008/login/verify-mfa', { cms_session: token });
+    const res = await proxy(req);
+    const loc = res.headers.get('location') || '';
+    assert(loc.includes('/admin'), '14c. paritas: /login/verify-mfa + auth lengkap → redirect /admin');
+  }
+
+  // 14d. Paritas Middleware Lama: /login/verify-mfa dengan temp mfa_setup -> redirect /admin/mfa-setup
+  {
+    const tempToken = await makeToken({ id: 1, email: 'a@b.com', purpose: 'mfa_setup' }, '15m');
+    const req = makeRequest('http://localhost:3008/login/verify-mfa', { cms_temp_mfa: tempToken });
+    const res = await proxy(req);
+    const loc = res.headers.get('location') || '';
+    assert(loc.includes('/admin/mfa-setup'), '14d. paritas: /login/verify-mfa + temp mfa_setup → redirect /admin/mfa-setup');
+  }
+
   // --- enforceSessionCompleteness() tests ---
   console.log('\nenforceSessionCompleteness() tests:');
 
